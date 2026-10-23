@@ -7,6 +7,11 @@
             "type": "command",
             "command": "bash \"$CLAUDE_PROJECT_DIR/tools/metis-preflight.sh\" --report",
             "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/tools/metis-readiness.sh\" --summary",
+            "timeout": 15
           }
         ]
       }
@@ -28,7 +33,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/pre-tool-use.mjs\""
+            "command": "if command -v node >/dev/null 2>&1; then node \"$CLAUDE_PROJECT_DIR/.claude/hooks/pre-tool-use.mjs\"; fi"
           }
         ]
       },
@@ -57,7 +62,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/post-tool-use.mjs\""
+            "command": "if command -v node >/dev/null 2>&1; then node \"$CLAUDE_PROJECT_DIR/.claude/hooks/post-tool-use.mjs\"; fi"
           }
         ]
       }
@@ -67,12 +72,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/stop.mjs\"",
+            "command": "if command -v node >/dev/null 2>&1; then node \"$CLAUDE_PROJECT_DIR/.claude/hooks/stop.mjs\"; fi",
             "timeout": 25
           },
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/verify-citations.mjs\"",
+            "command": "if command -v node >/dev/null 2>&1; then node \"$CLAUDE_PROJECT_DIR/.claude/hooks/verify-citations.mjs\"; fi",
             "timeout": 10
           }
         ]
@@ -83,7 +88,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/pre-compact.mjs\""
+            "command": "if command -v node >/dev/null 2>&1; then node \"$CLAUDE_PROJECT_DIR/.claude/hooks/pre-compact.mjs\"; fi"
           }
         ]
       }
@@ -93,7 +98,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/user-prompt-submit.mjs\"",
+            "command": "if command -v node >/dev/null 2>&1; then node \"$CLAUDE_PROJECT_DIR/.claude/hooks/user-prompt-submit.mjs\"; fi",
             "timeout": 8
           }
         ]

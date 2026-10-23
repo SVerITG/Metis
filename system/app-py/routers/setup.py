@@ -54,7 +54,8 @@ def _wizard_status() -> dict:
     sections = [
         ("About you",          bool(user.get("name") and user.get("role"))),
         ("Research domain",    bool(research.get("field"))),
-        ("News & literature",  bool(prefs.get("news_topics") or prefs.get("pubmed_query"))),
+        ("News & literature",  bool(prefs.get("news_interests") or prefs.get("news_topics")
+                                    or prefs.get("pubmed_query"))),
         ("Current projects",   bool(config.get("projects"))),
         ("Seed knowledge",     False),  # no persistent marker — user-driven
         ("Ideas & notes",      False),  # no persistent marker
@@ -131,6 +132,42 @@ async def setup_status():
     return _wizard_status()
 
 
+# The tour's stops: (link, tab name as the navigation shows it, what it is for,
+# one thing to try). Kept here, next to the route, so a renamed tab is one edit.
+TOUR_STOPS = [
+    ("/today", "Today", "Your day on one page: what is planned, what is due, a short "
+     "brief of the news and papers that matter to your work.",
+     "plan one task for today and watch it appear in the plan strip."),
+    ("/news", "News", "What is happening in the subjects you asked Metis to watch, "
+     "grouped into threads rather than a raw feed.",
+     "rate a story — Metis learns what is relevant to you."),
+    ("/knowledge", "Library", "Your papers and documents: the knowledge Claude searches "
+     "before it reaches for the internet.",
+     "search for a topic; results are ranked by closeness to your work."),
+    ("/work", "Work", "Projects and tasks, on a board where dragging a card is the edit, "
+     "and a calendar.", "move a task to another column."),
+    ("/meetings", "Meetings", "Meeting notes, with decisions and action items pulled out.",
+     "open a meeting and look at its action items."),
+    ("/thinking", "Reflection", "Ideas, notes and brainstorms — and the connections Metis "
+     "finds between them and your projects.", "add an idea in one line."),
+    ("/learning", "Learning", "Courses and study plans, scheduled into your week.",
+     "open a course and see its next lesson."),
+    ("/presentation", "Present", "Your slide decks and the lessons they were built from.",
+     "browse the repository."),
+    ("/metis", "Metis", "Metis itself: your profile and interests, which specialists did "
+     "what, and whether everything is working.", "check your interests are the right ones."),
+]
+
+
+@router.get("/tour", response_class=HTMLResponse)
+async def tour_page(request: Request):
+    import os as _os
+    demo = _DEMO_MARKER.exists() or _os.environ.get("METIS_DEMO") == "1"
+    return templates.TemplateResponse(request, "tour.html", {
+        "active_tab": "metis", "stops": TOUR_STOPS, "demo": demo,
+    })
+
+
 @router.get("/api/setup/verify", response_class=JSONResponse)
 async def setup_verify():
     """Prove Metis actually works before the wizard declares success (Keystone P1.3).
@@ -169,17 +206,41 @@ async def setup_verify():
         add("Metis tools importable", False, True, f"{type(e).__name__}: {e}")
 
     # 4) Embedding model cached → semantic search works offline from first run.
+    # Every place the embedder itself looks — not one guessed folder. Looking in
+    # ~/.cache/fastembed alone said "not cached" on a fresh install whose model sat
+    # in the HuggingFace cache and searched perfectly well.
     try:
-        cache = Path(os.environ.get("FASTEMBED_CACHE_PATH") or (Path.home() / ".cache" / "fastembed"))
-        cached = cache.exists() and any(cache.rglob("*.onnx"))
+        try:
+            from metis_mcp.embeddings import _cache_candidates
+            places = list(_cache_candidates())
+        except Exception:
+            places = [Path.home() / ".cache" / "fastembed"]
+        places.append(Path.home() / ".cache" / "huggingface" / "hub")
+        cached = any(c.exists() and any(c.rglob("*.onnx")) for c in places)
         add("Search model cached", cached, False,
             "offline search ready" if cached else "will download on first online use")
     except Exception as e:
         add("Search model cached", False, False, f"{type(e).__name__}: {e}")
 
-    # 5) The profile the wizard just wrote exists.
-    add("Your profile saved", _USER_CONFIG.exists(), True,
-        "user-config.yaml" if _USER_CONFIG.exists() else "not written yet")
+    # 5) Claude can see who this is. Checked in user-preferences.json — what
+    # get_user_profile() and the News and Today surfaces read — not merely that
+    # some config file exists: setup used to write user-config.yaml only, and this
+    # check passed while Claude greeted the person as "Researcher".
+    prefs: dict = {}
+    try:
+        prefs = json.loads(_USER_PREFS.read_text(encoding="utf-8")) if _USER_PREFS.exists() else {}
+    except Exception:
+        prefs = {}
+    name = str(prefs.get("display_name") or "").strip()
+    add("Metis knows who you are", bool(name), True,
+        name if name else "no name in user-preferences.json — Claude would say 'Researcher'")
+    lib = prefs.get("library_interests") or prefs.get("interests") or []
+    news = prefs.get("news_interests") or prefs.get("news_topics") or []
+    add("Your interests reached Metis", bool(lib), True,
+        f"{len(lib)} for your library, {len(news)} for news" if lib
+        else "no library interests saved — literature cannot be ranked for you")
+    add("News to watch", bool(news), False,
+        f"{len(news)} topic(s)" if news else "none yet — add them on the Metis tab")
 
     # 6) Deep self-check (non-critical extra signal, best-effort).
     try:
@@ -394,8 +455,9 @@ async def welcome_banner(request: Request):
       .then(r => r.json())
       .then(d => {
         if (d.ok) {
-          document.getElementById('first-run-overlay').remove();
-          window.location.reload();
+          // Straight into the tour: a page of sample data with no guide is the
+          // part of the demo nobody could make sense of.
+          window.location.href = '/tour';
         } else {
           if (btn) { btn.textContent = 'Error — ' + (d.error || 'try again'); btn.style.opacity = '1'; }
         }
@@ -408,38 +470,51 @@ async def welcome_banner(request: Request):
 """)
 
 
+def _demo_module():
+    """The sample-workspace loader. It ships with Metis; if it is missing, say so —
+    this route used to switch demo mode on over an empty database and report ok."""
+    import importlib.util
+    path = _METIS_ROOT / "system" / "install" / "seed_mockup_demo.py"
+    if not path.exists():
+        return None
+    spec = importlib.util.spec_from_file_location("seed_mockup_demo", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
 @router.post("/api/setup/seed-demo", response_class=JSONResponse)
 async def seed_demo():
-    """Seed the database with the demo persona and generate the demo linelist CSV."""
+    """Load the sample workspace, recording every row so Exit demo can remove it."""
     from db import get_db_path
     _db_path = get_db_path()
     if not _db_path.exists():
         return JSONResponse({"ok": False, "error": "Database not initialised. Start the dashboard first."}, status_code=503)
+    mod = _demo_module()
+    if mod is None:
+        return JSONResponse({"ok": False, "error": "The demo is not included in this installation."}, status_code=404)
     try:
-        seed_script = _METIS_ROOT / "system" / "install" / "seed_mockup_demo.py"
-        if seed_script.exists():
-            sys.path.insert(0, str(seed_script.parent))
-            import importlib.util
-            spec = importlib.util.spec_from_file_location("seed_mockup_demo", seed_script)
-            mod  = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(mod)
-            conn = sqlite3.connect(str(_db_path))
-            mod.seed(conn)
-            conn.close()
-            if hasattr(mod, "generate_linelist"):
-                _DEMO_DIR.mkdir(parents=True, exist_ok=True)
-                mod.generate_linelist(_DEMO_DIR / "linelist_ebola_equateur_2025.csv")
-        _DEMO_MARKER.touch()
-        return {"ok": True}
+        res = mod.load(_db_path)
     except Exception as e:
         return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+    if not res.get("ok"):
+        return JSONResponse(res, status_code=409)
+    _DEMO_MARKER.touch()
+    return res
 
 
 @router.post("/api/setup/exit-demo", response_class=JSONResponse)
 async def exit_demo():
-    """Remove demo mode marker."""
+    """Leave demo mode: remove exactly the sample rows, then the banner."""
+    removed = 0
+    mod = _demo_module()
+    if mod is not None:
+        try:
+            removed = mod.unload().get("removed", 0)
+        except Exception as e:
+            return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
     _DEMO_MARKER.unlink(missing_ok=True)
-    return {"ok": True}
+    return {"ok": True, "removed": removed}
 
 
 @router.get("/api/partial/demo-banner", response_class=HTMLResponse)
@@ -454,9 +529,11 @@ async def demo_banner():
      gap:16px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;">
   <span style="color:#4ade80;">▲ DEMO MODE</span>
   <span style="color:#6b9e7a;flex:1;">
-    Showing sample data for Dr. Amélie Fontaine — health economist &amp; global health policy researcher.
-    This is not your real workspace.
+    Sample workspace of a fictional researcher, Dr. Amélie Fontaine (health economist).
+    Exit demo removes all of it; your own setup is kept.
   </span>
+  <a href="/tour" style="color:#4ade80;text-decoration:none;border:1px solid #2a5a38;
+     padding:4px 12px;border-radius:3px;">TAKE THE TOUR</a>
   <a href="/setup" style="color:#4ade80;text-decoration:none;border:1px solid #2a5a38;
      padding:4px 12px;border-radius:3px;">SET UP MY WORKSPACE</a>
   <button onclick="fetch('/api/setup/exit-demo',{method:'POST'}).then(()=>location.reload())"

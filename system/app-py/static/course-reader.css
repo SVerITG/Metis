@@ -1,23 +1,39 @@
 /* =============================================================
    VERBATIM COPY of the statistics course stylesheet.
    Source: the statistics course stylesheet (see tools/sync-course-reader-css.sh)
-   Copied: 2026-09-03T20:27:27+02:00
+   Copied: 2026-10-13T18:28:21+02:00
    Do not hand-edit this section — run tools/sync-course-reader-css.sh.
    ============================================================= */
+/* Self-hosted variable fonts (SIL OFL, see public/fonts/OFL-*.txt). */
+@font-face {
+  font-family: 'Manrope';
+  src: url('/static/vendor/fonts/Manrope-variable.ttf') format('truetype');
+  font-weight: 200 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Fraunces';
+  src: url('/static/vendor/fonts/Fraunces-variable.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --bg: #f6efe6;
   --bg-strong: #efe3d2;
   --paper: #fffaf3;
   --paper-strong: #ffffff;
   --ink: #193038;
-  --ink-soft: #5b6f75;
-  --ink-faint: #839399;
+  --ink-soft: #52656b;  /* was #5b6f75: 4.4:1 on the tinted panels */
+  --ink-faint: #55676c;  /* was #839399: 2.5-3.1:1 on paper, failed WCAG AA */
   --line: #d8c9b5;
   --brand: #0f6c78;
   --brand-soft: #def0ec;
-  --accent: #c06045;
+  --accent: #a24d35;     /* was #c06045: 3.5-4.0:1 */
   --accent-soft: #fae7de;
-  --gold: #b9822a;
+  --gold: #8a5f17;       /* was #b9822a: 3.0:1 on gold-soft */
   --gold-soft: #fff3dc;
   --sage: #50725d;
   --sage-soft: #e6f0e8;
@@ -35,9 +51,27 @@
   --sidebar-w: 320px;
   --topbar-h: 76px;
   --content-max: 1380px;
+  /* Aliases. Later blocks were written against a dark theme's token names
+     (--accent-purple, --text-muted, --border ...) that this palette never
+     defined, so they fell back to pale neon literals or to nothing. Mapping
+     them here brings those components back onto the paper/teal palette. */
+  --accent-emerald: var(--sage);
+  --accent-purple: var(--brand);
+  --accent-amber: var(--gold);
+  --bg-card: var(--paper);
+  --surface: var(--paper);
+  --border: var(--line);
+  --border-subtle: rgba(216, 201, 181, 0.6);
+  --border-strong: #b9a78c;
+  --ink-bright: var(--ink);
+  --ink-secondary: var(--ink-soft);
+  --ink-muted: var(--ink-faint);
+  --text-primary: var(--ink);
+  --text-secondary: var(--ink-soft);
+  --text-muted: var(--ink-faint);
   --font-ui: 'Manrope', sans-serif;
   --font-display: 'Fraunces', Georgia, serif;
-  --font-mono: 'IBM Plex Mono', monospace;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', Consolas, 'Liberation Mono', monospace;
 }
 
 * {
@@ -51,9 +85,7 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
-  background:
-    radial-gradient(circle at top left, rgba(255, 255, 255, 0.55), transparent 22%),
-    linear-gradient(180deg, #f7f1e9 0%, var(--bg) 45%, #fbf8f4 100%);
+  background: var(--bg);
   color: var(--ink);
   font-family: var(--font-ui);
 }
@@ -311,7 +343,7 @@ a {
   width: 34px;
   height: 34px;
   border-radius: 999px;
-  background: linear-gradient(135deg, var(--brand), #2d8793);
+  background: var(--brand);  /* was a gradient to #2d8793: white initials 4.2:1 there */
   color: #fff;
   font-weight: 800;
 }
@@ -426,7 +458,7 @@ a {
 
 .hero,
 .page-card {
-  background: linear-gradient(135deg, rgba(255, 250, 243, 0.96), rgba(245, 236, 224, 0.96));
+  background: #faf4eb;  /* solid: no text container fades (2026-10-12) */
   border: 1px solid rgba(216, 201, 181, 0.88);
   border-radius: 28px;
   box-shadow: var(--shadow);
@@ -761,6 +793,26 @@ button.mini-chip {
   font-size: 0.97rem;
   line-height: 1.65;
   color: var(--ink);
+}
+
+.fact-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.fact-source {
+  margin: 0;
+  flex: 1 1 18rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
 }
 
 /* Activity heatmap */
@@ -1150,7 +1202,7 @@ button.mini-chip {
 .map-label {
   padding: 15px;
   border-radius: 18px;
-  background: linear-gradient(145deg, rgba(15, 108, 120, 0.12), rgba(255, 255, 255, 0.86));
+  background: #e6efec;
   border: 1px solid rgba(15, 108, 120, 0.18);
 }
 
@@ -1234,7 +1286,7 @@ button.mini-chip {
   border: 1px solid rgba(216, 201, 181, 0.92);
   border-radius: 24px;
   padding: 16px 18px;
-  background: linear-gradient(155deg, rgba(255, 255, 255, 0.96), rgba(255, 248, 236, 0.92));
+  background: #fffaf2;
   box-shadow: 0 12px 28px rgba(79, 64, 44, 0.08);
   text-align: left;
   transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
@@ -1260,16 +1312,16 @@ button.mini-chip {
 }
 
 .flow-module.current {
-  background: linear-gradient(155deg, rgba(236, 250, 252, 0.98), rgba(255, 255, 255, 0.94));
+  background: #eef7f7;
 }
 
 .flow-module.done {
-  background: linear-gradient(155deg, rgba(241, 247, 243, 0.98), rgba(255, 255, 255, 0.94));
+  background: #f2f6f2;
   border-color: rgba(80, 114, 93, 0.22);
 }
 
 .flow-module.optional {
-  background: linear-gradient(155deg, rgba(255, 248, 236, 0.98), rgba(255, 255, 255, 0.94));
+  background: #fdf6ea;
 }
 
 .flow-module.linked {
@@ -1915,6 +1967,28 @@ button.mini-chip {
   color: #fca5a5;
 }
 
+/* A run in progress: a pulsing dot, so a slow model fit does not look frozen. */
+.chunk-console.is-running::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: #5eead4;
+  vertical-align: middle;
+  animation: chunk-running-pulse 1.1s ease-in-out infinite;
+}
+
+@keyframes chunk-running-pulse {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chunk-console.is-running::before { animation: none; }
+}
+
 .chunk-console img.chunk-plot {
   display: block;
   max-width: 100%;
@@ -2477,8 +2551,14 @@ button.mini-chip {
 }
 
 .badge-achievement.locked {
-  opacity: 0.45;
+  /* Not yet earned. Fading the whole badge to 45% put its text at 1.9-2.6:1;
+     the icon fades, the words stay readable. */
+  opacity: 1;
+  border-style: dashed;
 }
+.badge-achievement.locked .badge-achievement-icon { opacity: 0.4; filter: grayscale(1); }
+.badge-achievement.locked .badge-achievement-label,
+.badge-achievement.locked .badge-achievement-desc { color: var(--ink-soft); }
 
 .badge-achievement-icon {
   font-size: 1.7rem;
@@ -3514,7 +3594,7 @@ button.mini-chip {
 .practical-case-study {
   margin: 0 0 1.1rem;
   padding: 0.9rem 1.1rem 0.9rem 1.1rem;
-  background: linear-gradient(135deg, rgba(185, 130, 42, 0.06), rgba(255, 255, 255, 0.94));
+  background: #faf3e8;
   border: 1px solid rgba(185, 130, 42, 0.22);
   border-left: 4px solid var(--gold);
   border-radius: 0 10px 10px 0;
@@ -3534,120 +3614,599 @@ button.mini-chip {
   color: var(--ink);
 }
 
+/* ═══ ONLINE PLATFORM — minimal structural styles (2026-10-08) ═══════════════
+   Added with the online sign-up, league, duels and settings. Structure only;
+   to be restyled with the rest of the design system. Nothing above this block
+   was changed. */
+.consent-row { display: flex; gap: 8px; align-items: flex-start; font-size: 0.86rem; color: var(--ink-soft); margin: 4px 0 8px; }
+.consent-row input { margin-top: 3px; }
+.auth-footnote { text-align: center; margin-top: 12px; font-size: 0.8rem; }
+.board-tabs { margin-bottom: 16px; }
+.rival-card { margin-bottom: 16px; }
+.league-winner { padding: 10px 12px; border-radius: var(--radius-sm); background: var(--gold-soft); margin-bottom: 10px; }
+.league-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.league-table th, .league-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+.league-table th { font-size: 0.78rem; color: var(--ink-soft); font-weight: 600; }
+.league-table tr.is-me td { background: var(--brand-soft); }
+.duel-list { list-style: none; padding: 0; margin: 0 0 16px; }
+.duel-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.duel-challenge { margin-bottom: 18px; }
+.duel-challenge .settings-inline { align-items: center; flex-wrap: wrap; }
+.practice-rstudio-note { margin-top: 12px; }
+/* ═══ END ONLINE PLATFORM ════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════════════
+   2026-10-09 · Institute-course polish
+   One numbering scheme, visible durations, a calmer first visit, a landing
+   page a colleague can trust, and the accessibility basics. Kept together
+   so the decisions read as one record.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Accessibility basics ───────────────────────────────────────────── */
+:where(button, a, [tabindex], summary, input, select, textarea):focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+.field-input:focus-visible,
+.field-textarea:focus-visible,
+.field-select:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  html { scroll-behavior: auto; }
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Active icon buttons use the same teal as active nav pills (was terracotta). */
+.topbar-icon-btn:hover,
+.topbar-icon-btn.active { border-color: rgba(15, 108, 120, 0.45); }
+
+/* Numbers that line up in a column use tabular figures. */
+.num, .outline-code, .pill-code, .lesson-hero-meta, .home-facts, .auth-facts, .auth-map-time, .syllabus-totals {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Step dots: Theory · Mastery check · R practice ─────────────────── */
+.step-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+}
+.step-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink-faint);
+  background: transparent;
+  flex: none;
+}
+.step-dot.done { background: var(--brand); border-color: var(--brand); }
+.step-dot.part { background: linear-gradient(90deg, var(--brand) 50%, transparent 50%); border-color: var(--brand); }
+
+/* ── Sidebar lesson rows: number · title + time · steps ─────────────── */
+.outline-item {
+  display: grid;
+  grid-template-columns: 2.4rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+}
+.outline-code {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+.outline-body { display: grid; gap: 1px; min-width: 0; }
+.outline-name { line-height: 1.35; }
+.outline-item.done .outline-name { color: var(--ink); }
+.outline-item.done .outline-code { color: var(--brand); }
+.outline-trigger .lesson-meta { white-space: nowrap; }
+
+/* ── Lesson hero ────────────────────────────────────────────────────── */
+.lesson-hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+  margin: 2px 0 14px;
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+}
+.lesson-hero-meta strong { color: var(--ink); font-weight: 800; }
+.lesson-hero-status-list { list-style: none; margin: 0; padding: 0; }
+.lesson-hero-status-item { color: var(--ink-soft); }
+.lesson-hero-status-item.done { color: var(--ink); }
+.lesson-hero-status-item .step-dot { width: 11px; height: 11px; }
+.lesson-hero-status-detail {
+  margin-left: auto;
+  font-size: 0.82rem;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+details.lesson-brief-card > summary {
+  cursor: pointer;
+  list-style: none;
+}
+details.lesson-brief-card > summary::-webkit-details-marker { display: none; }
+details.lesson-brief-card > summary .lesson-overview-label::after {
+  content: '  ▾';
+  color: var(--ink-faint);
+}
+details.lesson-brief-card:not([open]) > summary { margin-bottom: 0; }
+details.lesson-brief-card:not([open]) > summary .lesson-overview-label::after { content: '  ▸'; }
+
+/* ── Codes and times inside pills and search results ────────────────── */
+.pill-code {
+  font-weight: 800;
+  color: var(--brand);
+  margin-right: 2px;
+}
+.pill-time {
+  color: var(--ink-faint);
+  font-size: 0.84em;
+  margin-left: 4px;
+  white-space: nowrap;
+}
+.flow-exam-pill { font-weight: 600; font-size: 11px; border-radius: 999px; padding: 2px 9px; }
+.flow-exam-pill.done  { background: var(--sage-soft); border-color: rgba(80, 114, 93, 0.35); color: var(--sage); }
+.flow-exam-pill.ready { background: var(--brand-soft); border-color: rgba(15, 108, 120, 0.3); color: var(--brand); }
+.flow-lesson-dot.dot-next { box-shadow: 0 0 0 2px rgba(15, 108, 120, 0.25); }
+.lesson-hero-meta > * + *::before { content: '·'; margin-right: 14px; color: var(--ink-faint); }
+
+/* ── Home: one primary action, progress only once there is some ─────── */
+.home-hero .hero-actions { align-items: stretch; }
+.btn.home-primary {
+  display: inline-grid;
+  justify-items: start;
+  gap: 2px;
+  text-align: left;
+  padding: 12px 22px;
+  border-radius: 18px;
+}
+.btn.home-primary small {
+  font-weight: 500;
+  font-size: 0.86rem;
+  opacity: 0.9;
+}
+.home-facts {
+  margin: 4px 0 18px;
+  color: var(--ink-soft);
+  font-weight: 700;
+  font-size: 0.92rem;
+  letter-spacing: 0.01em;
+}
+.home-progress { margin-top: 22px; max-width: 640px; }
+.home-progress .progress-bar { height: 8px; }
+.home-progress-copy { margin: 8px 0 0; color: var(--ink-soft); font-size: 0.92rem; }
+
+/* ── Tables: real <table>s with tabular numerals ────────────────────── */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+.data-table th {
+  text-align: left;
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--ink-soft);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.data-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid rgba(216, 201, 181, 0.6);
+  vertical-align: middle;
+}
+.data-table tbody tr:last-child td { border-bottom: 0; }
+.data-table .num { text-align: right; white-space: nowrap; }
+.data-table td.num:first-child, .data-table th.num:first-child { text-align: left; width: 2.5rem; }
+.rank-table tr.me td { background: var(--brand-soft); font-weight: 700; }
+.rank-table.compact td, .rank-table.compact th { padding: 6px 8px; }
+.leaderboard-grid .review-card h3.sidebar-title { margin: 0 0 8px; }
+
+/* ── Syllabus (Course tab) ──────────────────────────────────────────── */
+.syllabus { display: grid; gap: 18px; }
+.syllabus-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+.syllabus-head .card-heading { margin: 2px 0 0; }
+.syllabus-totals { color: var(--ink-soft); font-weight: 700; font-size: 0.9rem; white-space: nowrap; }
+.syllabus-table { width: 100%; border-collapse: collapse; }
+.syllabus-table th {
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--ink-soft);
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line);
+}
+.syllabus-table td {
+  padding: 7px 10px;
+  border-bottom: 1px solid rgba(216, 201, 181, 0.55);
+  vertical-align: middle;
+}
+.syllabus-table tbody tr:last-child td { border-bottom: 0; }
+.syllabus-table .num { width: 4.5rem; color: var(--ink-soft); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.syllabus-table td.num:first-child { font-weight: 800; color: var(--ink); }
+.syllabus-table th.num:nth-child(3), .syllabus-table td.num:nth-child(3) { text-align: right; }
+.syllabus-table tr.next td { background: rgba(222, 240, 236, 0.6); }
+.syllabus-link {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--ink);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.syllabus-link:hover { color: var(--brand); text-decoration: underline; }
+.syllabus-tag {
+  margin-left: 6px;
+  font-size: 0.74rem;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+}
+.syllabus-tag.next { color: var(--brand); }
+.syllabus-exams { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+
+/* ── Landing / sign-in ──────────────────────────────────────────────── */
+.auth-shell { align-items: center; }
+.auth-layout {
+  width: min(1120px, 100%);
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(320px, 440px);
+  gap: 56px;
+  align-items: center;
+}
+.auth-institute {
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--brand);
+}
+.auth-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(2.2rem, 1.6rem + 2vw, 3.2rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin: 10px 0 14px;
+}
+.auth-lede {
+  color: var(--ink-soft);
+  line-height: 1.65;
+  font-size: 1.04rem;
+  max-width: 60ch;
+  margin: 0 0 14px;
+}
+.auth-author { margin: 0 0 14px; color: var(--ink); font-weight: 600; }
+.auth-facts {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  padding: 0;
+  margin: 0 0 22px;
+  color: var(--ink-soft);
+}
+.auth-facts strong { color: var(--ink); font-size: 1.15rem; margin-right: 3px; }
+.auth-map {
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 250, 243, 0.8);
+  padding: 14px 16px;
+}
+.auth-map-caption {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+}
+.auth-map-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+.auth-map-row {
+  display: grid;
+  grid-template-columns: 2.6rem minmax(0, 1fr) 90px 8.5rem;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.88rem;
+}
+.auth-map-num { font-weight: 800; color: var(--brand); }
+.auth-map-name { color: var(--ink); }
+.auth-map-name em { font-style: normal; color: var(--ink-soft); font-size: 0.8rem; margin-left: 4px; }
+.auth-map-bar { height: 6px; border-radius: 99px; background: rgba(216, 201, 181, 0.55); overflow: hidden; }
+.auth-map-bar span { display: block; height: 100%; border-radius: inherit; background: var(--brand); }
+.auth-map-row.optional .auth-map-bar span { background: var(--gold); }
+.auth-map-time { color: var(--ink-soft); text-align: right; white-space: nowrap; font-size: 0.82rem; }
+.auth-card .auth-brand { font-size: 1.6rem; margin: 0 0 8px; }
+
+@media (max-width: 900px) {
+  .auth-layout { grid-template-columns: 1fr; gap: 28px; }
+  .auth-map-row { grid-template-columns: 2.4rem minmax(0, 1fr) 7.5rem; }
+  .auth-map-bar { display: none; }
+}
+
+/* ── Mobile ─────────────────────────────────────────────────────────── */
+@media (max-width: 700px) {
+  .brand-sub { display: none; }
+  .brand-title { font-size: 1rem; line-height: 1.15; }
+  .syllabus-table th:nth-child(4), .syllabus-table td:nth-child(4) { display: none; }
+  .syllabus-head { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .btn.home-primary { width: 100%; }
+  .lesson-brief-row { grid-template-columns: 1fr; gap: 4px; }
+}
+
+/* Phones: the navigation had collapsed to zero width (Course, Course Map,
+   Practice, About were unreachable) and the topbar pushed the page to 422px
+   at a 390px viewport. Two rows instead: brand + icons, then the nav. */
+@media (max-width: 700px) {
+  :root { --topbar-h: 108px; }
+  .topbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "left right" "nav nav";
+    row-gap: 6px;
+    padding: 10px 14px 6px;
+  }
+  .topbar-left { grid-area: left; min-width: 0; gap: 10px; }
+  .topbar-right { grid-area: right; gap: 8px; }
+  .topbar-nav { grid-area: nav; justify-content: flex-start; overflow-x: auto; }
+  .topbar-right .topbar-icon-btn[data-view="course-map"] { display: none; }
+  .brand-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+}
+/* Grid children default to min-width:auto, so the heatmap's fixed-width SVG
+   stretched the whole Home column past a phone's width. */
+.home-shell { grid-template-columns: minmax(0, 1fr); }
+.home-shell > * { min-width: 0; }
+.heatmap-scroll { overflow-x: auto; }
+/* Same column positions in every module's table. */
+.syllabus-table { table-layout: fixed; }
+.syllabus-table th:nth-child(1) { width: 4.5rem; }
+.syllabus-table th:nth-child(3) { width: 6.5rem; }
+.syllabus-table th:nth-child(4) { width: 5.5rem; }
+@media (max-width: 700px) {
+  .syllabus-table th:nth-child(1) { width: 3rem; }
+  .syllabus-table th:nth-child(3) { width: 5rem; }
+}
+
+/* ═══ No sideways page scroll (2026-10-12) ══════════════════════════════
+   Rule: the page itself never scrolls horizontally at any common width.
+   Wide data may scroll inside its OWN box, and fits by wrapping first.
+   Most overflow had one shape: a flex or grid child keeps min-width:auto,
+   so one long unbreakable line (a URL, an R formula, a wide table) set the
+   minimum width of every ancestor up to the page. */
+.main { min-width: 0; }
+.lesson-stage-shell,
+.message-list,
+.practice-output-stack,
+.chunk-list { grid-template-columns: minmax(0, 1fr); }
+.lesson-stage-shell > *,
+.message-list > *,
+.practice-output-stack > *,
+.chunk-list > *,
+.board-grid > *,
+.leaderboard-grid > *,
+.profile-grid > *,
+.settings-grid > *,
+.lesson-grid > *,
+.exam-grid > * { min-width: 0; }
+@media (max-width: 680px) { .settings-grid { grid-template-columns: minmax(0, 1fr); } }
+/* User-written text: a pasted URL or an R call has no break opportunity. */
+.message-body,
+.message-head,
+.hero-copy,
+.card-heading,
+.feedback-box { overflow-wrap: anywhere; }
+.message-head { flex-wrap: wrap; }
+.console-block pre,
+.quick-console-pre { white-space: pre-wrap; overflow-wrap: anywhere; max-width: 100%; }
+/* Plots and pictures shrink to their column (the heatmap SVG keeps its
+   own scroll box, so SVG is not included). */
+.view img, .view video, .view canvas { max-width: 100%; }
+.view img { height: auto; }
+/* Phone: rank tables fit by tighter cells and wrapping headers and names,
+   not by pushing the page sideways (the overall table reached 417px at 390). */
+@media (max-width: 560px) {
+  .data-table { font-size: 0.88rem; }
+  .data-table th { white-space: normal; letter-spacing: 0.04em; padding: 6px 6px; }
+  .data-table td { padding: 8px 6px; overflow-wrap: anywhere; }
+  .rank-table.compact td, .rank-table.compact th { padding: 5px 5px; }
+}
+
+/* The hub is a light interface; its course frames are light too. The frame
+   cleaner in app.js marks the lesson html with .hub-frame, which switches off
+   the lesson's dark-mode block. color-scheme here is a second hint for
+   browsers that pass it to the frame's prefers-color-scheme. */
+.iframe-shell { color-scheme: light; }
+
 /* ===================== APPENDED ============================== */
-/* Markdown prose for the Metis course reader, in the statistics course's idiom.
-   The statistics course renders structured JSON into cards, so it has almost no
-   element-level styles. Our lessons are markdown. Everything here is built from
-   its own variables (--font-display, --ink, --line, --brand, --radius) so the
-   two read as one design rather than two. */
+/* Markdown prose and reader glue for the Metis course reader, in the source
+   course's idiom. The source course renders structured JSON into cards and
+   its lessons are a separate rendered site, so its app stylesheet (above) has
+   almost no element-level prose rules. Our lessons are markdown rendered in
+   place. Everything here is built from that stylesheet's own variables
+   (--font-display, --ink, --line, --brand, --radius ...) so the two read as one
+   design rather than two.
 
-/* ---- reader shell ------------------------------------------------------- */
-.reader-topbar-title { font-family: var(--font-display); font-size: 1.05rem; letter-spacing: -0.01em; color: var(--ink); }
-.reader-topbar-sub   { font-size: 0.78rem; color: var(--ink-faint); letter-spacing: 0.02em; }
-.reader-back { font-size: 0.82rem; color: var(--ink-soft); }
-.reader-back:hover { color: var(--brand); }
+   The shell, sidebar outline, lesson hero, step dots, quiz cards and nav footer
+   are NOT styled here: the reader templates emit the source app's own class
+   names (.hero.lesson-hero, .outline-group, .outline-item, .step-dot,
+   .quiz-item, .choice-btn, .feedback-box, .lesson-nav-footer) so those rules
+   apply verbatim. This file only fills the gaps. */
 
-/* ---- sidebar: course contents ------------------------------------------- */
-.rc-head { padding: 4px 2px 14px; border-bottom: 1px solid var(--line); margin-bottom: 14px; }
-.rc-kicker { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.14em;
-             text-transform: uppercase; color: var(--ink-faint); margin-bottom: 6px; }
-.rc-title { font-family: var(--font-display); font-size: 1.12rem; line-height: 1.25;
-            letter-spacing: -0.01em; color: var(--ink); margin: 0 0 12px; }
-.rc-bar { height: 6px; background: var(--bg-strong); border-radius: 999px; overflow: hidden; }
-.rc-bar > i { display: block; height: 100%; background: var(--brand); border-radius: 999px; }
-.rc-meta { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.1em;
-           text-transform: uppercase; color: var(--ink-faint); margin-top: 8px; }
+/* ---- reader root -------------------------------------------------------- */
+/* The lesson prose follows the source course's rendered lesson theme, whose
+   box fills are not part of the app palette above. They are scoped to the reader
+   body rather than :root so nothing else could ever pick them up. The reader is
+   a light interface, as the source course's hub is; color-scheme stops a dark OS from
+   darkening scrollbars and form controls underneath light text rules. */
+.course-reader {
+  color-scheme: light;
+  --rd-paper-muted: #f4ead9;
+  --rd-tint-note: #e9f0ec;
+  --rd-tint-tip: #edf0e9;
+  --rd-tint-warning: #f7efe0;
+  --rd-tint-code: #f6efe2;
+  --rd-code-ink: #10424b;
+}
 
-.rc-section { margin-bottom: 18px; }
-.rc-section-label { font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.13em;
-                    text-transform: uppercase; color: var(--ink-faint); margin: 0 0 8px 2px; }
-.rc-item { display: flex; align-items: flex-start; gap: 9px; width: 100%;
-           background: none; border: 0; text-align: left; padding: 7px 9px;
-           border-radius: var(--radius-sm); color: var(--ink); font-size: 0.86rem;
-           line-height: 1.4; transition: background 0.14s ease; }
-.rc-item:hover { background: var(--brand-soft); }
-.rc-item.is-done { color: var(--ink-soft); }
-.rc-dot { flex: none; width: 8px; height: 8px; margin-top: 6px; border-radius: 50%;
-          border: 1px solid var(--line); background: transparent; }
-.rc-item.is-done .rc-dot { background: var(--brand); border-color: var(--brand); }
+/* ---- shell -------------------------------------------------------------- */
+.reader-back { white-space: nowrap; }
+.rd-loading { padding: 48px 28px; text-align: center; color: var(--ink-soft); }
+.rd-loading--side { padding: 10px 4px; text-align: left; font-size: 0.86rem; }
+
+/* ---- sidebar ------------------------------------------------------------ */
+/* Course progress uses a native <progress> so the fill needs no inline width.
+   Painted to match .progress-bar / .progress-fill in the stylesheet above. */
+.rd-progress {
+  display: block; width: 100%; height: 11px; margin-top: 8px;
+  border: 0; border-radius: 999px; overflow: hidden;
+  background: rgba(216, 201, 181, 0.4);
+  appearance: none; -webkit-appearance: none;
+}
+.rd-progress::-webkit-progress-bar { background: rgba(216, 201, 181, 0.4); border-radius: 999px; }
+.rd-progress::-webkit-progress-value { background: linear-gradient(90deg, var(--brand), #2f97a4); border-radius: 999px; }
+.rd-progress::-moz-progress-bar { background: linear-gradient(90deg, var(--brand), #2f97a4); border-radius: 999px; }
+
+.rd-outline { display: grid; gap: 10px; }
+/* Outline groups are <details>, so they fold without script; the header is
+   unmarked, as the source course's own fold is. */
+details.outline-group > summary { list-style: none; }
+details.outline-group > summary::-webkit-details-marker { display: none; }
+.outline-trigger { cursor: pointer; }
+.outline-code { overflow-wrap: anywhere; }
+a.lesson-stage-tab { text-decoration: none; }
+@media (max-width: 700px) { .lesson-stage-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.outline-item[aria-current="page"] .outline-name { font-weight: 700; }
+.rd-side-note { font-size: 0.86rem; margin-bottom: 10px; }
 
 /* ---- lesson page -------------------------------------------------------- */
-.lesson-page { display: grid; gap: 18px; }
-
-.lesson-topnav { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.lesson-topnav .lesson-crumb { font-family: var(--font-mono); font-size: 0.7rem;
-                               letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); }
+.rd-lesson { display: grid; gap: 18px; }
+.rd-lesson > * { min-width: 0; }
+/* In-page jumps land below the fixed topbar, not under it. */
+.rd-lesson [id] { scroll-margin-top: calc(var(--topbar-h) + 16px); }
+/* The page is a grid with its own gap; the hero's standalone bottom margin
+   would double it. */
+.rd-lesson > .hero { margin-bottom: 0; }
+.hero .hero-copy { margin-bottom: 10px; }
+.lesson-hero-status-label + .lesson-hero-status-list { margin-top: 0; }
 
 .lesson-card { padding: 30px 34px 34px; }
 @media (max-width: 720px) { .lesson-card { padding: 22px 20px 26px; } }
 
-.lesson-foot-card { display: flex; align-items: center; justify-content: space-between;
-                    gap: 14px; padding: 16px 20px; flex-wrap: wrap; }
-.lesson-foot-note { font-size: 0.86rem; color: var(--ink-soft); }
-.lesson-foot-note .is-done { color: var(--sage); font-weight: 600; }
+/* The hero already carries the lesson title, so the markdown's own first
+   heading would print it twice. */
+.lesson-body.has-hero > h1:first-child { display: none; }
+.lesson-body.has-hero > h1:first-child + * { margin-top: 0; }
+
+.rd-transition { display: flex; align-items: center; justify-content: space-between;
+                 gap: 14px; flex-wrap: wrap; }
+.rd-transition .card-actions { align-items: center; }
+
+/* ---- mastery check ------------------------------------------------------ */
+.rd-check-list { display: grid; gap: 12px; }
+.quiz-item .choice-list { margin-top: 12px; }
+.choice-btn { line-height: 1.5; transition: background 0.12s ease, border-color 0.12s ease; }
+.choice-btn:disabled { cursor: default; color: var(--ink); }
+.choice-btn:disabled:not(.correct):not(.incorrect) { opacity: 0.72; }
+.choice-btn.correct { color: var(--ink); font-weight: 600; }
+.feedback-box strong { color: inherit; }
 
 /* ---- the prose itself --------------------------------------------------- */
-/* p, code, pre, pre code, strong and em are NOT set here. The lesson body
-   carries .markdown-body as well as .lesson-body, so the statistics course's
-   own rules for those six elements apply verbatim — which is what "copy it
-   exactly" means. Only the one override below is ours, and it is flagged:
-
-   .markdown-body p is `margin: 0 0 0.6em`, which is right for the small cards
-   it was written for (quiz explanations, brief cards) and cramped for a
-   3,000-word lesson. Say the word and this goes and the lessons tighten up. */
+/* p, code, pre, strong and em come first from the stylesheet's .markdown-body
+   rules; the lines below bring them up to the rendered lesson theme, which is
+   what a learner of the source course actually reads. */
+.lesson-body { color: var(--ink); font-size: 1.02rem; line-height: 1.72; letter-spacing: -0.01em; }
+.lesson-body > *:first-child { margin-top: 0; }
 .lesson-body.markdown-body p { margin: 0 0 1.05em; }
 .lesson-body.markdown-body p:last-child { margin-bottom: 0; }
 
-.lesson-body { color: var(--ink); font-size: 1.02rem; line-height: 1.75; }
-.lesson-body > *:first-child { margin-top: 0; }
-
-.lesson-body h1 { font-family: var(--font-display); font-size: 1.95rem; font-weight: 600;
-                  line-height: 1.18; letter-spacing: -0.02em; color: var(--ink); margin: 0 0 0.55em; }
-.lesson-body h2 { font-family: var(--font-display); font-size: 1.42rem; font-weight: 600;
-                  line-height: 1.25; letter-spacing: -0.015em; color: var(--ink);
-                  margin: 2em 0 0.5em; padding-bottom: 0.3em; border-bottom: 1px solid var(--line); }
-.lesson-body h3 { font-family: var(--font-display); font-size: 1.16rem; font-weight: 600;
-                  letter-spacing: -0.01em; color: var(--ink); margin: 1.7em 0 0.4em; }
-.lesson-body h4 { font-size: 1rem; font-weight: 700; color: var(--ink); margin: 1.4em 0 0.3em; }
+.lesson-body h1, .lesson-body h2, .lesson-body h3, .lesson-body h4 {
+  font-family: var(--font-display); font-weight: 600; letter-spacing: -0.025em; color: var(--ink);
+}
+.lesson-body h1 { font-size: clamp(2.15rem, 1.95rem + 0.9vw, 2.55rem); line-height: 1.1; margin: 0 0 0.55em; }
+.lesson-body h2 { font-size: 1.55rem; line-height: 1.25; margin: 2.35rem 0 0.6em;
+                  padding-bottom: 0.3rem; border-bottom: 1px solid rgba(15, 108, 120, 0.2); }
+.lesson-body h3 { font-size: 1.22rem; line-height: 1.3; margin: 1.75rem 0 0.45em; }
+.lesson-body h4 { font-size: 1.05rem; margin: 1.3rem 0 0.35em; }
 
 .lesson-body hr { border: 0; border-top: 1px solid var(--line); margin: 2.2em 0; }
 
 .lesson-body a { color: var(--brand); text-decoration: underline;
                  text-decoration-thickness: 1px; text-underline-offset: 2px;
-                 text-decoration-color: rgba(15, 108, 120, 0.35); }
+                 text-decoration-color: rgba(15, 108, 120, 0.35); overflow-wrap: anywhere; }
 .lesson-body a:hover { text-decoration-color: var(--brand); }
 
 .lesson-body ul, .lesson-body ol { padding-left: 1.35em; margin: 0 0 1.05em; }
 .lesson-body li { margin-bottom: 0.42em; }
 .lesson-body li > ul, .lesson-body li > ol { margin: 0.42em 0 0; }
 
-/* Blockquotes here are structural — the concept map at the top of a lesson and
-   the pull-quotes that carry the spine — not quotations. */
-.lesson-body blockquote { margin: 1.4em 0; padding: 0.95em 1.15em;
-                          border-left: 3px solid var(--brand);
-                          background: var(--brand-soft);
-                          border-radius: 0 var(--radius-sm) var(--radius-sm) 0; color: var(--ink); }
+.lesson-body.markdown-body code { background: rgba(15, 108, 120, 0.08); color: var(--rd-code-ink);
+                                  padding: 0.08rem 0.3rem; border-radius: 0.35rem; overflow-wrap: anywhere; }
+.lesson-body.markdown-body pre { background: var(--rd-tint-code); border: 1px solid var(--line);
+                                 border-radius: 0.95rem; padding: 14px 18px; margin: 1.25rem 0 1.6rem;
+                                 white-space: pre-wrap; overflow-wrap: anywhere;
+                                 box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8); }
+.lesson-body.markdown-body pre code { background: none; color: var(--ink); padding: 0; font-size: 0.84rem; }
+
+/* Every boxed block shares the column's left and right edges and has one solid
+   fill with one solid coloured bar — no fades, so a sentence never ends on a
+   different background from where it started. */
+.lesson-body blockquote,
+.lesson-body .cx {
+  margin: 1.4rem 0 1.8rem; padding: 1.1rem 1.4rem;
+  border: 1px solid var(--line); border-left: 0.45rem solid var(--cx-hue, var(--brand));
+  border-radius: 1rem; background: var(--cx-bg, var(--rd-tint-note));
+  box-shadow: var(--shadow); color: var(--ink);
+}
+.lesson-body blockquote { --cx-hue: var(--brand); --cx-bg: var(--rd-tint-note); }
 .lesson-body blockquote p:last-child { margin-bottom: 0; }
+.lesson-body .cx--warn { --cx-hue: var(--gold); --cx-bg: var(--rd-tint-warning); }
+.lesson-body .cx--note { --cx-hue: var(--sage); --cx-bg: var(--rd-tint-tip); }
 
-/* Callouts. The lessons open warnings with ⚠ and asides with ✱; the marker is
-   turned into a class server-side because CSS cannot select on text. */
-.lesson-body .cx { margin: 1.35em 0; padding: 0.9em 1.1em; border-radius: var(--radius-sm);
-                   border: 1px solid var(--line); border-left: 3px solid var(--cx-hue, var(--brand));
-                   background: var(--cx-bg, var(--paper)); }
-.lesson-body .cx--warn { --cx-hue: var(--accent); --cx-bg: var(--accent-soft); }
-.lesson-body .cx--note { --cx-hue: var(--gold);   --cx-bg: var(--gold-soft); }
-
-/* Wide tables scroll in their own container rather than breaking the measure. */
-.lesson-tablewrap { overflow-x: auto; margin: 1.4em 0; border: 1px solid var(--line);
-                    border-radius: var(--radius-sm); background: var(--paper); }
-.lesson-body table { border-collapse: collapse; width: 100%; font-size: 0.86rem;
-                     line-height: 1.5; margin: 0; }
-.lesson-body th { background: var(--bg-strong); padding: 10px 13px; text-align: left;
-                  font-weight: 700; color: var(--ink); white-space: nowrap;
-                  border-bottom: 1px solid var(--line); }
-.lesson-body td { padding: 10px 13px; border-bottom: 1px solid rgba(216, 201, 181, 0.55);
-                  vertical-align: top; }
+/* Wide tables fill their card and wrap first; anything still too wide scrolls
+   inside its own box rather than pushing the page sideways. */
+.lesson-tablewrap { overflow-x: auto; margin: 1.25rem 0 1.75rem; border: 1px solid var(--line);
+                    border-radius: 1rem; background: var(--paper-strong); box-shadow: var(--shadow); }
+.lesson-body table { border-collapse: separate; border-spacing: 0; width: 100%;
+                     font-size: 0.92rem; line-height: 1.5; margin: 0; background: var(--paper-strong);
+                     font-variant-numeric: tabular-nums; }
+.lesson-body th { background: var(--rd-paper-muted); padding: 0.72rem 0.88rem; text-align: left;
+                  font-weight: 700; color: var(--ink); border-bottom: 1px solid var(--line); }
+.lesson-body td { padding: 0.72rem 0.88rem; border-bottom: 1px solid var(--line);
+                  vertical-align: top; overflow-wrap: anywhere; }
 .lesson-body tbody tr:last-child td { border-bottom: 0; }
+.lesson-body img { max-width: 100%; height: auto; }
 
 /* ---- exercise ladder ---------------------------------------------------- */
 .lesson-exercises { margin-top: 2.4em; padding-top: 1.4em; border-top: 2px solid var(--line); }
@@ -3672,7 +4231,7 @@ button.mini-chip {
                text-transform: uppercase; color: var(--ink-faint); margin-bottom: 5px; }
 .lx-out { background: var(--bg-strong); border: 1px solid var(--line); padding: 12px 14px;
           border-radius: var(--radius-sm); overflow-x: auto; font-family: var(--font-mono);
-          font-size: 0.76rem; line-height: 1.55; white-space: pre; }
+          font-size: 0.76rem; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
 .lx-q { padding-left: 1.3em; margin: 0.8em 0 0; }
 .lx-q li { margin-bottom: 0.45em; }
 .lx-note { font-size: 0.84rem; color: var(--ink-soft); margin: 0.7em 0 0; }
@@ -3685,22 +4244,17 @@ button.mini-chip {
 .lx--a { --lx-hue: var(--sage); }
 .lx--b { --lx-hue: var(--brand); }
 .lx--c { --lx-hue: var(--gold); }
-.lx--d { --lx-hue: #6f5aa8; }
+.lx--d { --lx-hue: #5b4b8a; }
 .lx--e { --lx-hue: var(--accent); }
 
 /* ---- methodology pages -------------------------------------------------- */
-.mx-kicker { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.13em;
-             text-transform: uppercase; color: var(--brand); margin-bottom: 10px; }
-.mx-title { font-family: var(--font-display); font-size: 1.95rem; font-weight: 600;
-            line-height: 1.18; letter-spacing: -0.02em; color: var(--ink); margin: 0 0 0.4em; }
-.mx-lede { font-size: 1.08rem; line-height: 1.6; color: var(--ink-soft); margin: 0 0 6px;
-           max-width: 62ch; }
-
 .mx-block { margin-top: 28px; }
-.mx-h { font-family: var(--font-display); font-size: 1.06rem; font-weight: 600;
-        letter-spacing: -0.01em; color: var(--ink); margin: 0 0 10px;
-        padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+.mx-block:first-child { margin-top: 0; }
+.mx-h { font-family: var(--font-display); font-size: 1.22rem; font-weight: 600;
+        letter-spacing: -0.02em; color: var(--ink); margin: 0 0 10px;
+        padding-bottom: 6px; border-bottom: 1px solid rgba(15, 108, 120, 0.2); }
 .mx-note { font-size: 0.86rem; color: var(--ink-soft); margin: 0 0 10px; max-width: 62ch; }
+.mx-note--after { margin-top: 12px; }
 .mx-list { margin: 0; padding-left: 1.25em; }
 .mx-list li { margin-bottom: 0.5em; line-height: 1.65; }
 
@@ -3724,7 +4278,7 @@ button.mini-chip {
 }
 .mx-step { font-weight: 700; color: var(--ink); line-height: 1.5; }
 .mx-tools { font-family: var(--font-mono); font-size: 0.76rem; color: var(--brand);
-            margin-top: 4px; line-height: 1.5; }
+            margin-top: 4px; line-height: 1.5; overflow-wrap: anywhere; }
 .mx-stepnote { font-size: 0.88rem; color: var(--ink-soft); margin-top: 5px; line-height: 1.6; }
 
 .mx-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; }
@@ -3737,8 +4291,8 @@ button.mini-chip {
 .mx-source:last-of-type { border-bottom: 0; }
 .mx-grade { flex: none; font-family: var(--font-mono); font-size: 0.62rem; font-weight: 600;
             letter-spacing: 0.09em; padding: 3px 7px; border-radius: 6px; margin-top: 2px; }
-.mx-grade--fetched { color: #2f5c46; background: var(--sage-soft); border: 1px solid #b6cdbf; }
-.mx-grade--search  { color: #7a5514; background: var(--gold-soft); border: 1px solid #e0c68a; }
+.mx-grade--fetched { color: var(--sage); background: var(--sage-soft); border: 1px solid rgba(80, 114, 93, 0.3); }
+.mx-grade--search  { color: var(--gold); background: var(--gold-soft); border: 1px solid rgba(138, 95, 23, 0.3); }
 .mx-cite { font-size: 0.92rem; line-height: 1.55; color: var(--ink); }
 .mx-url { display: inline-block; font-family: var(--font-mono); font-size: 0.72rem;
           margin-top: 3px; word-break: break-all; color: var(--brand);
@@ -3746,54 +4300,53 @@ button.mini-chip {
 .mx-what { font-size: 0.87rem; color: var(--ink-soft); margin-top: 6px; line-height: 1.6; }
 
 .mx-lessons { display: flex; flex-wrap: wrap; gap: 8px; }
-.mx-lesson-link { font-family: var(--font-mono); font-size: 0.74rem; letter-spacing: 0.04em;
-                  padding: 6px 11px; border-radius: 999px; border: 1px solid var(--line);
-                  background: var(--paper); color: var(--ink-soft); cursor: pointer; }
-.mx-lesson-link:hover { border-color: var(--brand); color: var(--brand); background: var(--brand-soft); }
 
 /* ---- tab landing pages -------------------------------------------------- */
-.tv-spine { margin: 16px 0 0; padding: 14px 18px; border-left: 3px solid var(--brand);
-            background: var(--brand-soft); border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-            font-size: 1rem; line-height: 1.65; color: var(--ink); max-width: 68ch; }
-
+.tv-spine { margin: 4px 0 0; padding: 14px 18px; max-width: 76ch;
+            border: 1px solid rgba(15, 108, 120, 0.18); border-left: 0.45rem solid var(--brand);
+            border-radius: var(--radius-sm); background: var(--brand-soft);
+            font-size: 1rem; line-height: 1.65; color: var(--ink); }
 .tv-stats { display: flex; flex-wrap: wrap; gap: 26px; margin-top: 20px;
             padding-top: 16px; border-top: 1px solid var(--line); }
 .tv-stats > div { display: flex; flex-direction: column; gap: 2px; }
-.tv-stats b { font-family: var(--font-display); font-size: 1.5rem; font-weight: 600;
-              line-height: 1; color: var(--ink); }
-.tv-stats span { font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.12em;
+.tv-stats b { font-family: var(--font-display); font-size: 2rem; font-weight: 600;
+              line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
+.tv-stats span { font-size: 0.78rem; font-weight: 800; letter-spacing: 0.08em;
                  text-transform: uppercase; color: var(--ink-faint); }
 
-.tv-section { margin-top: 10px; }
-.tv-section-h { font-family: var(--font-display); font-size: 1.12rem; font-weight: 600;
-                letter-spacing: -0.01em; color: var(--ink); margin: 22px 0 12px; }
+.tv-section { margin-top: 6px; }
+.tv-section-h { font-family: var(--font-display); font-size: 1.5rem; font-weight: 600;
+                letter-spacing: -0.02em; color: var(--ink); margin: 18px 0 12px; }
 
-.tv-grid { display: grid; gap: 14px;
+.tv-grid { display: grid; gap: 16px;
            grid-template-columns: repeat(auto-fill, minmax(268px, 1fr)); }
 .tv-grid--wide { grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); }
+@media (max-width: 520px) { .tv-grid, .tv-grid--wide { grid-template-columns: minmax(0, 1fr); } }
 
 /* Cards are buttons: they must look pressable and read left-aligned, which the
-   pill .btn styling would fight. */
-.tv-card { text-align: left; padding: 16px 18px 18px; cursor: pointer;
+   pill .btn styling would fight. Shaped like the source course's module
+   cards: white-paper face, hairline border, 22px corners. */
+.tv-card { text-align: left; padding: 16px 18px 18px; cursor: pointer; color: var(--ink);
            display: flex; flex-direction: column; gap: 7px;
+           border-radius: 22px; background: rgba(255, 255, 255, 0.78);
            transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease; }
-.tv-card:hover { transform: translateY(-2px); border-color: var(--brand);
-                 box-shadow: 0 18px 32px rgba(15, 108, 120, 0.13); }
-.tv-card.is-done { opacity: 0.72; }
+.tv-card:hover { transform: translateY(-1px); border-color: rgba(15, 108, 120, 0.28);
+                 box-shadow: 0 16px 28px rgba(15, 108, 120, 0.09); }
+.tv-card.is-done { background: var(--sage-soft); border-color: rgba(80, 114, 93, 0.22); }
 .tv-card-top { display: flex; align-items: center; gap: 9px; }
 .tv-emoji { font-size: 1.05rem; line-height: 1; }
-.tv-meta { font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.09em;
-           text-transform: uppercase; color: var(--ink-faint); margin-left: auto; }
-.tv-done { color: var(--sage); font-weight: 700; }
-.tv-card-title { font-family: var(--font-display); font-size: 1.02rem; font-weight: 600;
-                 line-height: 1.32; letter-spacing: -0.01em; color: var(--ink); }
-.tv-card-sub { font-size: 0.88rem; line-height: 1.55; color: var(--ink-soft); }
-.tv-card-desc { font-size: 0.82rem; line-height: 1.55; color: var(--ink-faint);
+.tv-meta { font-size: 0.74rem; font-weight: 800; letter-spacing: 0.08em;
+           text-transform: uppercase; color: var(--ink-faint); margin-left: auto;
+           font-variant-numeric: tabular-nums; }
+.tv-done { color: var(--sage); font-weight: 800; }
+.tv-card-title { font-family: var(--font-display); font-size: 1.2rem; font-weight: 600;
+                 line-height: 1.12; letter-spacing: -0.015em; color: var(--ink); }
+.tv-card-sub { font-size: 0.9rem; line-height: 1.55; color: var(--ink-soft); }
+.tv-card-desc { font-size: 0.84rem; line-height: 1.55; color: var(--ink-soft);
                 padding-top: 7px; border-top: 1px solid rgba(216, 201, 181, 0.55); }
 
-.tv-tag { font-family: var(--font-mono); font-size: 0.6rem; font-weight: 600;
-          letter-spacing: 0.09em; text-transform: uppercase;
-          padding: 3px 7px; border-radius: 6px; }
-.tv-tag--routine     { color: #2f5c46; background: var(--sage-soft); border: 1px solid #b6cdbf; }
-.tv-tag--established { color: #0f6c78; background: var(--brand-soft); border: 1px solid #a9d5d3; }
-.tv-tag--emerging    { color: #7a5514; background: var(--gold-soft); border: 1px solid #e0c68a; }
+.tv-tag { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+          padding: 4px 9px; border-radius: 999px; }
+.tv-tag--routine     { color: var(--sage);  background: var(--sage-soft);  border: 1px solid rgba(80, 114, 93, 0.25); }
+.tv-tag--established { color: var(--brand); background: var(--brand-soft); border: 1px solid rgba(15, 108, 120, 0.22); }
+.tv-tag--emerging    { color: var(--gold);  background: var(--gold-soft);  border: 1px solid rgba(138, 95, 23, 0.25); }

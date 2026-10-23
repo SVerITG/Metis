@@ -21,6 +21,19 @@ APPEND="$(dirname "$0")/course-reader-prose.css"
 [ -f "$SRC" ]    || { echo "source stylesheet not found: $SRC" >&2; exit 1; }
 [ -f "$APPEND" ] || { echo "prose additions not found: $APPEND" >&2; exit 1; }
 
+# The source self-hosts its two variable fonts at /fonts/. That path does not
+# exist on the dashboard, and an @font-face that 404s does not fall back to a
+# same-named face loaded elsewhere — it falls back to the generic family, so
+# every heading silently became Georgia. Copy the font files (and their OFL
+# licences) next to the dashboard's other vendored fonts and point the copied
+# rules there.
+FONT_SRC="$(dirname "$SRC")/fonts"
+FONT_DEST="$(dirname "$0")/../system/app-py/static/vendor/fonts"
+if [ -d "$FONT_SRC" ]; then
+  mkdir -p "$FONT_DEST"
+  cp "$FONT_SRC"/*-variable.ttf "$FONT_SRC"/OFL-*.txt "$FONT_DEST"/ 2>/dev/null || true
+fi
+
 {
   echo "/* ============================================================="
   echo "   VERBATIM COPY of the statistics course stylesheet."
@@ -31,7 +44,7 @@ APPEND="$(dirname "$0")/course-reader-prose.css"
   echo "   Copied: $(date -Iseconds)"
   echo "   Do not hand-edit this section — run tools/sync-course-reader-css.sh."
   echo "   ============================================================= */"
-  cat "$SRC"
+  sed "s#url('/fonts/#url('/static/vendor/fonts/#g" "$SRC"
   echo ""
   echo "/* ===================== APPENDED ============================== */"
   cat "$APPEND"

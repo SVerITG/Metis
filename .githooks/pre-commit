@@ -23,6 +23,20 @@ staged="$(git diff --cached --name-only --diff-filter=ACMR)"
 if [ -z "$staged" ]; then exit 0; fi
 n_staged=$(printf '%s\n' "$staged" | grep -c . || true)
 
+# Since 2026-10-16 the development repository is PRIVATE, and the public
+# repository is built from it by system/release/export-public.sh through the
+# filter system/release/public-export.gitignore. Rules 1 and 2 guard what can
+# be published, so they look only at staged files that filter lets through.
+# Without the filter (e.g. in the public copy itself) every file counts.
+EXPORT_FILTER="$ROOT/system/release/public-export.gitignore"
+all_staged="$staged"
+if [ -f "$EXPORT_FILTER" ]; then
+  private_set="$(git ls-files --cached -i --exclude-from="$EXPORT_FILTER" 2>/dev/null || true)"
+  staged="$(printf '%s\n' "$all_staged" | grep -vxF -f <(printf '%s\n' "$private_set") || true)"
+  n_private=$(( n_staged - $(printf '%s\n' "$staged" | grep -c . || true) ))
+  [ "$n_private" -gt 0 ] && echo "publish guard: $n_private staged path(s) are development-only (never exported), not checked for identity"
+fi
+
 # ── 1. forbidden paths ──────────────────────────────────────────────────────
 # The pattern is BUILT from tools/check_publish_clean.py's rules rather than
 # restated here. Two reasons, and the second is the sharper one: a second copy
@@ -45,7 +59,10 @@ fi
 # it says so rather than passing silently — "no rules" is not "no problems".
 words="$(python3 "$ROOT/.githooks/_rules.py" words || true)"
 if [ -n "$words" ]; then
-  added="$(git diff --cached --diff-filter=ACMR -U0 | grep -E '^\+' | grep -v '^+++' || true)"
+  added=""
+  if [ -n "$staged" ]; then
+    added="$(printf '%s\n' "$staged" | tr '\n' '\0' | xargs -0 git diff --cached --diff-filter=ACMR -U0 -- | grep -E '^\+' | grep -v '^+++' || true)"
+  fi
   n_added=$(printf '%s\n' "$added" | grep -c . || true)
   for w in $words; do
     hit="$(printf '%s\n' "$added" | grep -iEn "(^|[^0-9A-Za-z])${w}([^0-9A-Za-z]|$)" | head -3 || true)"

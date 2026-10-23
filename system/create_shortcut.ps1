@@ -1,4 +1,4 @@
-# create_shortcut.ps1
+﻿# create_shortcut.ps1
 # Creates a Desktop shortcut and Start Menu entry for the Metis Python dashboard.
 # Run once:
 #   powershell -ExecutionPolicy Bypass -File "create_shortcut.ps1"

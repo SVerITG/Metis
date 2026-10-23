@@ -2,6 +2,7 @@
 
 import datetime
 import os
+import re
 from pathlib import Path
 
 from mcp.types import TextContent
@@ -34,6 +35,24 @@ _DENY_FILENAMES = {
 _DENY_SUFFIXES = {".pem", ".key", ".p12", ".pfx", ".ppk"}
 # Any path component equal to one of these is refused outright.
 _DENY_DIR_PARTS = {".ssh", ".gnupg", ".aws", ".azure", ".kube", "gcloud"}
+
+
+def resolve_user_path(value: str) -> Path:
+    """Turn a path as a client writes it into the one this server can open.
+
+    A Windows path (C:\\Users\\...) becomes /mnt/c/Users/... when the server
+    runs under WSL, and a relative path means "inside Metis" rather than inside
+    whatever directory the client launched the server from (Claude Desktop
+    starts it in the Windows system folder).
+    """
+    v = (value or "").strip().strip('"')
+    m = re.match(r"^([A-Za-z]):[\\/](.*)$", v)
+    if m and os.name != "nt" and Path("/mnt").is_dir():
+        v = f"/mnt/{m.group(1).lower()}/" + m.group(2).replace("\\", "/")
+    p = Path(v).expanduser()
+    if not p.is_absolute():
+        p = paths.root / p
+    return p
 
 
 def _path_refusal(target: Path) -> str | None:
@@ -348,7 +367,7 @@ async def read_file(path: str, max_chars: int = 8000) -> list[TextContent]:
         max_chars: Maximum characters to return (default 8000). For large files,
                    increase this or ask for a specific section.
     """
-    fp = Path(path)
+    fp = resolve_user_path(path)
 
     # Boundary check BEFORE any stat/read — and before we reveal whether the file
     # even exists (a "File not found" on ~/.ssh/id_rsa is itself a disclosure).
@@ -394,7 +413,7 @@ async def list_folder(folder_path: str, pattern: str = "*") -> list[TextContent]
         folder_path: Absolute path to the folder.
         pattern: Glob pattern to filter files (e.g. "*.R", "*.md"). Default: all files.
     """
-    root = Path(folder_path)
+    root = resolve_user_path(folder_path)
 
     # Same server-side boundary as read_file — listing a directory is disclosure too.
     refusal = _path_refusal(root)

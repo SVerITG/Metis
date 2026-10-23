@@ -268,7 +268,7 @@ async def today_workstation_tail(request: Request):
         "FROM day_plan WHERE ? BETWEEN start_date AND COALESCE(end_date, start_date)",
         (today,), default=[]) or []
     due = db_query(
-        f"SELECT id AS ref FROM tasks WHERE COALESCE(due_date,'') = ? "
+        f"SELECT task_id AS ref FROM tasks WHERE COALESCE(due_date,'') = ? "
         f"AND {live_task_sql()}", (today,), default=[]) or []
     on_today = len({str(r["ref"]) for r in planned} | {str(r["ref"]) for r in due})
 
@@ -1315,17 +1315,21 @@ def _get_cached_brief(period: str = "daily") -> str | None:
         if period == "weekly":
             row = conn.execute(
                 "SELECT content, model FROM daily_insights "
-                "WHERE model='claude-haiku-weekly' AND content IS NOT NULL "
+                "WHERE model IN ('claude-haiku-weekly','desktop-weekly') "
+                "AND content IS NOT NULL "
                 "ORDER BY generated_at DESC LIMIT 1"
             ).fetchone()
-            accepted = {"claude-haiku-weekly"}
+            # desktop-*: written by a scheduled Desktop session through
+            # save_daily_brief, for machines with no API key of their own.
+            accepted = {"claude-haiku-weekly", "desktop-weekly"}
         elif period == "catchup":
             row = conn.execute(
                 "SELECT content, model FROM daily_insights "
-                "WHERE model='claude-sonnet-catchup' AND content IS NOT NULL "
+                "WHERE model IN ('claude-sonnet-catchup','desktop-catchup') "
+                "AND content IS NOT NULL "
                 "ORDER BY generated_at DESC LIMIT 1"
             ).fetchone()
-            accepted = {"claude-sonnet-catchup"}
+            accepted = {"claude-sonnet-catchup", "desktop-catchup"}
         else:
             row = conn.execute(
                 "SELECT content, model FROM daily_insights WHERE insight_date=? LIMIT 1",
@@ -1389,7 +1393,14 @@ def _last_brief_generated_at(db_path_str: str = "") -> datetime.datetime | None:
         ).fetchone()
         conn.close()
         if row and row[0]:
-            return datetime.datetime.fromisoformat(row[0])
+            ts = datetime.datetime.fromisoformat(row[0])
+            # The callers subtract this from a naive now(). One writer stored
+            # an offset-aware UTC stamp while every other row is naive local,
+            # and the subtraction raised — the whole brief panel rendered as an
+            # error on the day a brief had in fact been saved.
+            if ts.tzinfo is not None:
+                ts = ts.astimezone().replace(tzinfo=None)
+            return ts
     except Exception:
         pass
     return None
@@ -1404,141 +1415,18 @@ def _brief_system_prompt(
     period_desc: str,
     gap_label: str = "",
 ) -> str:
-    """Build the system prompt for the daily/weekly/catchup brief."""
+    """Build the system prompt for the daily/weekly/catchup brief.
 
-    guardrail = (
-        "IMPORTANT: Write about external developments only — never about the "
-        "researcher's own tools, software, or AI systems. Projects and ideas "
-        "are provided as framing context only — they are relevance anchors, "
-        "not briefing topics."
-    )
-
-    # Anti-repetition contract. The context groups news into story threads and
-    # labels each with what the researcher has already been told; without these rules the
-    # model still leads with the biggest story every day, which is exactly the
-    # behaviour the thread layer exists to stop. See tools/news_threads.py.
-    freshness = (
-        "FRESHNESS CONTRACT — this brief is read every day, so repetition is the "
-        "main failure mode:\n"
-        "- Lead ONLY with a thread listed under 'ELIGIBLE TO LEAD'. Never lead with "
-        "a thread under 'ALREADY DELIVERED', however large it is.\n"
-        "- A long-running story that has not changed deserves silence, not a "
-        "paragraph. Saying nothing about it is correct, not an omission.\n"
-        "- If an already-delivered thread genuinely escalated (its line says "
-        "ESCALATION), you may lead with it — say plainly what changed since last "
-        "time rather than re-describing the story.\n"
-        "- Take the ANGLE offered for the thread you lead with. The angles already "
-        "used are listed; do not reuse them. Same story, new lens.\n"
-        "- Never open with a phrase you would have used yesterday. No 'continues to', "
-        "'remains a concern', 'ongoing situation' as a lead.\n"
-    )
-
-    preamble = (
-        f"You are writing a research intelligence brief for {name}, "
-        f"a senior researcher in {field}.\n\n"
-        f"Their specific research interests: {interests}\n"
-        f"Topics they monitor: {topics}\n"
-        f"Briefing period: {period_desc}\n\n"
-        f"{guardrail}\n\n"
-        f"{freshness}\n"
-    )
-
-    # Appended to every period so coverage is recorded and cooldowns advance.
-    # The path insert is defensive: without the footer no coverage is recorded,
-    # nothing ever goes on cooldown, and the repetition returns silently — so
-    # this must not depend on another function having set sys.path first.
-    footer = ""
-    try:
-        _src = str(Path(__file__).parent.parent.parent / "mcp-server" / "src")
-        if _src not in sys.path:
-            sys.path.insert(0, _src)
-        from metis_mcp.tools.news_threads import COVERAGE_FOOTER_INSTRUCTION as _footer_txt
-        footer = f"\n\n{_footer_txt}"
-    except Exception as _exc:
-        _log.warning("morning-brief: coverage footer unavailable (%s) — "
-                     "threads will not be recorded and the brief may repeat", _exc)
-
-    if period == "weekly":
-        return preamble + (
-            "Write exactly four paragraphs, 400–500 words total:\n\n"
-            "Paragraph 1 — THE WEEK: The two or three most significant developments "
-            "in global health, science, or AI this week. State what happened and why "
-            "it matters. Be specific — name papers, organisations, numbers.\n\n"
-            "Paragraph 2 — PATTERNS: Step back from individual items and identify "
-            "one or two emerging patterns, policy shifts, or methodological trends "
-            "across the week's signals. Cross-reference items when connected.\n\n"
-            "Paragraph 3 — THE BRIDGE: One concrete connection between an external "
-            f"signal and {name}'s active research or interests. Be explicit about "
-            "why it matters and what opportunity or risk it creates.\n\n"
-            "Paragraph 4 — ONE THING: A single paper, report, or question worth "
-            f"following up on next week. Name it precisely and say why {name} "
-            "should prioritise it.\n\n"
-            "WEEKLY-SPECIFIC RULE — this overrides the daily freshness contract "
-            "above. The weekly is COMPLETE on purpose: it must cover the week's "
-            "significant threads even where the dailies held them back, because "
-            f"{name} reads it as an overview rather than a diff. So do not suppress "
-            "anything here. What changes is the treatment:\n"
-            "- A thread marked ALREADY SEEN: give its TRAJECTORY across the week — "
-            "where it started, what moved, where it stands now. Never restate the "
-            "daily item he already read.\n"
-            "- A thread marked NOT YET SEEN: report it properly and completely. He "
-            "has never been told, so this is new information however old the story.\n"
-            "- Prefer a never-seen thread for Paragraph 4 (ONE THING) when one is "
-            "of comparable importance.\n\n"
-            f"Tone: warm, direct, occasionally dry. Like a smart colleague giving the "
-            f"5-minute week-in-review. Plain language. Field-standard terms fine; "
-            f"unexplained jargon is not.\n\n"
-            "No greeting. No sign-off. No headers. No bullet points. Continuous prose only."
-            + footer
-        )
-
-    if period == "catchup":
-        gap_note = f" ({gap_label})" if gap_label else ""
-        return preamble + (
-            f"The researcher has been away{gap_note}. Write exactly four paragraphs, "
-            "400–500 words total:\n\n"
-            "Paragraph 1 — WHAT YOU MISSED: The two or three most important developments "
-            "since the last brief. Lead with the highest-impact item. State facts, not "
-            "opinions.\n\n"
-            "Paragraph 2 — WHAT CHANGED: Any shifts in policy, emerging patterns, or "
-            "new publications that alter the landscape of their field. Reference the "
-            "previous brief (provided) to highlight what's genuinely new vs. continuing.\n\n"
-            "Paragraph 3 — CONNECTIONS: One or two concrete links between missed signals "
-            f"and {name}'s active research. Be specific about implications.\n\n"
-            "Paragraph 4 — START HERE: The single most important thing to read, review, "
-            "or act on first. Name it and say why it's the priority re-entry point.\n\n"
-            "CATCH-UP-SPECIFIC RULE — draw your content from the threads marked "
-            "NEVER DELIVERED. Those are what he actually missed. Threads marked "
-            "ALREADY SEEN are for continuity: give their current state in a clause, "
-            "never a paragraph.\n\n"
-            f"Tone: warm, efficient. Like a trusted colleague bringing you up to speed "
-            f"after time away. No filler.\n\n"
-            "No greeting. No sign-off. No headers. No bullet points. Continuous prose only."
-            + footer
-        )
-
-    # Default: daily
-    return preamble + (
-        "Write exactly three paragraphs, 270–320 words total:\n\n"
-        "Paragraph 1 — THE LEAD: The most important development from a thread listed "
-        "as ELIGIBLE TO LEAD. State what happened and why it matters. "
-        f"If it touches {name}'s specific interests, draw that connection explicitly "
-        "and plainly. Don't hint: say it directly. If the only eligible threads are "
-        "modest, lead with a modest story — a smaller genuinely-new lead is better "
-        "than a large one he has already read.\n\n"
-        "Paragraph 2 — THE FIELD: Two or three other notable developments, grouped "
-        "thematically. Cross-reference items when they are connected. Be specific — "
-        "name papers, organisations, or numbers. Group by theme. This is where an "
-        "already-delivered thread may earn one clause, and only if it has moved.\n\n"
-        "Paragraph 3 — THE THREAD: One specific paper, news item, or open question "
-        f"from the context that {name} should follow up on today. Name it precisely "
-        "and say exactly why it matters for their work right now — concretely.\n\n"
-        f"Tone: warm, direct, occasionally dry. Like a smart colleague who read "
-        f"everything during {period_desc} and is giving you the 90-second version. "
-        "Plain language. Field-standard terms fine; unexplained jargon is not.\n\n"
-        "No greeting. No sign-off. No headers. No bullet points. Continuous prose only."
-        + footer
-    )
+    The recipe lives in metis_mcp.tools.brief_prompt, shared with the session
+    path (generate_daily_insight -> save_daily_brief). It was defined here
+    alone, so briefs written by a scheduled session followed no recipe at all.
+    """
+    _src = str(Path(__file__).parent.parent.parent / "mcp-server" / "src")
+    if _src not in sys.path:
+        sys.path.insert(0, _src)
+    from metis_mcp.tools.brief_prompt import brief_system_prompt
+    return brief_system_prompt(period, name, field, interests, topics,
+                               period_desc, gap_label)
 
 
 def _get_or_generate_brief(force: bool = False, period: str = "daily") -> str | None:
@@ -1587,9 +1475,9 @@ def _get_or_generate_brief(force: bool = False, period: str = "daily") -> str | 
         if period in ("weekly", "catchup"):
             row = conn.execute(
                 "SELECT content, model FROM daily_insights "
-                "WHERE model = ? AND content IS NOT NULL "
+                "WHERE model IN (?, ?) AND content IS NOT NULL "
                 "ORDER BY generated_at DESC LIMIT 1",
-                (model_tag,),
+                (model_tag, "desktop-" + period),
             ).fetchone()
         else:
             row = conn.execute(
@@ -1599,8 +1487,7 @@ def _get_or_generate_brief(force: bool = False, period: str = "daily") -> str | 
         conn.close()
         # Accept the dashboard's own brief, or a brief composed from Claude Desktop/Code.
         accepted_tags = {model_tag}
-        if period == "daily":
-            accepted_tags.add("desktop-brief")
+        accepted_tags.add("desktop-brief" if period == "daily" else "desktop-" + period)
         if row and row["content"] and row["model"] in accepted_tags:
             cached_content = row["content"]
     except Exception:
@@ -1873,7 +1760,8 @@ def _load_brief_sources(db_path_str: str) -> list[dict]:
     try:
         conn = _sqlite3.connect(db_path_str)
         row = conn.execute(
-            "SELECT sources FROM daily_insights WHERE insight_date = ? AND model = 'claude-haiku-brief'",
+            "SELECT sources FROM daily_insights WHERE insight_date = ? "
+            "AND model IN ('claude-haiku-brief','desktop-brief')",
             (today,),
         ).fetchone()
         conn.close()
@@ -2037,7 +1925,13 @@ async def today_morning_brief(request: Request):
                 _kick_brief_generation("daily")
             pending = True
 
-    # Surface errors: missing API key or a failed generation attempt
+    # Surface errors: missing API key or a failed generation attempt. A brief
+    # can arrive WITHOUT this process generating it — written by a scheduled
+    # session through save_daily_brief, or merged in from the other computer —
+    # so a brief in hand retires any earlier failure instead of being hidden
+    # behind it.
+    if ai_brief:
+        _brief_last_error.pop(period, None)
     brief_error = ""
     if pending and not _get_api_key() and _get_brief_mode() != "manual":
         brief_error = "no-api-key"  # sentinel — template shows setup guidance
@@ -5705,11 +5599,11 @@ FIELD_NEWS_SHOWN = 5
 FIELD_PAPERS_SHOWN = 5
 
 # "But it can always be less if there is nothing relevant to my work."
-# So the quota is a CEILING, not a target. Only items at or above the closeness
-# mark are eligible, and a thin day yields fewer. Measured over ten days: 12-55
-# news and 2-27 papers cleared it, so busy days fill the quota and quiet ones do
-# not. This is db.RELEVANCE_CLOSE — the same constant that draws the "close"
-# badge — so the panel and the badge can no longer disagree about what close is.
+# The quota is a CEILING, not a target: a day with fewer unjudged items yields
+# fewer. It is NOT gated on db.RELEVANCE_CLOSE any more — that floor emptied the
+# news stream on a machine whose scores ran lower (see _field_week_data). Each
+# day's allowance is its top-N by relevance; RELEVANCE_CLOSE only draws the
+# "close" badge.
 
 
 def _field_week_today_counts() -> dict:
@@ -5729,11 +5623,19 @@ def _field_week_today_counts() -> dict:
         "AND NOT EXISTS (SELECT 1 FROM reading_stack r "
         "                WHERE r.kind='news' AND r.item_id = b.brief_id)",
         (today,), default=0) or 0
+    # COUNT THE TABLE THE PANEL DRAWS FROM. This counted `literature_metadata`
+    # — the library — while the papers beside it come from `new_publications`,
+    # the discovery queue. The two fill by different routes, so on 2026-09-23
+    # the line read "0 papers today" on a day 221 papers had arrived: the
+    # library genuinely gained nothing, and the box below it was full. A
+    # tally that answers a different question from the panel it labels is
+    # worse than no tally, because it is read as the panel's own count.
     n_papers = db_scalar(
-        "SELECT COUNT(*) FROM literature_metadata l "
-        "WHERE date(l.created_at) = ? "
+        "SELECT COUNT(*) FROM new_publications p "
+        "WHERE date(p.discovered_at) = ? "
+        "AND COALESCE(p.read_at,'') = '' AND COALESCE(p.dismissed_at,'') = '' "
         "AND NOT EXISTS (SELECT 1 FROM reading_stack r "
-        "                WHERE r.kind='paper' AND r.item_id = CAST(l.id AS TEXT))",
+        "                WHERE r.kind='paper' AND r.item_id = CAST(p.id AS TEXT))",
         (today,), default=0) or 0
     return {"news_today": n_news, "papers_today": n_papers}
 
@@ -5840,9 +5742,22 @@ def _field_week_data(days: int = FIELD_WEEK_DAYS) -> dict:
         # the whole week, so signal-first would promote a loud item about nothing
         # in particular over a quiet one about their own subject. 699 of 1,502
         # items carried 'high' on 2026-09-08, so it is not a scarce mark.
-        "  AND COALESCE(b.relevance, 0) >= ? "
+        #
+        # NO ABSOLUTE FLOOR HERE — the daily allowance below IS the filter.
+        # A `relevance >= RELEVANCE_CLOSE` predicate stood here and emptied the
+        # news half of the panel completely: 447 unjudged items in the window,
+        # the best of them scoring 0.6113, none able to clear 0.66. That is the
+        # failure this function's docstring already describes from 2026-09-11,
+        # and it returned because the constant and the scores are set by
+        # different things. Most of the scoring profile's anchors come from the
+        # local task, idea and project tables, which are machine-local by
+        # design and never converge, so the same story scores 0.42 on one
+        # machine and 0.63 on another; a constant cannot be right on both.
+        # ROW_NUMBER per day is scale-free and cannot empty itself, which is
+        # why the design settled on it. RELEVANCE_CLOSE still draws the `close`
+        # badge — that is a label on an item, not a gate in front of the queue.
         ") SELECT * FROM ranked WHERE rn <= ? ORDER BY on_date DESC, rel DESC LIMIT ?",
-        (since, "news", RELEVANCE_CLOSE, FIELD_NEWS_PER_DAY,
+        (since, "news", FIELD_NEWS_PER_DAY,
          FIELD_NEWS_SHOWN), default=[]) or []
 
     papers = db_query(
@@ -5868,13 +5783,17 @@ def _field_week_data(days: int = FIELD_WEEK_DAYS) -> dict:
         # conditional on volume — "49 unseen against 1,253 news items" — and a
         # paper is exempt from a firehose filter only while it is not a firehose.
         # Measured 2026-09-08: 438 unread papers inside one week, nine times the
-        # figure the exemption was written for. The same floor applies.
+        # figure the exemption was written for. The same allowance applies —
+        # the per-day ROW_NUMBER cap, not an absolute floor. Papers were less
+        # visibly broken than news (72 of 489 cleared the constant rather than
+        # 0 of 447), which is exactly how a scale-dependent cutoff fails: it
+        # degrades quietly on one stream and totally on the other, and neither
+        # says why.
         "WHERE COALESCE(p.read_at,'') = '' AND COALESCE(p.dismissed_at,'') = '' "
         "  AND COALESCE(NULLIF(p.pub_iso,''), NULLIF(p.pub_date,''), p.discovered_at) >= ? "
         "  AND " + NOT_JUDGED.format(id="p.id") + " "
-        "  AND COALESCE(p.relevance, 0) >= ? "
         ") SELECT * FROM ranked WHERE rn <= ? ORDER BY on_date DESC, rel DESC LIMIT ?",
-        (since, "paper", RELEVANCE_CLOSE, FIELD_PAPERS_PER_DAY,
+        (since, "paper", FIELD_PAPERS_PER_DAY,
          FIELD_PAPERS_SHOWN), default=[]) or []
 
     # THE SUPPLY THAT REMAINS, not everything unjudged this week. The panel
@@ -5888,9 +5807,8 @@ def _field_week_data(days: int = FIELD_WEEK_DAYS) -> dict:
         " FROM news_briefs b "
         " WHERE COALESCE(b.brief_date,'') >= ? AND COALESCE(b.seen_at,'') = '' "
         "   AND " + NOT_JUDGED.format(id="b.brief_id") + " "
-        "   AND COALESCE(b.relevance,0) >= ? "
         ") SELECT COUNT(*) FROM ranked WHERE rn <= ?",
-        (since, "news", RELEVANCE_CLOSE, FIELD_NEWS_PER_DAY), default=0) or 0
+        (since, "news", FIELD_NEWS_PER_DAY), default=0) or 0
     n_papers = db_scalar(
         "WITH ranked AS ("
         " SELECT ROW_NUMBER() OVER (PARTITION BY substr(min(COALESCE(NULLIF(p.pub_iso,''), "
@@ -5900,9 +5818,8 @@ def _field_week_data(days: int = FIELD_WEEK_DAYS) -> dict:
         " WHERE COALESCE(p.read_at,'') = '' AND COALESCE(p.dismissed_at,'') = '' "
         "   AND COALESCE(NULLIF(p.pub_iso,''), NULLIF(p.pub_date,''), p.discovered_at) >= ? "
         "   AND " + NOT_JUDGED.format(id="p.id") + " "
-        "   AND COALESCE(p.relevance,0) >= ? "
         ") SELECT COUNT(*) FROM ranked WHERE rn <= ?",
-        (since, "paper", RELEVANCE_CLOSE, FIELD_PAPERS_PER_DAY), default=0) or 0
+        (since, "paper", FIELD_PAPERS_PER_DAY), default=0) or 0
 
     # Name the source on every news row. `_source_of` maps a host to its
     # masthead and is what the News surface cards already use; the digest was
@@ -6282,6 +6199,16 @@ async def today_system_health(request: Request):
     except Exception:
         pass
 
+    # Last readiness check (tools/metis-readiness.py, run daily by a scheduled task)
+    readiness = None
+    try:
+        rc = os.environ.get("METIS_RC_ROOT", "") or str(Path(__file__).resolve().parents[3])
+        import json as _json
+        d = _json.loads((Path(rc) / "system" / "config" / "readiness.json").read_text(encoding="utf-8"))
+        readiness = {"overall": d.get("overall", ""), "age": _age_label(d.get("run_at", ""))}
+    except Exception:
+        pass
+
     return templates.TemplateResponse(
         request,
         "partials/today_system_health.html",
@@ -6290,6 +6217,7 @@ async def today_system_health(request: Request):
             "last_scan_label": last_scan_label,
             "memory_count": memory_count,
             "api_status": api_status,
+            "readiness": readiness,
         },
     )
 

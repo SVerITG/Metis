@@ -10,9 +10,9 @@ anthropic>=0.40
 # Voice activity detection (lightweight — no GPU required)
 webrtcvad-wheels>=2.0.14
 soundfile>=0.12
-# Voice transcription & speaker identification
-faster-whisper>=1.0
-resemblyzer>=0.1.3
+# Voice transcription & speaker identification are opt-in: they live in the MCP
+# server's [voice] extra (setup-mcp.sh --with-voice). resemblyzer pulls webrtcvad,
+# which compiles C, and a laptop without a compiler failed the whole install.
 # Optional voice deps (install manually if needed):
 #   torchaudio>=2.0        — audio processing (requires torch)
 #   pyannote.audio>=4.0    — speaker diarization (requires HF_TOKEN for gated model)

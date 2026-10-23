@@ -141,6 +141,11 @@ def run_wizard(metis_root: Path, api_key: str | None) -> dict:
         default="R, Python"
     )
     methods = _ask("Research methods (e.g. cohort study, RCT, spatial analysis)")
+    # Asked separately from the field on purpose: news you want to follow is often
+    # NOT your own subject, and it drives the brief rather than relevance.
+    news_terms = _ask(
+        "What should Metis watch in the news? (comma-separated — may differ from your field)"
+    )
 
     # ── Section 3: Working style ──────────────────────────────────────────────
     _banner("3 / 4  How you like to work")
@@ -251,6 +256,7 @@ def run_wizard(metis_root: Path, api_key: str | None) -> dict:
         "topics": topics,
         "tools": tools,
         "methods": methods,
+        "news_terms": news_terms,
         "feedback_style": feedback_style,
         "challenge_level": challenge_level,
         "output_length": output_length,

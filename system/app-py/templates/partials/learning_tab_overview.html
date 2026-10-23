@@ -1,14 +1,14 @@
 <!-- learning_tab_overview.html — the landing page for each tab -->
 {% set qnames = {1: "Is this the same outbreak?", 2: "Where did it come from?", 3: "How fast is it spreading?", 4: "Has the pathogen changed?"} %}
 
-<div class="lesson-page">
+<div class="lesson-shell rd-lesson">
 
 {% if tab == "course" %}
-  <article class="card lesson-card">
-    <div class="mx-kicker">The course</div>
-    <h1 class="mx-title">{{ meta.title or course_title }}</h1>
+  <div class="hero">
+    <span class="hero-kicker">The course</span>
+    <h1>{{ meta.title or course_title }}</h1>
     {% if meta.spine %}
-    <blockquote class="tv-spine">{{ meta.spine }}</blockquote>
+    <p class="tv-spine">{{ meta.spine }}</p>
     {% endif %}
     <div class="tv-stats">
       <div><b>{{ n_total }}</b><span>lessons</span></div>
@@ -17,7 +17,7 @@
       {% if meta.cards_authored %}<div><b>{{ meta.cards_authored }}</b><span>cards</span></div>{% endif %}
       <div><b>{{ n_done }}</b><span>completed</span></div>
     </div>
-  </article>
+  </div>
 
   {% for section in sections %}
   <div class="tv-section">
@@ -41,16 +41,16 @@
   {% endfor %}
 
 {% elif tab == "deepdives" %}
-  <article class="card lesson-card">
-    <div class="mx-kicker">Deep dives</div>
-    <h1 class="mx-title">Recent applications, read closely</h1>
-    <p class="mx-lede">
+  <div class="hero">
+    <span class="hero-kicker">Deep dives</span>
+    <h1>Recent applications, read closely</h1>
+    <p class="hero-copy">
       Each one takes a single published analysis and walks it end to end — the question someone
       actually asked, the data and what it does not represent, every method decoded, what was
       found, how it was evaluated, and what it is honestly worth. Each closes with a
       sixty-second version you could say out loud.
     </p>
-  </article>
+  </div>
 
   <div class="tv-section">
     <div class="tv-grid tv-grid--wide">
@@ -72,10 +72,10 @@
   </div>
 
 {% else %}
-  <article class="card lesson-card">
-    <div class="mx-kicker">Methodology</div>
-    <h1 class="mx-title">Method recipes</h1>
-    <p class="mx-lede">
+  <div class="hero">
+    <span class="hero-kicker">Methodology</span>
+    <h1>Method recipes</h1>
+    <p class="hero-copy">
       Methods lifted out of published analyses and generalised away from the pathogen they were
       used on — so an entry is named for a method, never an organism. Each carries what it
       <em>needs</em> before what it does, because the gate is nearly always metadata rather than
@@ -85,7 +85,7 @@
       <div><b>{{ methodologies | length }}</b><span>methods</span></div>
       <div><b>{{ methodologies | map(attribute='seen_in') | map('length') | sum }}</b><span>sources</span></div>
     </div>
-  </article>
+  </div>
 
   {% set qs = [] %}
   {% for m in methodologies %}{% if m.question not in qs %}{% set _ = qs.append(m.question) %}{% endif %}{% endfor %}

@@ -801,31 +801,46 @@ async def search_library(query: str, limit: int = 10) -> list[TextContent]:
     if not paths.db.exists():
         return [TextContent(type="text", text="Database not found.")]
 
-    like = f"%{query}%"
+    # Words are matched separately and ranked by how many hit. Matching the
+    # whole query as one substring found nothing for any natural multi-word
+    # request, and titles carry typographic hyphens (U+2010) that an ASCII
+    # hyphen in the query never matches — so hyphens split words too.
+    words = [w for w in re.split(r"[^\w]+", query.lower()) if len(w) > 2] or [query.lower()]
+    fields = ("title", "authors", "abstract", "tags")
+    where = " OR ".join(f"{f} LIKE ?" for _ in words for f in fields)
+    params = [f"%{w}%" for w in words for _ in fields]
     with connect(paths.db) as conn:
-        rows = conn.execute(
-            """SELECT title, authors, year, journal, doi, tags, abstract, item_type
-               FROM literature_metadata
-               WHERE title LIKE ? OR authors LIKE ? OR abstract LIKE ? OR tags LIKE ?
-               ORDER BY year DESC LIMIT ?""",
-            (like, like, like, like, limit),
+        cands = conn.execute(
+            f"""SELECT title, authors, year, journal, doi, tags, abstract, item_type
+               FROM literature_metadata WHERE {where}
+               ORDER BY year DESC LIMIT 500""",
+            params,
         ).fetchall()
 
+    def _score(r) -> tuple:
+        hay = " ".join((r[f] or "") for f in fields).lower()
+        title = (r["title"] or "").lower()
+        return (query.lower() in hay,
+                sum(w in hay for w in words),
+                sum(w in title for w in words))
+
+    rows = sorted(cands, key=_score, reverse=True)[:limit]
     if not rows:
         return [TextContent(type="text", text=f"No papers found for: {query}")]
 
-    lines = [f"**{len(rows)} results for '{query}':**\n"]
-    for r in rows:
+    lines = [f"**{len(rows)} results for '{query}'** (best match first; "
+             f"its abstract is shown in full):\n"]
+    for i, r in enumerate(rows):
         year = r["year"] or "?"
         journal = r["journal"] or r["item_type"] or "?"
         doi_link = f" · doi:{r['doi']}" if r["doi"] else ""
-        abstract = (r["abstract"] or "")[:150]
+        abstract = (r["abstract"] or "") if i == 0 else (r["abstract"] or "")[:150]
         lines.append(
-            f"**{r['title'][:80]}**\n"
+            f"**{r['title'] if i == 0 else r['title'][:80]}**\n"
             f"  {r['authors'][:60] or '—'} · {year} · {journal[:40]}{doi_link}"
         )
         if abstract:
-            lines.append(f"  _{abstract}…_")
+            lines.append(f"  _{abstract}{'' if i == 0 else '…'}_")
         lines.append("")
 
     return [TextContent(type="text", text="\n".join(lines))]

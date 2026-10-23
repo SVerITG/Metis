@@ -1500,9 +1500,12 @@ def record_decision(decision: str, category: str = "preference",
             con.execute("ALTER TABLE user_decisions ADD COLUMN agent_slug TEXT DEFAULT ''")
         except Exception:
             pass
+        # created_at is passed explicitly: the installer's schema declares it
+        # NOT NULL with no default, so relying on a default failed every insert
+        # on an installer-built database.
         con.execute(
             "INSERT INTO user_decisions (category, decision, context, scope, source, "
-            "agent_slug) VALUES (?, ?, ?, 'always', 'user', ?)",
+            "agent_slug, created_at) VALUES (?, ?, ?, 'always', 'user', ?, datetime('now'))",
             (category, decision, context, (agent_slug or "").strip()),
         )
         con.commit()

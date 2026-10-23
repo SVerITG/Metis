@@ -1,0 +1,9 @@
+# Windows scripts get Windows line endings in every checkout and in GitHub's
+# zip download. cmd.exe misreads `goto` labels in a batch file with bare LF
+# endings, and these files only ever run on Windows. The repository itself
+# keeps LF; git converts on the way out.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+*.vbs text eol=crlf
+*.iss text eol=crlf

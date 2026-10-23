@@ -187,7 +187,7 @@ async def planner_kanban(request: Request):
         "SELECT project_id as id, title, domain, priority, next_step FROM projects WHERE status = 'active' ORDER BY priority DESC"
     )
     done = db_query(
-        "SELECT project_id as id, title, domain, priority FROM projects WHERE status = 'done' ORDER BY updated_at DESC LIMIT 8"
+        "SELECT project_id as id, title, domain, priority FROM projects WHERE status = 'done' ORDER BY COALESCE(completed_at, created_at) DESC LIMIT 8"
     )
     return templates.TemplateResponse(
         request,

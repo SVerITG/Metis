@@ -1,30 +1,97 @@
-<!-- learning_lesson_reader.html — one lesson, in the statistics course's idiom -->
-<div class="lesson-page">
+<!-- learning_lesson_reader.html — one lesson, in the source course's idiom:
+     hero with steps · the text · mastery check · next step · prev/next footer -->
+{%- set quiz = lesson.quiz or [] -%}
+{%- set home_tab = 'deepdives' if lesson.section == 'Deep dives' else 'course' -%}
+{#- The lesson's own short code ("1.2"), as the source course numbers its
+    lessons; falls back to the manifest order. -#}
+{%- set code = lesson.day if lesson.day else ('%02d' % lesson.order if lesson.order is number else '') -%}
+{%- set topics = (lesson.topics or [])[:4] -%}
+{%- set terms = (lesson.key_terms or [])[:3] -%}
+<div class="lesson-shell rd-lesson" data-lesson-id="{{ lesson_id }}">
 
-  <div class="lesson-topnav">
-    <div>
-      {% if prev_id %}
-      <button class="btn btn-ghost" type="button"
-              hx-get="/api/course/{{ slug }}/lesson/{{ prev_id }}"
-              hx-target="#lesson-reader-panel" hx-swap="innerHTML">← Previous</button>
-      {% endif %}
+  <div class="hero lesson-hero">
+    <div class="lesson-hero-main">
+      {% if lesson.section %}<span class="hero-kicker">{{ lesson.section }}{% if lesson.phase_title %} · {{ lesson.phase_title }}{% endif %}</span>{% endif %}
+      <h1>{{ lesson.title or lesson_id }}</h1>
+      {% if lesson.subtitle %}<p class="hero-copy">{{ lesson.subtitle }}</p>{% endif %}
+      <p class="lesson-hero-meta">
+        {%- if code %}<strong>Lesson {{ code }}</strong>{% endif -%}
+        {%- if lesson.time %}<span>{{ lesson.time }} min</span>{% endif -%}
+        {%- if quiz %}<span>{{ quiz | length }} check question{% if quiz | length != 1 %}s{% endif %}</span>{% endif -%}
+        {%- if lesson.optional %}<span>optional</span>{% endif -%}
+      </p>
+      <div class="hero-actions">
+        <button class="btn btn-secondary" type="button" data-open-tab="{{ home_tab }}">Back to course</button>
+        {% if quiz %}<a class="btn btn-secondary" href="#rd-check">Mastery check</a>{% endif %}
+      </div>
     </div>
-    <div class="lesson-crumb">{{ lesson.section or "" }}</div>
-    <div>
-      {% if next_id %}
-      <button class="btn btn-ghost" type="button"
-              hx-get="/api/course/{{ slug }}/lesson/{{ next_id }}"
-              hx-target="#lesson-reader-panel" hx-swap="innerHTML">Next →</button>
-      {% endif %}
+
+    <div class="lesson-hero-status">
+      <div class="lesson-hero-status-label">Steps in this lesson</div>
+      <ol class="lesson-hero-status-list">
+        <li class="lesson-hero-status-item{% if done %} done{% endif %}">
+          <span class="step-dot{% if done %} done{% endif %}" aria-hidden="true"></span>
+          <span>Reading{% if done %}<span class="visually-hidden">: marked as read</span>{% endif %}</span>
+        </li>
+        {% if quiz %}
+        <li class="lesson-hero-status-item" data-check-step>
+          <span class="step-dot" aria-hidden="true"></span>
+          <span>Mastery check</span>
+          <span class="lesson-hero-status-detail" data-check-detail>0/{{ quiz | length }}</span>
+        </li>
+        {% endif %}
+      </ol>
     </div>
   </div>
 
-  <article class="card lesson-card">
-    <div class="lesson-body markdown-body">
+  <nav class="lesson-stage-tabs" aria-label="Steps in this lesson">
+    <a class="lesson-stage-tab active" href="#rd-text" aria-current="step">
+      <span class="lesson-stage-name">Reading</span>
+      <span class="lesson-stage-note">{{ 'done' if done else 'start here' }}</span>
+    </a>
+    {% if quiz %}
+    <a class="lesson-stage-tab" href="#rd-check">
+      <span class="lesson-stage-name">Mastery check</span>
+      <span class="lesson-stage-note" data-check-note>0/{{ quiz | length }} answered</span>
+    </a>
+    {% endif %}
+  </nav>
+
+  {% if topics or terms or lesson.description %}
+  <details class="lesson-brief-card" open>
+    <summary class="lesson-brief-head">
+      <span class="lesson-overview-label">Lesson at a glance</span>
+      <span class="lesson-overview-note">What to hold on to while you read.</span>
+    </summary>
+    <div class="lesson-brief-grid">
+      {% if topics %}
+      <div class="lesson-brief-row">
+        <div class="lesson-brief-key">Core move</div>
+        <div class="lesson-brief-value">{{ topics | join(' → ') }}</div>
+      </div>
+      {% endif %}
+      {% if terms %}
+      <div class="lesson-brief-row">
+        <div class="lesson-brief-key">Key ideas to hold</div>
+        <div class="lesson-brief-value">{{ terms | join(', ') }}</div>
+      </div>
+      {% endif %}
+      {% if lesson.description %}
+      <div class="lesson-brief-row">
+        <div class="lesson-brief-key">What it covers</div>
+        <div class="lesson-brief-value">{{ lesson.description }}</div>
+      </div>
+      {% endif %}
+    </div>
+  </details>
+  {% endif %}
+
+  <article class="card lesson-card" id="rd-text">
+    <div class="lesson-body markdown-body{% if lesson.title %} has-hero{% endif %}">
       {{ body_html | safe }}
     </div>
 
-{#- Rendered only when the course asks for it. These two courses are for reading,
+{#- Rendered only when the course asks for it. Reading courses are for reading,
     not drilling (course.json -> pedagogy_mode), so the ladder is authored and held
     back rather than deleted. -#}
 {% if show_exercises and lesson.exercises %}
@@ -80,18 +147,67 @@
       {% endfor %}
     </div>
     {% endif %}
-
   </article>
 
-  <div class="card lesson-foot-card">
-    <div class="lesson-foot-note">
-      {% if done %}<span class="is-done">✓ Completed</span>{% else %}Mark this lesson when you have finished it.{% endif %}
+  {% if quiz %}
+  <section class="lesson-stage-shell" id="rd-check" data-check aria-labelledby="rd-check-h">
+    <div class="card review-mode-card">
+      <h2 class="card-heading" id="rd-check-h">Mastery check</h2>
+      <p class="section-subcopy">Pick one answer per question; the right one and the reasoning
+        appear straight away. A self-check for you — answers are not recorded.</p>
+      <div class="badge-row">
+        <span class="badge brand" data-check-tally>0 of {{ quiz | length }} answered</span>
+        <span class="badge gold">Explanatory feedback built in</span>
+      </div>
     </div>
-    <div style="display:flex;gap:10px;align-items:center;">
-      {% if not done %}
-      <button class="btn btn-primary" type="button"
-              onclick="completeLesson('{{ slug }}', '{{ lesson_id }}', this)">Mark complete</button>
+    <div class="lesson-quiz-list rd-check-list">
+      {% for q in quiz %}
+      <div class="quiz-item" data-correct="{{ q.correct }}">
+        <div><strong>{{ loop.index }}. {{ q.question }}</strong></div>
+        <div class="choice-list">
+          {% for opt in q.options %}
+          <button class="choice-btn" type="button" data-choice="{{ loop.index0 }}">{{ opt }}</button>
+          {% endfor %}
+        </div>
+        <div class="feedback-box hidden" role="status"><strong data-verdict></strong>{{ q.explanation or '' }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <div class="card lesson-transition-card rd-transition">
+    <div>
+      <div class="sidebar-title">{% if done %}Reading recorded{% else %}Next step{% endif %}</div>
+      <div class="small-note">
+        {%- if done %}This lesson is marked as read.{% if next_id %} Move on while the idea is still fresh.{% endif %}
+        {%- else %}Mark this lesson as read when you have finished it{% if next_id %}, then move on to the next one{% endif %}.{% endif -%}
+      </div>
+    </div>
+    <div class="card-actions">
+      {% if done %}
+      <span class="status-chip sage">read</span>
+      {% else %}
+      <button class="btn btn-primary" type="button" data-complete-lesson="{{ lesson_id }}">Mark as read</button>
       {% endif %}
+      {% if next_id %}
+      <button class="btn btn-secondary" type="button"
+              hx-get="/api/course/{{ slug }}/lesson/{{ next_id }}"
+              hx-target="#lesson-reader-panel" hx-swap="innerHTML">Next lesson →</button>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if prev_id or next_id %}
+  <div class="lesson-nav-footer">
+    <div class="lesson-nav-prev">
+      {% if prev_id %}
+      <button class="btn btn-ghost" type="button"
+              hx-get="/api/course/{{ slug }}/lesson/{{ prev_id }}"
+              hx-target="#lesson-reader-panel" hx-swap="innerHTML">← Previous lesson</button>
+      {% endif %}
+    </div>
+    <div class="lesson-nav-next">
       {% if next_id %}
       <button class="btn btn-ghost" type="button"
               hx-get="/api/course/{{ slug }}/lesson/{{ next_id }}"
@@ -99,5 +215,6 @@
       {% endif %}
     </div>
   </div>
+  {% endif %}
 
 </div>

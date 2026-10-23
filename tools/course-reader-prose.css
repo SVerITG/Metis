@@ -1,116 +1,160 @@
-/* Markdown prose for the Metis course reader, in the statistics course's idiom.
-   The statistics course renders structured JSON into cards, so it has almost no
-   element-level styles. Our lessons are markdown. Everything here is built from
-   its own variables (--font-display, --ink, --line, --brand, --radius) so the
-   two read as one design rather than two. */
+/* Markdown prose and reader glue for the Metis course reader, in the source
+   course's idiom. The source course renders structured JSON into cards and
+   its lessons are a separate rendered site, so its app stylesheet (above) has
+   almost no element-level prose rules. Our lessons are markdown rendered in
+   place. Everything here is built from that stylesheet's own variables
+   (--font-display, --ink, --line, --brand, --radius ...) so the two read as one
+   design rather than two.
 
-/* ---- reader shell ------------------------------------------------------- */
-.reader-topbar-title { font-family: var(--font-display); font-size: 1.05rem; letter-spacing: -0.01em; color: var(--ink); }
-.reader-topbar-sub   { font-size: 0.78rem; color: var(--ink-faint); letter-spacing: 0.02em; }
-.reader-back { font-size: 0.82rem; color: var(--ink-soft); }
-.reader-back:hover { color: var(--brand); }
+   The shell, sidebar outline, lesson hero, step dots, quiz cards and nav footer
+   are NOT styled here: the reader templates emit the source app's own class
+   names (.hero.lesson-hero, .outline-group, .outline-item, .step-dot,
+   .quiz-item, .choice-btn, .feedback-box, .lesson-nav-footer) so those rules
+   apply verbatim. This file only fills the gaps. */
 
-/* ---- sidebar: course contents ------------------------------------------- */
-.rc-head { padding: 4px 2px 14px; border-bottom: 1px solid var(--line); margin-bottom: 14px; }
-.rc-kicker { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.14em;
-             text-transform: uppercase; color: var(--ink-faint); margin-bottom: 6px; }
-.rc-title { font-family: var(--font-display); font-size: 1.12rem; line-height: 1.25;
-            letter-spacing: -0.01em; color: var(--ink); margin: 0 0 12px; }
-.rc-bar { height: 6px; background: var(--bg-strong); border-radius: 999px; overflow: hidden; }
-.rc-bar > i { display: block; height: 100%; background: var(--brand); border-radius: 999px; }
-.rc-meta { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.1em;
-           text-transform: uppercase; color: var(--ink-faint); margin-top: 8px; }
+/* ---- reader root -------------------------------------------------------- */
+/* The lesson prose follows the source course's rendered lesson theme, whose
+   box fills are not part of the app palette above. They are scoped to the reader
+   body rather than :root so nothing else could ever pick them up. The reader is
+   a light interface, as the source course's hub is; color-scheme stops a dark OS from
+   darkening scrollbars and form controls underneath light text rules. */
+.course-reader {
+  color-scheme: light;
+  --rd-paper-muted: #f4ead9;
+  --rd-tint-note: #e9f0ec;
+  --rd-tint-tip: #edf0e9;
+  --rd-tint-warning: #f7efe0;
+  --rd-tint-code: #f6efe2;
+  --rd-code-ink: #10424b;
+}
 
-.rc-section { margin-bottom: 18px; }
-.rc-section-label { font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.13em;
-                    text-transform: uppercase; color: var(--ink-faint); margin: 0 0 8px 2px; }
-.rc-item { display: flex; align-items: flex-start; gap: 9px; width: 100%;
-           background: none; border: 0; text-align: left; padding: 7px 9px;
-           border-radius: var(--radius-sm); color: var(--ink); font-size: 0.86rem;
-           line-height: 1.4; transition: background 0.14s ease; }
-.rc-item:hover { background: var(--brand-soft); }
-.rc-item.is-done { color: var(--ink-soft); }
-.rc-dot { flex: none; width: 8px; height: 8px; margin-top: 6px; border-radius: 50%;
-          border: 1px solid var(--line); background: transparent; }
-.rc-item.is-done .rc-dot { background: var(--brand); border-color: var(--brand); }
+/* ---- shell -------------------------------------------------------------- */
+.reader-back { white-space: nowrap; }
+.rd-loading { padding: 48px 28px; text-align: center; color: var(--ink-soft); }
+.rd-loading--side { padding: 10px 4px; text-align: left; font-size: 0.86rem; }
+
+/* ---- sidebar ------------------------------------------------------------ */
+/* Course progress uses a native <progress> so the fill needs no inline width.
+   Painted to match .progress-bar / .progress-fill in the stylesheet above. */
+.rd-progress {
+  display: block; width: 100%; height: 11px; margin-top: 8px;
+  border: 0; border-radius: 999px; overflow: hidden;
+  background: rgba(216, 201, 181, 0.4);
+  appearance: none; -webkit-appearance: none;
+}
+.rd-progress::-webkit-progress-bar { background: rgba(216, 201, 181, 0.4); border-radius: 999px; }
+.rd-progress::-webkit-progress-value { background: linear-gradient(90deg, var(--brand), #2f97a4); border-radius: 999px; }
+.rd-progress::-moz-progress-bar { background: linear-gradient(90deg, var(--brand), #2f97a4); border-radius: 999px; }
+
+.rd-outline { display: grid; gap: 10px; }
+/* Outline groups are <details>, so they fold without script; the header is
+   unmarked, as the source course's own fold is. */
+details.outline-group > summary { list-style: none; }
+details.outline-group > summary::-webkit-details-marker { display: none; }
+.outline-trigger { cursor: pointer; }
+.outline-code { overflow-wrap: anywhere; }
+a.lesson-stage-tab { text-decoration: none; }
+@media (max-width: 700px) { .lesson-stage-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.outline-item[aria-current="page"] .outline-name { font-weight: 700; }
+.rd-side-note { font-size: 0.86rem; margin-bottom: 10px; }
 
 /* ---- lesson page -------------------------------------------------------- */
-.lesson-page { display: grid; gap: 18px; }
-
-.lesson-topnav { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.lesson-topnav .lesson-crumb { font-family: var(--font-mono); font-size: 0.7rem;
-                               letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); }
+.rd-lesson { display: grid; gap: 18px; }
+.rd-lesson > * { min-width: 0; }
+/* In-page jumps land below the fixed topbar, not under it. */
+.rd-lesson [id] { scroll-margin-top: calc(var(--topbar-h) + 16px); }
+/* The page is a grid with its own gap; the hero's standalone bottom margin
+   would double it. */
+.rd-lesson > .hero { margin-bottom: 0; }
+.hero .hero-copy { margin-bottom: 10px; }
+.lesson-hero-status-label + .lesson-hero-status-list { margin-top: 0; }
 
 .lesson-card { padding: 30px 34px 34px; }
 @media (max-width: 720px) { .lesson-card { padding: 22px 20px 26px; } }
 
-.lesson-foot-card { display: flex; align-items: center; justify-content: space-between;
-                    gap: 14px; padding: 16px 20px; flex-wrap: wrap; }
-.lesson-foot-note { font-size: 0.86rem; color: var(--ink-soft); }
-.lesson-foot-note .is-done { color: var(--sage); font-weight: 600; }
+/* The hero already carries the lesson title, so the markdown's own first
+   heading would print it twice. */
+.lesson-body.has-hero > h1:first-child { display: none; }
+.lesson-body.has-hero > h1:first-child + * { margin-top: 0; }
+
+.rd-transition { display: flex; align-items: center; justify-content: space-between;
+                 gap: 14px; flex-wrap: wrap; }
+.rd-transition .card-actions { align-items: center; }
+
+/* ---- mastery check ------------------------------------------------------ */
+.rd-check-list { display: grid; gap: 12px; }
+.quiz-item .choice-list { margin-top: 12px; }
+.choice-btn { line-height: 1.5; transition: background 0.12s ease, border-color 0.12s ease; }
+.choice-btn:disabled { cursor: default; color: var(--ink); }
+.choice-btn:disabled:not(.correct):not(.incorrect) { opacity: 0.72; }
+.choice-btn.correct { color: var(--ink); font-weight: 600; }
+.feedback-box strong { color: inherit; }
 
 /* ---- the prose itself --------------------------------------------------- */
-/* p, code, pre, pre code, strong and em are NOT set here. The lesson body
-   carries .markdown-body as well as .lesson-body, so the statistics course's
-   own rules for those six elements apply verbatim — which is what "copy it
-   exactly" means. Only the one override below is ours, and it is flagged:
-
-   .markdown-body p is `margin: 0 0 0.6em`, which is right for the small cards
-   it was written for (quiz explanations, brief cards) and cramped for a
-   3,000-word lesson. Say the word and this goes and the lessons tighten up. */
+/* p, code, pre, strong and em come first from the stylesheet's .markdown-body
+   rules; the lines below bring them up to the rendered lesson theme, which is
+   what a learner of the source course actually reads. */
+.lesson-body { color: var(--ink); font-size: 1.02rem; line-height: 1.72; letter-spacing: -0.01em; }
+.lesson-body > *:first-child { margin-top: 0; }
 .lesson-body.markdown-body p { margin: 0 0 1.05em; }
 .lesson-body.markdown-body p:last-child { margin-bottom: 0; }
 
-.lesson-body { color: var(--ink); font-size: 1.02rem; line-height: 1.75; }
-.lesson-body > *:first-child { margin-top: 0; }
-
-.lesson-body h1 { font-family: var(--font-display); font-size: 1.95rem; font-weight: 600;
-                  line-height: 1.18; letter-spacing: -0.02em; color: var(--ink); margin: 0 0 0.55em; }
-.lesson-body h2 { font-family: var(--font-display); font-size: 1.42rem; font-weight: 600;
-                  line-height: 1.25; letter-spacing: -0.015em; color: var(--ink);
-                  margin: 2em 0 0.5em; padding-bottom: 0.3em; border-bottom: 1px solid var(--line); }
-.lesson-body h3 { font-family: var(--font-display); font-size: 1.16rem; font-weight: 600;
-                  letter-spacing: -0.01em; color: var(--ink); margin: 1.7em 0 0.4em; }
-.lesson-body h4 { font-size: 1rem; font-weight: 700; color: var(--ink); margin: 1.4em 0 0.3em; }
+.lesson-body h1, .lesson-body h2, .lesson-body h3, .lesson-body h4 {
+  font-family: var(--font-display); font-weight: 600; letter-spacing: -0.025em; color: var(--ink);
+}
+.lesson-body h1 { font-size: clamp(2.15rem, 1.95rem + 0.9vw, 2.55rem); line-height: 1.1; margin: 0 0 0.55em; }
+.lesson-body h2 { font-size: 1.55rem; line-height: 1.25; margin: 2.35rem 0 0.6em;
+                  padding-bottom: 0.3rem; border-bottom: 1px solid rgba(15, 108, 120, 0.2); }
+.lesson-body h3 { font-size: 1.22rem; line-height: 1.3; margin: 1.75rem 0 0.45em; }
+.lesson-body h4 { font-size: 1.05rem; margin: 1.3rem 0 0.35em; }
 
 .lesson-body hr { border: 0; border-top: 1px solid var(--line); margin: 2.2em 0; }
 
 .lesson-body a { color: var(--brand); text-decoration: underline;
                  text-decoration-thickness: 1px; text-underline-offset: 2px;
-                 text-decoration-color: rgba(15, 108, 120, 0.35); }
+                 text-decoration-color: rgba(15, 108, 120, 0.35); overflow-wrap: anywhere; }
 .lesson-body a:hover { text-decoration-color: var(--brand); }
 
 .lesson-body ul, .lesson-body ol { padding-left: 1.35em; margin: 0 0 1.05em; }
 .lesson-body li { margin-bottom: 0.42em; }
 .lesson-body li > ul, .lesson-body li > ol { margin: 0.42em 0 0; }
 
-/* Blockquotes here are structural — the concept map at the top of a lesson and
-   the pull-quotes that carry the spine — not quotations. */
-.lesson-body blockquote { margin: 1.4em 0; padding: 0.95em 1.15em;
-                          border-left: 3px solid var(--brand);
-                          background: var(--brand-soft);
-                          border-radius: 0 var(--radius-sm) var(--radius-sm) 0; color: var(--ink); }
+.lesson-body.markdown-body code { background: rgba(15, 108, 120, 0.08); color: var(--rd-code-ink);
+                                  padding: 0.08rem 0.3rem; border-radius: 0.35rem; overflow-wrap: anywhere; }
+.lesson-body.markdown-body pre { background: var(--rd-tint-code); border: 1px solid var(--line);
+                                 border-radius: 0.95rem; padding: 14px 18px; margin: 1.25rem 0 1.6rem;
+                                 white-space: pre-wrap; overflow-wrap: anywhere;
+                                 box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8); }
+.lesson-body.markdown-body pre code { background: none; color: var(--ink); padding: 0; font-size: 0.84rem; }
+
+/* Every boxed block shares the column's left and right edges and has one solid
+   fill with one solid coloured bar — no fades, so a sentence never ends on a
+   different background from where it started. */
+.lesson-body blockquote,
+.lesson-body .cx {
+  margin: 1.4rem 0 1.8rem; padding: 1.1rem 1.4rem;
+  border: 1px solid var(--line); border-left: 0.45rem solid var(--cx-hue, var(--brand));
+  border-radius: 1rem; background: var(--cx-bg, var(--rd-tint-note));
+  box-shadow: var(--shadow); color: var(--ink);
+}
+.lesson-body blockquote { --cx-hue: var(--brand); --cx-bg: var(--rd-tint-note); }
 .lesson-body blockquote p:last-child { margin-bottom: 0; }
+.lesson-body .cx--warn { --cx-hue: var(--gold); --cx-bg: var(--rd-tint-warning); }
+.lesson-body .cx--note { --cx-hue: var(--sage); --cx-bg: var(--rd-tint-tip); }
 
-/* Callouts. The lessons open warnings with ⚠ and asides with ✱; the marker is
-   turned into a class server-side because CSS cannot select on text. */
-.lesson-body .cx { margin: 1.35em 0; padding: 0.9em 1.1em; border-radius: var(--radius-sm);
-                   border: 1px solid var(--line); border-left: 3px solid var(--cx-hue, var(--brand));
-                   background: var(--cx-bg, var(--paper)); }
-.lesson-body .cx--warn { --cx-hue: var(--accent); --cx-bg: var(--accent-soft); }
-.lesson-body .cx--note { --cx-hue: var(--gold);   --cx-bg: var(--gold-soft); }
-
-/* Wide tables scroll in their own container rather than breaking the measure. */
-.lesson-tablewrap { overflow-x: auto; margin: 1.4em 0; border: 1px solid var(--line);
-                    border-radius: var(--radius-sm); background: var(--paper); }
-.lesson-body table { border-collapse: collapse; width: 100%; font-size: 0.86rem;
-                     line-height: 1.5; margin: 0; }
-.lesson-body th { background: var(--bg-strong); padding: 10px 13px; text-align: left;
-                  font-weight: 700; color: var(--ink); white-space: nowrap;
-                  border-bottom: 1px solid var(--line); }
-.lesson-body td { padding: 10px 13px; border-bottom: 1px solid rgba(216, 201, 181, 0.55);
-                  vertical-align: top; }
+/* Wide tables fill their card and wrap first; anything still too wide scrolls
+   inside its own box rather than pushing the page sideways. */
+.lesson-tablewrap { overflow-x: auto; margin: 1.25rem 0 1.75rem; border: 1px solid var(--line);
+                    border-radius: 1rem; background: var(--paper-strong); box-shadow: var(--shadow); }
+.lesson-body table { border-collapse: separate; border-spacing: 0; width: 100%;
+                     font-size: 0.92rem; line-height: 1.5; margin: 0; background: var(--paper-strong);
+                     font-variant-numeric: tabular-nums; }
+.lesson-body th { background: var(--rd-paper-muted); padding: 0.72rem 0.88rem; text-align: left;
+                  font-weight: 700; color: var(--ink); border-bottom: 1px solid var(--line); }
+.lesson-body td { padding: 0.72rem 0.88rem; border-bottom: 1px solid var(--line);
+                  vertical-align: top; overflow-wrap: anywhere; }
 .lesson-body tbody tr:last-child td { border-bottom: 0; }
+.lesson-body img { max-width: 100%; height: auto; }
 
 /* ---- exercise ladder ---------------------------------------------------- */
 .lesson-exercises { margin-top: 2.4em; padding-top: 1.4em; border-top: 2px solid var(--line); }
@@ -135,7 +179,7 @@
                text-transform: uppercase; color: var(--ink-faint); margin-bottom: 5px; }
 .lx-out { background: var(--bg-strong); border: 1px solid var(--line); padding: 12px 14px;
           border-radius: var(--radius-sm); overflow-x: auto; font-family: var(--font-mono);
-          font-size: 0.76rem; line-height: 1.55; white-space: pre; }
+          font-size: 0.76rem; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
 .lx-q { padding-left: 1.3em; margin: 0.8em 0 0; }
 .lx-q li { margin-bottom: 0.45em; }
 .lx-note { font-size: 0.84rem; color: var(--ink-soft); margin: 0.7em 0 0; }
@@ -148,22 +192,17 @@
 .lx--a { --lx-hue: var(--sage); }
 .lx--b { --lx-hue: var(--brand); }
 .lx--c { --lx-hue: var(--gold); }
-.lx--d { --lx-hue: #6f5aa8; }
+.lx--d { --lx-hue: #5b4b8a; }
 .lx--e { --lx-hue: var(--accent); }
 
 /* ---- methodology pages -------------------------------------------------- */
-.mx-kicker { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.13em;
-             text-transform: uppercase; color: var(--brand); margin-bottom: 10px; }
-.mx-title { font-family: var(--font-display); font-size: 1.95rem; font-weight: 600;
-            line-height: 1.18; letter-spacing: -0.02em; color: var(--ink); margin: 0 0 0.4em; }
-.mx-lede { font-size: 1.08rem; line-height: 1.6; color: var(--ink-soft); margin: 0 0 6px;
-           max-width: 62ch; }
-
 .mx-block { margin-top: 28px; }
-.mx-h { font-family: var(--font-display); font-size: 1.06rem; font-weight: 600;
-        letter-spacing: -0.01em; color: var(--ink); margin: 0 0 10px;
-        padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+.mx-block:first-child { margin-top: 0; }
+.mx-h { font-family: var(--font-display); font-size: 1.22rem; font-weight: 600;
+        letter-spacing: -0.02em; color: var(--ink); margin: 0 0 10px;
+        padding-bottom: 6px; border-bottom: 1px solid rgba(15, 108, 120, 0.2); }
 .mx-note { font-size: 0.86rem; color: var(--ink-soft); margin: 0 0 10px; max-width: 62ch; }
+.mx-note--after { margin-top: 12px; }
 .mx-list { margin: 0; padding-left: 1.25em; }
 .mx-list li { margin-bottom: 0.5em; line-height: 1.65; }
 
@@ -187,7 +226,7 @@
 }
 .mx-step { font-weight: 700; color: var(--ink); line-height: 1.5; }
 .mx-tools { font-family: var(--font-mono); font-size: 0.76rem; color: var(--brand);
-            margin-top: 4px; line-height: 1.5; }
+            margin-top: 4px; line-height: 1.5; overflow-wrap: anywhere; }
 .mx-stepnote { font-size: 0.88rem; color: var(--ink-soft); margin-top: 5px; line-height: 1.6; }
 
 .mx-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; }
@@ -200,8 +239,8 @@
 .mx-source:last-of-type { border-bottom: 0; }
 .mx-grade { flex: none; font-family: var(--font-mono); font-size: 0.62rem; font-weight: 600;
             letter-spacing: 0.09em; padding: 3px 7px; border-radius: 6px; margin-top: 2px; }
-.mx-grade--fetched { color: #2f5c46; background: var(--sage-soft); border: 1px solid #b6cdbf; }
-.mx-grade--search  { color: #7a5514; background: var(--gold-soft); border: 1px solid #e0c68a; }
+.mx-grade--fetched { color: var(--sage); background: var(--sage-soft); border: 1px solid rgba(80, 114, 93, 0.3); }
+.mx-grade--search  { color: var(--gold); background: var(--gold-soft); border: 1px solid rgba(138, 95, 23, 0.3); }
 .mx-cite { font-size: 0.92rem; line-height: 1.55; color: var(--ink); }
 .mx-url { display: inline-block; font-family: var(--font-mono); font-size: 0.72rem;
           margin-top: 3px; word-break: break-all; color: var(--brand);
@@ -209,54 +248,53 @@
 .mx-what { font-size: 0.87rem; color: var(--ink-soft); margin-top: 6px; line-height: 1.6; }
 
 .mx-lessons { display: flex; flex-wrap: wrap; gap: 8px; }
-.mx-lesson-link { font-family: var(--font-mono); font-size: 0.74rem; letter-spacing: 0.04em;
-                  padding: 6px 11px; border-radius: 999px; border: 1px solid var(--line);
-                  background: var(--paper); color: var(--ink-soft); cursor: pointer; }
-.mx-lesson-link:hover { border-color: var(--brand); color: var(--brand); background: var(--brand-soft); }
 
 /* ---- tab landing pages -------------------------------------------------- */
-.tv-spine { margin: 16px 0 0; padding: 14px 18px; border-left: 3px solid var(--brand);
-            background: var(--brand-soft); border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-            font-size: 1rem; line-height: 1.65; color: var(--ink); max-width: 68ch; }
-
+.tv-spine { margin: 4px 0 0; padding: 14px 18px; max-width: 76ch;
+            border: 1px solid rgba(15, 108, 120, 0.18); border-left: 0.45rem solid var(--brand);
+            border-radius: var(--radius-sm); background: var(--brand-soft);
+            font-size: 1rem; line-height: 1.65; color: var(--ink); }
 .tv-stats { display: flex; flex-wrap: wrap; gap: 26px; margin-top: 20px;
             padding-top: 16px; border-top: 1px solid var(--line); }
 .tv-stats > div { display: flex; flex-direction: column; gap: 2px; }
-.tv-stats b { font-family: var(--font-display); font-size: 1.5rem; font-weight: 600;
-              line-height: 1; color: var(--ink); }
-.tv-stats span { font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.12em;
+.tv-stats b { font-family: var(--font-display); font-size: 2rem; font-weight: 600;
+              line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
+.tv-stats span { font-size: 0.78rem; font-weight: 800; letter-spacing: 0.08em;
                  text-transform: uppercase; color: var(--ink-faint); }
 
-.tv-section { margin-top: 10px; }
-.tv-section-h { font-family: var(--font-display); font-size: 1.12rem; font-weight: 600;
-                letter-spacing: -0.01em; color: var(--ink); margin: 22px 0 12px; }
+.tv-section { margin-top: 6px; }
+.tv-section-h { font-family: var(--font-display); font-size: 1.5rem; font-weight: 600;
+                letter-spacing: -0.02em; color: var(--ink); margin: 18px 0 12px; }
 
-.tv-grid { display: grid; gap: 14px;
+.tv-grid { display: grid; gap: 16px;
            grid-template-columns: repeat(auto-fill, minmax(268px, 1fr)); }
 .tv-grid--wide { grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); }
+@media (max-width: 520px) { .tv-grid, .tv-grid--wide { grid-template-columns: minmax(0, 1fr); } }
 
 /* Cards are buttons: they must look pressable and read left-aligned, which the
-   pill .btn styling would fight. */
-.tv-card { text-align: left; padding: 16px 18px 18px; cursor: pointer;
+   pill .btn styling would fight. Shaped like the source course's module
+   cards: white-paper face, hairline border, 22px corners. */
+.tv-card { text-align: left; padding: 16px 18px 18px; cursor: pointer; color: var(--ink);
            display: flex; flex-direction: column; gap: 7px;
+           border-radius: 22px; background: rgba(255, 255, 255, 0.78);
            transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease; }
-.tv-card:hover { transform: translateY(-2px); border-color: var(--brand);
-                 box-shadow: 0 18px 32px rgba(15, 108, 120, 0.13); }
-.tv-card.is-done { opacity: 0.72; }
+.tv-card:hover { transform: translateY(-1px); border-color: rgba(15, 108, 120, 0.28);
+                 box-shadow: 0 16px 28px rgba(15, 108, 120, 0.09); }
+.tv-card.is-done { background: var(--sage-soft); border-color: rgba(80, 114, 93, 0.22); }
 .tv-card-top { display: flex; align-items: center; gap: 9px; }
 .tv-emoji { font-size: 1.05rem; line-height: 1; }
-.tv-meta { font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.09em;
-           text-transform: uppercase; color: var(--ink-faint); margin-left: auto; }
-.tv-done { color: var(--sage); font-weight: 700; }
-.tv-card-title { font-family: var(--font-display); font-size: 1.02rem; font-weight: 600;
-                 line-height: 1.32; letter-spacing: -0.01em; color: var(--ink); }
-.tv-card-sub { font-size: 0.88rem; line-height: 1.55; color: var(--ink-soft); }
-.tv-card-desc { font-size: 0.82rem; line-height: 1.55; color: var(--ink-faint);
+.tv-meta { font-size: 0.74rem; font-weight: 800; letter-spacing: 0.08em;
+           text-transform: uppercase; color: var(--ink-faint); margin-left: auto;
+           font-variant-numeric: tabular-nums; }
+.tv-done { color: var(--sage); font-weight: 800; }
+.tv-card-title { font-family: var(--font-display); font-size: 1.2rem; font-weight: 600;
+                 line-height: 1.12; letter-spacing: -0.015em; color: var(--ink); }
+.tv-card-sub { font-size: 0.9rem; line-height: 1.55; color: var(--ink-soft); }
+.tv-card-desc { font-size: 0.84rem; line-height: 1.55; color: var(--ink-soft);
                 padding-top: 7px; border-top: 1px solid rgba(216, 201, 181, 0.55); }
 
-.tv-tag { font-family: var(--font-mono); font-size: 0.6rem; font-weight: 600;
-          letter-spacing: 0.09em; text-transform: uppercase;
-          padding: 3px 7px; border-radius: 6px; }
-.tv-tag--routine     { color: #2f5c46; background: var(--sage-soft); border: 1px solid #b6cdbf; }
-.tv-tag--established { color: #0f6c78; background: var(--brand-soft); border: 1px solid #a9d5d3; }
-.tv-tag--emerging    { color: #7a5514; background: var(--gold-soft); border: 1px solid #e0c68a; }
+.tv-tag { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+          padding: 4px 9px; border-radius: 999px; }
+.tv-tag--routine     { color: var(--sage);  background: var(--sage-soft);  border: 1px solid rgba(80, 114, 93, 0.25); }
+.tv-tag--established { color: var(--brand); background: var(--brand-soft); border: 1px solid rgba(15, 108, 120, 0.22); }
+.tv-tag--emerging    { color: var(--gold);  background: var(--gold-soft);  border: 1px solid rgba(138, 95, 23, 0.25); }

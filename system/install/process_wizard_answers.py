@@ -77,6 +77,26 @@ Researcher answers:
 """
 
 
+
+def live_db_path(root: Path) -> Path:
+    """The database the server and dashboard actually read.
+
+    NOT system/app/data/metis.sqlite: that location was retired in June (OneDrive
+    corrupts SQLite's write-ahead log), and a database created or written there is
+    an orphan. The MCP package owns the rule; this mirrors it when the package is
+    not importable: METIS_DB → METIS_DATA_DIR → ~/.local/share/metis/metis.sqlite.
+    """
+    try:
+        from metis_mcp.config import resolve_live_db
+        return resolve_live_db(root)
+    except ImportError:
+        import os
+        if os.environ.get("METIS_DB"):
+            return Path(os.environ["METIS_DB"])
+        data_dir = os.environ.get("METIS_DATA_DIR") or os.path.join(
+            os.path.expanduser("~"), ".local", "share", "metis")
+        return Path(data_dir) / "metis.sqlite"
+
 def _format_answers(answers: dict) -> str:
     lines = []
     labels = {
@@ -362,7 +382,7 @@ def write_user_topics(metis_root: Path, answers: dict) -> dict:
     could not tell a subject you work in from one you merely read about.
     """
     written = {"field": 0, "method": 0, "news": 0}
-    db_path = metis_root / "system" / "app" / "data" / "metis.sqlite"
+    db_path = live_db_path(metis_root)
     if not db_path.exists():
         return {"error": f"database not found at {db_path}", **written}
 
@@ -407,6 +427,83 @@ def write_user_topics(metis_root: Path, answers: dict) -> dict:
     return written
 
 
+
+def _terms(*texts) -> list:
+    """Split free-text answers into clean, de-duplicated terms (comma, semicolon or
+    new line separates; order kept)."""
+    import re
+    out, seen = [], set()
+    for text in texts:
+        if isinstance(text, (list, tuple)):
+            parts = [str(t) for t in text]
+        else:
+            parts = re.split(r"[,;\n]+", str(text or ""))
+        for part in parts:
+            term = part.strip().strip(".").strip()
+            if term and term.lower() not in seen:
+                seen.add(term.lower())
+                out.append(term)
+    return out
+
+
+def write_user_preferences(metis_root: Path, answers: dict) -> dict:
+    """Write who the person is and what they follow into user-preferences.json.
+
+    This was the missing author. Setup collected a name, a role, a field and news
+    terms, and wrote them to the persona, user-config.yaml and user_topics — but
+    get_user_profile(), the News and Today surfaces, the brief and the setup
+    checklist all read user-preferences.json, which nothing in setup wrote. A
+    colleague who had just finished setup was greeted as "Researcher", with no
+    news interests, while the checklist still said setup was complete.
+
+    The keys are the ones update_user_interests() writes, so both authors agree:
+      library_interests  what to build a scientific background on: field, topics,
+                         methods
+      news_interests     what to watch in the news: the news answer only — a
+                         subject you work in is not automatically news you want
+      interests          union of both (older readers)
+      news_topics        mirror of news_interests (older readers)
+    A blank answer never erases a value already there: re-running setup to change
+    one thing must not wipe the rest.
+    """
+    import datetime
+    import json
+    import os
+
+    path = metis_root / "system" / "config" / "user-preferences.json"
+    prefs: dict = {}
+    if path.exists():
+        try:
+            prefs = json.loads(path.read_text(encoding="utf-8")) or {}
+        except (OSError, ValueError):
+            prefs = {}
+
+    for key, answer in (("display_name", "name"), ("role", "role"),
+                        ("institution", "institution")):
+        value = str(answers.get(answer) or "").strip()
+        if value:
+            prefs[key] = value[:120]
+
+    library = _terms(answers.get("field"), answers.get("topics"), answers.get("methods"))
+    news = _terms(answers.get("news_terms"))
+    if library:
+        prefs["library_interests"] = library
+    if news:
+        prefs["news_interests"] = news
+    final_news = prefs.get("news_interests") or []
+    final_library = prefs.get("library_interests") or []
+    prefs["news_topics"] = list(final_news)
+    prefs["interests"] = _terms(final_library, final_news)
+    prefs["interests_updated_at"] = datetime.datetime.now().isoformat(timespec="seconds")
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(prefs, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    os.replace(tmp, path)
+    return {"display_name": prefs.get("display_name", ""),
+            "library_interests": len(final_library), "news_interests": len(final_news)}
+
+
 def write_project_stubs(metis_root: Path, projects: list, scan_type: str = "names") -> list:
     """Write project records: SQLite entry + CLAUDE.md in project folder + planning card."""
     if not projects:
@@ -414,13 +511,8 @@ def write_project_stubs(metis_root: Path, projects: list, scan_type: str = "name
 
     written = []
     # Write to the LIVE DB the server actually reads — NOT system/app-py/data, which
-    # is the archived split-brain path (Keystone P1.4 / N6). Mirror db.get_db_path():
-    # METIS_DB → METIS_DATA_DIR → ~/.local/share/metis/metis.sqlite.
-    import os as _os
-    _data_dir = _os.environ.get("METIS_DATA_DIR") or _os.path.join(
-        _os.path.expanduser("~"), ".local", "share", "metis"
-    )
-    db_path = Path(_os.environ.get("METIS_DB") or _os.path.join(_data_dir, "metis.sqlite"))
+    # is the archived split-brain path (Keystone P1.4 / N6).
+    db_path = live_db_path(metis_root)
 
     for p in projects:
         # Support both old format (name string) and new format (dict with category/folder)
@@ -613,6 +705,7 @@ def process(answers: dict, metis_root: Path, api_key: str | None = None) -> dict
     result["config_path"] = str(write_user_config(metis_root, answers, topics))
     result["projects"] = [str(p) for p in write_project_stubs(metis_root, structured_projects, scan_type)]
     result["topics_written"] = write_user_topics(metis_root, answers)
+    result["profile_written"] = write_user_preferences(metis_root, answers)
     result["ai_used"] = ai_used
     result["topics"] = topics
     remove_first_run_marker(metis_root)

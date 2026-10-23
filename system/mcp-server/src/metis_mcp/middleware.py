@@ -165,7 +165,7 @@ def install(app: Any) -> None:
         # the API cannot be un-disclosed.
         if guard_on:
             try:
-                from metis_mcp.tools.files import _path_refusal
+                from metis_mcp.tools.files import _path_refusal, resolve_user_path
                 from pathlib import Path
 
                 for key, value in (arguments or {}).items():
@@ -174,7 +174,11 @@ def install(app: Any) -> None:
                     looks_like_path = key.lower() in _PATH_ARGS or value.startswith(("/", "~", "./", "../"))
                     if not looks_like_path:
                         continue
-                    refusal = _path_refusal(Path(value))
+                    # A relative value means "inside Metis", not inside whatever
+                    # directory the client launched the server from (Desktop
+                    # starts it in the Windows system folder, so a bare
+                    # filename was refused as outside the workspace).
+                    refusal = _path_refusal(resolve_user_path(value))
                     if refusal:
                         log.error("guard: BLOCKED %s(%s=%r) — %s", name, key, value[:80], refusal)
                         _audit(name, "BLOCKED", refusal[:120])

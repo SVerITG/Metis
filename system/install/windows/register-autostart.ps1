@@ -1,4 +1,4 @@
-# register-autostart.ps1
+﻿# register-autostart.ps1
 # Register the Metis Dashboard to auto-start at login AND stay alive via a
 # periodic heartbeat. The VBS script is idempotent — if uvicorn is already
 # running, it exits instantly. The heartbeat recovers from sleep/wake, WSL

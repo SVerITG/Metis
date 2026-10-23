@@ -43,9 +43,19 @@ class TestConfidentialDetection:
         assert r["classification"] == "CONFIDENTIAL", (text, r["warnings"])
 
     def test_sensitive_csv_header_is_confidential(self):
-        r = scan_content("nom,prenom,diagnosis\nx,y,z")
+        r = scan_content("nom,prenom,village\nx,y,z")
         assert r["classification"] == "CONFIDENTIAL"
         assert any("column" in w.lower() for w in r["warnings"])
+
+    def test_named_rows_with_a_result_are_a_sensitive_line_list(self):
+        # A name next to a clinical fact is individually identifying.
+        for header in ("nom,prenom,diagnosis", "name,village,gps,catt_result"):
+            r = scan_content(header + "\nx,y,z,w")
+            assert r["classification"] == "SENSITIVE", (header, r["warnings"])
+
+    def test_aggregate_counts_are_not_flagged(self):
+        r = scan_content("village,screened,catt_positive\nKibala,120,3")
+        assert r["safe"] is True
 
 
 class TestLowerSensitivity:
@@ -68,3 +78,59 @@ class TestPipelineUsesSharedScanner:
         from metis_mcp.tools.pipeline import _scan_safety
         text = "patient_id: 4521"
         assert _scan_safety(text)["classification"] == scan_content(text)["classification"] == "SENSITIVE"
+
+
+class TestAnonymizeTables:
+    """A pasted line-list: identifiers sit in cells with no cue word beside them."""
+
+    TABLE = (
+        "case_id,name,date_of_birth,phone,gps,test_result\n"
+        "C-1,Anne-Sophie Example,1990-01-02,+32 470 12 34 56,-4.3317 15.2662,positive\n"
+        "C-2,Paul Sample,1985-05-06,+32 471 98 76 54,-4.4410 15.7790,negative"
+    )
+
+    def _anon(self, text):
+        import asyncio
+        import json
+        from metis_mcp.tools.anonymization import anonymize_text
+        return json.loads(asyncio.run(anonymize_text(content=text, replace_names=True))[0].text)
+
+    def test_identifier_columns_are_masked(self):
+        out = self._anon(self.TABLE)["anonymized"]
+        for leaked in ("Anne", "Sophie", "1990-01-02", "15.2662", "470 12"):
+            assert leaked not in out, leaked
+
+    def test_outcome_columns_are_kept(self):
+        out = self._anon(self.TABLE)["anonymized"]
+        assert "positive" in out and "negative" in out
+
+    def test_hyphenated_first_name_is_masked_whole(self):
+        out = self._anon("the form was signed by Anne-Sophie Example.")["anonymized"]
+        assert "Anne" not in out
+
+
+def test_one_warning_per_label():
+    r = scan_content("call +243 812 345 678 or +243 997 001 223")
+    phone = [w for w in r["warnings"] if w.startswith("Phone number")]
+    assert len(phone) == 1
+
+
+def test_consent_event_logs_on_an_installer_built_table(tmp_path, monkeypatch):
+    """schema.sql created consent_ledger without session_id; every insert failed."""
+    import asyncio
+    import sqlite3
+    from metis_mcp.config import paths
+    from metis_mcp.tools.anonymization import get_consent_ledger, log_consent_event
+
+    db = tmp_path / "t.sqlite"
+    con = sqlite3.connect(db)
+    con.execute("""CREATE TABLE consent_ledger (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp TEXT NOT NULL DEFAULT (datetime('now')),
+        action TEXT NOT NULL, data_classification TEXT DEFAULT 'PUBLIC',
+        agent_slug TEXT DEFAULT '', notes TEXT DEFAULT '')""")
+    con.commit()
+    con.close()
+    monkeypatch.setattr(paths, "db", db)
+    asyncio.run(log_consent_event(action="blocked", data_classification="SENSITIVE"))
+    assert "blocked" in asyncio.run(get_consent_ledger(limit=5))[0].text

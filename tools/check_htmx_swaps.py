@@ -153,7 +153,12 @@ def main() -> int:
                     continue
                 body = inner_of(src, m.end())
                 if re.search(r'<h[1-6]\b', body) or "sec_label(" in body:
-                    served = fetch(base, url) or ""
+                    served = fetch(base, url)
+                    # An empty 200 removes the whole section, heading and all —
+                    # the "nothing to show" case, not a heading lost on load.
+                    if served is not None and not served.strip():
+                        continue
+                    served = served or ""
                     # only a problem if the partial does NOT supply its own
                     if not (re.search(r'<h[1-6]\b', served) or 'class="sec-label' in served):
                         problems.append(

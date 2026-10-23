@@ -1,124 +1,492 @@
-# Pinned from working venv — 2026-07-13
-# Regenerate: pip freeze | grep -v metis-mcp-server > requirements.txt
-mcp==1.27.0
-pyyaml==6.0.3
-requests==2.33.1
-fastapi==0.136.0
-uvicorn==0.45.0
-uvloop==0.22.1
-watchfiles==1.1.1
-python-multipart==0.0.26
-httpx==0.28.1
-httpx-sse==0.4.3
-anyio==4.13.0
-starlette==1.0.0
-sse-starlette==3.3.4
-pydantic==2.13.3
-pydantic-settings==2.14.0
-pydantic_core==2.46.3
-# Phase 5 — vector memory
-sqlite-vec==0.1.9
-onnxruntime==1.24.4
-tokenizers==0.22.2
-# Phase 6 — encryption
-cryptography==46.0.7
-# Phase 7 / data tools
-pandas==3.0.2
-openpyxl==3.1.5
-pyreadstat==1.3.4
-numpy==2.4.4
-# Phase L — PDF knowledge indexing
-pymupdf==1.27.2.3
-pdfminer.six==20260107
-# Phase 8.8 — content scan
-feedparser==6.0.12
-# Phase 10 — Zotero/library connector
-pyzotero==1.11.1
-scikit-learn==1.8.0
-# Phase 12 — Claude API access
-anthropic==0.116.0
-# Optional integrations
-google-genai==1.73.1
-twilio==9.10.5
-# Embedding extra
-fastembed==0.8.0
-# Library extra (PaperQA2)
-paper-qa==2026.3.18
-paper-qa-pypdf==2026.3.18
-# Voice extra — transcription + speaker ID
-faster-whisper==1.2.1
-Resemblyzer==0.1.4
-soundfile==0.14.0
-# Diarization (pyannote + torch audio)
-pyannote-audio==4.0.7
-pyannote-core==6.0.1
-pyannote-database==6.1.1
-pyannote-metrics==4.1
-pyannote-pipeline==4.0.0
-torchaudio==2.11.0
-# PyTorch + CUDA (GPU inference)
-torch==2.12.0
-torchvision==0.27.0
-# OCR extra
-pillow==12.2.0
-# Document processing
-beautifulsoup4==4.14.3
-python-docx==1.2.0
-python-pptx==1.0.2
-bibtexparser==1.4.4
-Markdown==3.10.2
-html2text==2025.4.15
-# Docling (advanced document parsing)
-docling==2.94.0
-docling-core==2.76.0
-docling-ibm-models==3.13.2
-docling-parse==5.11.0
-# LiteLLM (multi-model routing)
-litellm==1.83.10
-openai==2.24.0
-tiktoken==0.12.0
-# Tree-sitter (code analysis)
-tree-sitter==0.25.2
-tree-sitter-python==0.25.0
-# Audio processing
-librosa==0.11.0
-webrtcvad==2.0.10
-# ML / transformers
-transformers==5.8.1
-safetensors==0.7.0
-huggingface_hub==1.15.0
-accelerate==1.13.0
-# Transitive (keep pinned for reproducibility)
+# Version lock for the MCP server AND the dashboard — one resolution, so the two
+# can never ask for incompatible versions of a shared package.
+#
+# The installers use it as a CONSTRAINT file (pip/uv `-c`), not a package list:
+# pyproject.toml and app-py/requirements.txt say WHAT is installed, this file
+# says WHICH version. A hand-pinned list here once asked for two versions that
+# cannot coexist, and every fresh install failed for three months.
+#
+# Generated — do not edit. Regenerate with:  bash tools/lock-requirements.sh
+aiofiles==25.1.0
+    # via -r system/app-py/requirements.txt
+aiohappyeyeballs==2.6.2
+    # via aiohttp
+aiohttp==3.13.3
+    # via
+    #   aiohttp-retry
+    #   fhlmi
+    #   httpx-aiohttp
+    #   litellm
+    #   twilio
+aiohttp-retry==2.9.1
+    # via twilio
+aiosignal==1.4.0
+    # via aiohttp
+annotated-doc==0.0.4
+    # via
+    #   fastapi
+    #   typer
 annotated-types==0.7.0
+    # via pydantic
+anthropic==0.104.1
+    # via
+    #   -r system/app-py/requirements.txt
+    #   metis-mcp-server (system/mcp-server/pyproject.toml)
+anyio==4.13.0
+    # via
+    #   anthropic
+    #   google-genai
+    #   httpx
+    #   mcp
+    #   openai
+    #   paper-qa
+    #   sse-starlette
+    #   starlette
+    #   watchfiles
+apscheduler==3.11.2
+    # via -r system/app-py/requirements.txt
+async-timeout==5.0.1
+    # via coredis
+attrs==26.1.0
+    # via
+    #   aiohttp
+    #   jsonschema
+    #   referencing
+beartype==0.22.9
+    # via coredis
+bibtexparser==1.4.4
+    # via pyzotero
 certifi==2026.2.25
+    # via
+    #   httpcore
+    #   httpx
+    #   requests
 cffi==2.0.0
+    # via
+    #   cryptography
+    #   soundfile
 charset-normalizer==3.4.7
-click==8.3.2
-h11==0.16.0
-httpcore==1.0.9
-httptools==0.7.1
-idna==3.12
-loguru==0.7.3
-rich==15.0.0
-sniffio==1.3.1
-typing_extensions==4.15.0
-urllib3==2.6.3
-websockets==16.0
-packaging==25.0
-setuptools==81.0.0
+    # via
+    #   pdfminer-six
+    #   requests
+click==8.1.8
+    # via
+    #   litellm
+    #   uvicorn
+colorama==0.4.6 ; sys_platform == 'win32'
+    # via
+    #   click
+    #   loguru
+    #   tqdm
+    #   typer
+    #   uvicorn
+coredis==5.7.0
+    # via
+    #   fhlmi
+    #   limits
+cryptography==46.0.7
+    # via
+    #   metis-mcp-server (system/mcp-server/pyproject.toml)
+    #   google-auth
+    #   pdfminer-six
+    #   pyjwt
+deprecated==1.3.1
+    # via
+    #   coredis
+    #   limits
+distro==1.9.0
+    # via
+    #   anthropic
+    #   google-genai
+    #   openai
+docstring-parser==0.18.0
+    # via
+    #   anthropic
+    #   fhaviary
+et-xmlfile==2.0.0
+    # via openpyxl
+fastapi==0.136.0
+    # via
+    #   -r system/app-py/requirements.txt
+    #   metis-mcp-server (system/mcp-server/pyproject.toml)
+fastembed==0.8.0
+    # via metis-mcp-server (system/mcp-server/pyproject.toml)
+fastuuid==0.14.0
+    # via litellm
+feedparser==6.0.12
+    # via
+    #   metis-mcp-server (system/mcp-server/pyproject.toml)
+    #   pyzotero
+fhaviary==0.35.0
+    # via
+    #   fhlmi
+    #   paper-qa
+fhlmi==0.46.0
+    # via
+    #   fhaviary
+    #   paper-qa
 filelock==3.29.0
+    # via huggingface-hub
+flatbuffers==25.12.19
+    # via onnxruntime
+frozenlist==1.8.0
+    # via
+    #   aiohttp
+    #   aiosignal
 fsspec==2026.4.0
-regex==2026.5.9
-tqdm==4.67.3
-scipy==1.17.1
+    # via huggingface-hub
+google-auth==2.53.0
+    # via google-genai
+google-genai==1.73.1
+    # via metis-mcp-server (system/mcp-server/pyproject.toml)
+h11==0.16.0
+    # via
+    #   httpcore
+    #   uvicorn
+hf-xet==1.5.0 ; platform_machine == 'AMD64' or platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'arm64' or platform_machine == 'x86_64'
+    # via huggingface-hub
+html2text==2025.4.15
+    # via paper-qa
+httpcore==1.0.9
+    # via httpx
+httptools==0.7.1
+    # via uvicorn
+httpx==0.28.1
+    # via
+    #   -r system/app-py/requirements.txt
+    #   metis-mcp-server (system/mcp-server/pyproject.toml)
+    #   anthropic
+    #   fhaviary
+    #   google-genai
+    #   httpx-aiohttp
+    #   huggingface-hub
+    #   litellm
+    #   mcp
+    #   openai
+    #   paper-qa
+    #   pyzotero
+httpx-aiohttp==0.1.12
+    # via
+    #   fhaviary
+    #   paper-qa
+httpx-sse==0.4.3
+    # via mcp
+huggingface-hub==1.16.0
+    # via
+    #   fastembed
+    #   tokenizers
+idna==3.12
+    # via
+    #   anyio
+    #   httpx
+    #   requests
+    #   yarl
+importlib-metadata==8.5.0
+    # via litellm
+jinja2==3.1.6
+    # via
+    #   -r system/app-py/requirements.txt
+    #   litellm
+jiter==0.15.0
+    # via
+    #   anthropic
+    #   openai
 joblib==1.5.3
-networkx==3.6.1
-Jinja2==3.1.6
-MarkupSafe==3.0.3
+    # via scikit-learn
+jsonschema==4.23.0
+    # via
+    #   litellm
+    #   mcp
+jsonschema-specifications==2025.9.1
+    # via jsonschema
+latexcodec==3.0.1
+    # via pybtex
+limits==5.8.0
+    # via fhlmi
+litellm==1.83.10
+    # via
+    #   fhaviary
+    #   fhlmi
+loguru==0.7.3
+    # via fastembed
+markdown==3.10.2
+    # via -r system/app-py/requirements.txt
+markdown-it-py==4.2.0
+    # via rich
+markupsafe==3.0.3
+    # via jinja2
+mcp==1.27.0
+    # via metis-mcp-server (system/mcp-server/pyproject.toml)
+mdurl==0.1.2
+    # via markdown-it-py
+mmh3==5.2.1
+    # via fastembed
+mpmath==1.3.0
+    # via sympy
+multidict==6.7.1
+    # via
+    #   aiohttp
+    #   yarl
+narwhals==2.21.2
+    # via pyreadstat
+numpy==2.4.4
+    # via
+    #   fastembed
+    #   onnxruntime
+    #   pandas
+    #   paper-qa
+    #   pyreadstat
+    #   scikit-learn
+    #   scipy
+    #   soundfile
+onnxruntime==1.24.4
+    # via
+    #   metis-mcp-server (system/mcp-server/pyproject.toml)
+    #   fastembed
+openai==2.24.0
+    # via
+    #   fhlmi
+    #   litellm
+openpyxl==3.1.5
+    # via metis-mcp-server (system/mcp-server/pyproject.toml)
 orjson==3.11.9
-psutil==7.2.2
+    # via fhlmi
+packaging==25.0
+    # via
+    #   coredis
+    #   fhaviary
+    #   huggingface-hub
+    #   limits
+    #   onnxruntime
+    #   pytesseract
+pandas==3.0.2
+    # via metis-mcp-server (system/mcp-server/pyproject.toml)
+paper-qa==2026.3.18
+    # via
+    #   metis-mcp-server (system/mcp-server/pyproject.toml)
+    #   paper-qa-pypdf
+paper-qa-pypdf==2026.3.18
+    # via paper-qa
+pdfminer-six==20260107
+    # via metis-mcp-server (system/mcp-server/pyproject.toml)
+pillow==12.2.0
+    # via
+    #   metis-mcp-server (system/mcp-server/pyproject.toml)
+    #   fastembed
+    #   pytesseract
+propcache==0.5.2
+    # via
+    #   aiohttp
+    #   yarl
+protobuf==7.35.0
+    # via onnxruntime
+py-rust-stemmers==0.1.5
+    # via fastembed
+pyasn1==0.6.3
+    # via pyasn1-modules
+pyasn1-modules==0.4.2
+    # via google-auth
+pybtex==0.26.1
+    # via paper-qa
+pycparser==3.0 ; implementation_name != 'PyPy'
+    # via cffi
+pydantic==2.12.5
+    # via
+    #   anthropic
+    #   fastapi
+    #   fhaviary
+    #   fhlmi
+    #   google-genai
+    #   litellm
+    #   mcp
+    #   openai
+    #   paper-qa
+    #   pydantic-settings
+pydantic-core==2.41.5
+    # via
+    #   fhaviary
+    #   pydantic
+pydantic-settings==2.14.0
+    # via
+    #   mcp
+    #   paper-qa
+pygments==2.20.0
+    # via rich
+pyjwt==2.12.1
+    # via
+    #   mcp
+    #   twilio
+pympler==1.1
+    # via coredis
+pymupdf==1.27.2.3
+    # via metis-mcp-server (system/mcp-server/pyproject.toml)
+pyparsing==3.3.2
+    # via bibtexparser
+pypdf==6.12.2
+    # via paper-qa-pypdf
+pyreadstat==1.3.4
+    # via metis-mcp-server (system/mcp-server/pyproject.toml)
+pytesseract==0.3.13
+    # via metis-mcp-server (system/mcp-server/pyproject.toml)
 python-dateutil==2.9.0.post0
+    # via pandas
+python-dotenv==1.0.1
+    # via
+    #   litellm
+    #   pydantic-settings
+    #   uvicorn
+python-multipart==0.0.26
+    # via
+    #   -r system/app-py/requirements.txt
+    #   metis-mcp-server (system/mcp-server/pyproject.toml)
+    #   mcp
+pywin32==312 ; sys_platform == 'win32'
+    # via
+    #   mcp
+    #   pympler
+pyyaml==6.0.3
+    # via
+    #   metis-mcp-server (system/mcp-server/pyproject.toml)
+    #   huggingface-hub
+    #   pybtex
+    #   uvicorn
+pyzotero==1.12.0
+    # via metis-mcp-server (system/mcp-server/pyproject.toml)
+referencing==0.37.0
+    # via
+    #   jsonschema
+    #   jsonschema-specifications
+regex==2026.5.9
+    # via tiktoken
+requests==2.33.1
+    # via
+    #   metis-mcp-server (system/mcp-server/pyproject.toml)
+    #   fastembed
+    #   google-auth
+    #   google-genai
+    #   tiktoken
+    #   twilio
+rich==15.0.0
+    # via
+    #   paper-qa
+    #   typer
+rpds-py==0.30.0
+    # via
+    #   jsonschema
+    #   referencing
+scikit-learn==1.8.0
+    # via metis-mcp-server (system/mcp-server/pyproject.toml)
+scipy==1.17.1
+    # via scikit-learn
+setuptools==81.0.0
+    # via paper-qa
+sgmllib3k==1.0.0
+    # via feedparser
+shellingham==1.5.4
+    # via typer
 six==1.17.0
-sortedcontainers==2.4.0
-tabulate==0.10.0
+    # via python-dateutil
+sniffio==1.3.1
+    # via
+    #   anthropic
+    #   google-genai
+    #   openai
+soundfile==0.13.1
+    # via -r system/app-py/requirements.txt
+sqlite-vec==0.1.9
+    # via metis-mcp-server (system/mcp-server/pyproject.toml)
+sse-starlette==3.3.4
+    # via mcp
+starlette==1.0.0
+    # via
+    #   fastapi
+    #   mcp
+    #   sse-starlette
+sympy==1.14.0
+    # via onnxruntime
+tantivy==0.26.0
+    # via paper-qa
+tenacity==9.1.4
+    # via
+    #   google-genai
+    #   paper-qa
 threadpoolctl==3.6.0
+    # via scikit-learn
+tiktoken==0.12.0
+    # via
+    #   fhlmi
+    #   litellm
+    #   paper-qa
+tokenizers==0.22.2
+    # via
+    #   metis-mcp-server (system/mcp-server/pyproject.toml)
+    #   fastembed
+    #   litellm
+tqdm==4.67.3
+    # via
+    #   fastembed
+    #   huggingface-hub
+    #   openai
+twilio==9.10.5
+    # via metis-mcp-server (system/mcp-server/pyproject.toml)
+typer==0.26.4
+    # via huggingface-hub
+typing-extensions==4.15.0
+    # via
+    #   aiosignal
+    #   anthropic
+    #   anyio
+    #   coredis
+    #   fastapi
+    #   google-genai
+    #   huggingface-hub
+    #   limits
+    #   mcp
+    #   openai
+    #   pydantic
+    #   pydantic-core
+    #   referencing
+    #   starlette
+    #   typing-inspection
+typing-inspection==0.4.2
+    # via
+    #   fastapi
+    #   mcp
+    #   pydantic
+    #   pydantic-settings
+tzdata==2026.5 ; sys_platform == 'emscripten' or sys_platform == 'win32'
+    # via
+    #   pandas
+    #   tzlocal
+    #   whenever
+tzlocal==5.3.1
+    # via
+    #   apscheduler
+    #   whenever
+urllib3==2.6.3
+    # via requests
+uvicorn==0.45.0
+    # via
+    #   -r system/app-py/requirements.txt
+    #   metis-mcp-server (system/mcp-server/pyproject.toml)
+    #   mcp
+uvloop==0.22.1 ; platform_python_implementation != 'PyPy' and sys_platform != 'cygwin' and sys_platform != 'win32'
+    # via uvicorn
+watchfiles==1.1.1
+    # via uvicorn
+webrtcvad-wheels==2.0.14
+    # via -r system/app-py/requirements.txt
+websockets==16.0
+    # via
+    #   google-genai
+    #   uvicorn
+whenever==0.10.0
+    # via pyzotero
+win32-setctime==1.2.0 ; sys_platform == 'win32'
+    # via loguru
+wrapt==2.2.1
+    # via deprecated
+yarl==1.24.2
+    # via aiohttp
+zipp==4.1.0
+    # via importlib-metadata

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Tour — Metis{% endblock %}
+
+{% block content %}
+<div class="page" style="max-width:860px;">
+
+  <div class="page-head">
+    <div>
+      <div class="page-eyebrow">Getting started</div>
+      <h1 class="page-title">A tour of Metis</h1>
+      <p style="color:var(--m-muted);margin:var(--m-space-2) 0 0;">
+        Metis has two halves: this dashboard, where your work is laid out, and Claude
+        (Desktop or Code), where you talk to it. They share one memory — what you do in
+        one shows up in the other. Ten minutes here is enough to find your way.
+        {% if demo %}You are looking at a fictional researcher's sample workspace, so every
+        stop below has something in it.{% endif %}
+      </p>
+    </div>
+  </div>
+
+  <h2 style="font-size:var(--t-h4);margin:var(--m-space-6) 0 var(--m-space-3);">Part 1 — the dashboard</h2>
+  <ol style="display:grid;gap:var(--m-space-3);padding-left:1.4em;margin:0;">
+    {% for href, name, what, try_this in stops %}
+    <li style="padding:var(--m-space-3) var(--m-space-4);border:1px solid var(--m-rule);border-radius:var(--m-radius);background:var(--m-surface);">
+      <div style="display:flex;justify-content:space-between;gap:var(--m-space-3);align-items:baseline;flex-wrap:wrap;">
+        <strong>{{ name }}</strong>
+        <a class="u-mono" href="{{ href }}" style="letter-spacing:0.08em;">OPEN {{ name|upper }} →</a>
+      </div>
+      <div style="margin-top:var(--m-space-1);">{{ what }}</div>
+      <div style="margin-top:var(--m-space-1);color:var(--m-muted);font-size:var(--t-meta);">Try: {{ try_this }}</div>
+    </li>
+    {% endfor %}
+  </ol>
+
+  <h2 style="font-size:var(--t-h4);margin:var(--m-space-7) 0 var(--m-space-3);">Part 2 — talking to Metis in Claude Desktop</h2>
+  <ol style="display:grid;gap:var(--m-space-3);padding-left:1.4em;margin:0;">
+    <li><strong>Open Claude Desktop.</strong> Setup already connected Metis to it — use the
+      "Metis — Open AI" shortcut. If Claude Desktop was open during setup, quit it fully
+      (also from the tray icon) and open it again so it picks Metis up.</li>
+    <li><strong>Check that Metis is there.</strong> In the message box, open the tools menu
+      (the sliders or "+" icon): <em>metis-rc</em> should be listed and switched on.</li>
+    <li><strong>Just ask, in plain words.</strong> Metis picks the right specialist itself. For example:
+      <ul style="margin:var(--m-space-2) 0 0;color:var(--m-muted);">
+        <li>"What's on my plate today?"</li>
+        <li>"Find recent papers on my main topic and tell me which matter for my project."</li>
+        <li>"I just had a meeting — here are my notes. Pull out the decisions and tasks."</li>
+        <li>"Review the methods section I'm pasting below."</li>
+      </ul>
+    </li>
+    <li><strong>Use the ready-made prompts.</strong> The "+" menu in the message box has a
+      Metis section: <em>metis</em> (route any request), <em>metis-morning</em> (your
+      briefing), <em>metis-capture</em> (save an idea or task), <em>metis-doctor</em>
+      (is everything working?), and one per specialist.</li>
+    <li><strong>Watch it land here.</strong> A task Claude creates appears on Work, a paper
+      it finds appears in the Library, and the work it did shows on the Metis tab.</li>
+    <li><strong>Using Claude Code instead?</strong> Open a terminal in your Metis folder and
+      run <code>claude</code>. The same tools and memory are available there.</li>
+  </ol>
+
+  <div class="u-row u-row--wrap" style="margin:var(--m-space-7) 0 var(--m-space-6);padding:var(--m-space-4);border:1px solid var(--m-rule);border-radius:var(--m-radius);gap:var(--m-space-3);">
+    {% if demo %}
+    <span class="u-grow" style="min-width:220px;">Ready for your own workspace? Leaving the demo removes every sample item; your setup answers are kept.</span>
+    <button onclick="fetch('/api/setup/exit-demo',{method:'POST'}).then(()=>location.href='/setup')"
+            class="btn btn--primary">Exit demo and set up mine</button>
+    {% else %}
+    <span class="u-grow" style="min-width:220px;">Want to see Metis with something in it first? Load the fictional sample workspace — you can remove it with one click.</span>
+    <button onclick="fetch('/api/setup/seed-demo',{method:'POST'}).then(r=>r.json()).then(d=>{if(d.ok){location.reload()}else{alert(d.error||'Could not load the demo')}})"
+            class="btn btn--primary">Load the sample workspace</button>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

@@ -118,143 +118,91 @@ def _ensure_tables(conn):
 
 
 @app.tool()
-async def generate_daily_insight() -> list[TextContent]:
-    """Assemble recent activity into context for the daily insight.
+async def generate_daily_insight(period: str = "daily") -> list[TextContent]:
+    """Prepare everything needed to write a brief: the writing recipe and the context.
 
-    Gathers the raw material for a "what's happening across your research"
-    digest: the last 7 days of agent_runs summaries, last 3 days of high-signal
-    news_briefs, last 14 days of meeting titles, and last 7 days of new library
-    additions. It stores a placeholder row in daily_insights; the Metis agent
-    does the actual synthesis from the returned context. Read the stored result
-    later with get_daily_insight.
+    The session half of the daily-brief round-trip, for machines whose dashboard
+    cannot call the API itself. Returns the SAME instructions and the SAME
+    context the dashboard's own generator uses (metis_mcp.tools.brief_prompt and
+    assemble_*_context), so a brief written here reads like one written there:
+    continuous prose, the freshness contract, and a coverage footer that keeps
+    tomorrow's brief from repeating today's lead. Write the brief by following
+    the instructions exactly, then pass it, footer included, to save_daily_brief
+    with the date key this returns.
 
-    Takes no arguments.
+    Args:
+        period: "daily" (default), "weekly", or "catchup".
 
     Returns:
-        A text block of the assembled recent context (and the sources drawn on)
-        for the agent to synthesize into a daily insight.
+        The writing instructions, the context, and the exact save call to make.
     """
+    from metis_mcp.config import get_root
+    from metis_mcp.tools import brief_prompt as bp
+
+    if period not in bp.KEY_SUFFIXES:
+        return [TextContent(type="text", text=(
+            f"Unknown period {period!r}: use daily, weekly or catchup."))]
     if not paths.db.exists():
         return [TextContent(type="text", text=f"Database not found: {paths.db}")]
+    db_path = str(paths.db)
 
-    now = datetime.datetime.now(datetime.timezone.utc)
-    today = now.strftime("%Y-%m-%d")
-    d7 = (now - datetime.timedelta(days=7)).isoformat()
-    d3 = (now - datetime.timedelta(days=3)).isoformat()
-    d14 = (now - datetime.timedelta(days=14)).isoformat()
-
-    sources_used = []
-    context_parts = []
-
+    last = bp.last_brief_at(db_path)
+    days_since_last = max(1, (datetime.datetime.now() - last).days) if last else 1
     try:
-        with connect(paths.db) as conn:
-            _ensure_tables(conn)
-
-            # 1. Agent runs (last 7 days)
-            _table_exists = conn.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name='agent_runs'"
-            ).fetchone()
-            if _table_exists:
-                cur = conn.execute(
-                    "SELECT agent_slug, task_summary, created_at FROM agent_runs "
-                    "WHERE created_at >= ? ORDER BY created_at DESC LIMIT 30",
-                    (d7,),
-                )
-                rows = cur.fetchall()
-                if rows:
-                    lines = ["## Recent Agent Activity (7d)\n"]
-                    for r in rows:
-                        lines.append(f"- [{r['agent_slug']}] {r['task_summary']}")
-                    context_parts.append("\n".join(lines))
-                    sources_used.append(f"agent_runs:{len(rows)}")
-
-            # 2. News briefs (last 3 days)
-            _table_exists = conn.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name='news_briefs'"
-            ).fetchone()
-            if _table_exists:
-                cur = conn.execute(
-                    "SELECT title, summary FROM news_briefs "
-                    "WHERE rowid IN (SELECT rowid FROM news_briefs ORDER BY rowid DESC LIMIT 20) "
-                    "LIMIT 10",
-                )
-                rows = cur.fetchall()
-                if rows:
-                    lines = ["## Recent News (3d)\n"]
-                    for r in rows:
-                        title = r["title"] or ""
-                        summary = str(r["summary"] or "")[:200]
-                        lines.append(f"- **{title}**: {summary}")
-                    context_parts.append("\n".join(lines))
-                    sources_used.append(f"news_briefs:{len(rows)}")
-
-            # 3. Meetings (last 14 days)
-            _table_exists = conn.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name='meetings'"
-            ).fetchone()
-            if _table_exists:
-                cur = conn.execute(
-                    "SELECT title, date FROM meetings ORDER BY date DESC LIMIT 15",
-                )
-                rows = cur.fetchall()
-                if rows:
-                    lines = ["## Recent Meetings (14d)\n"]
-                    for r in rows:
-                        lines.append(f"- {r['title']} ({r['date']})")
-                    context_parts.append("\n".join(lines))
-                    sources_used.append(f"meetings:{len(rows)}")
-
-            # 4. Library additions (last 7 days)
-            _table_exists = conn.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name='library_seeded'"
-            ).fetchone()
-            if _table_exists:
-                cur = conn.execute(
-                    "SELECT title, relevance_note FROM library_seeded "
-                    "ORDER BY rowid DESC LIMIT 10",
-                )
-                rows = cur.fetchall()
-                if rows:
-                    lines = ["## Recent Library Additions\n"]
-                    for r in rows:
-                        note = str(r["relevance_note"] or "")[:150]
-                        lines.append(f"- {r['title']}: {note}")
-                    context_parts.append("\n".join(lines))
-                    sources_used.append(f"library_seeded:{len(rows)}")
-
-            # Store placeholder
-            assembled = "\n\n".join(context_parts) if context_parts else "No recent context available."
-            sources_str = ", ".join(sources_used)
-
-            conn.execute(
-                """INSERT INTO daily_insights (insight_date, content, sources, generated_at)
-                   VALUES (?, ?, ?, ?)
-                   ON CONFLICT(insight_date) DO UPDATE SET
-                       content = excluded.content,
-                       sources = excluded.sources,
-                       generated_at = excluded.generated_at""",
-                (today, assembled, sources_str, now.isoformat()),
-            )
-            conn.commit()
-
-        result = {
-            "date": today,
-            "context_assembled": assembled,
-            "sources_used": sources_used,
-        }
-
-        lines = [
-            f"**Daily insight context assembled for {today}**",
-            f"Sources: {sources_str or 'none'}",
-            f"Context length: {len(assembled)} chars",
-            "",
-            assembled[:2000] + ("..." if len(assembled) > 2000 else ""),
-        ]
-
-        return [TextContent(type="text", text="\n".join(lines))]
-
+        if period == "weekly":
+            ctx = assemble_weekly_context(db_path)
+        elif period == "catchup":
+            prev = ""
+            try:
+                with connect(paths.db) as conn:
+                    row = conn.execute(
+                        "SELECT content FROM daily_insights "
+                        "WHERE model IN ('claude-haiku-brief','desktop-brief') "
+                        "AND content IS NOT NULL ORDER BY insight_date DESC LIMIT 1"
+                    ).fetchone()
+                    prev = row[0] if row and row[0] else ""
+            except Exception:
+                pass
+            ctx = assemble_catchup_context(db_path, last.isoformat() if last else "", prev)
+        else:
+            ctx = assemble_daily_context(db_path)
     except Exception as e:
-        return [TextContent(type="text", text=f"Error generating daily insight: {e}")]
+        return [TextContent(type="text", text=f"Error assembling brief context: {e}")]
+
+    if not ctx.get("context"):
+        return [TextContent(type="text", text=(
+            "No context to brief from: no recent news, papers or projects in the "
+            "database. Run the news and literature scans first."))]
+
+    profile = bp.load_profile(get_root(), db_path)
+    period_desc = bp.describe_period(period, days_since_last)
+    instructions = bp.brief_system_prompt(
+        period=period,
+        name=profile["name"],
+        field=profile["field"],
+        interests=profile["interests"],
+        topics=profile["topics"],
+        period_desc=period_desc,
+        gap_label=bp.gap_label_for(days_since_last),
+    )
+    key = bp.insight_key(period)
+    text = "\n".join([
+        f"# Writing the {period} brief for {key}",
+        "",
+        "Follow these instructions exactly. They are the ones the dashboard's own "
+        "generator uses; do not add headers, bullets, a date line or a sign-off.",
+        "",
+        "## Instructions",
+        instructions,
+        "",
+        f"## Research context for {period_desc}",
+        ctx["context"][:bp.CONTEXT_CHARS],
+        "",
+        "## Save it",
+        f'save_daily_brief(content=<the brief, with its <<THREADS: ...>> line last>, date="{key}")',
+        "The footer line is stripped before display and recorded as coverage.",
+    ])
+    return [TextContent(type="text", text=text)]
 
 
 @app.tool()
@@ -262,38 +210,59 @@ async def save_daily_brief(
     content: str,
     sources: str = "",
     date: str = "",
-    model: str = "desktop-brief",
+    model: str = "",
 ) -> list[TextContent]:
-    """Save a composed daily brief so the dashboard widget shows it.
+    """Save a composed brief so the dashboard widget shows it.
 
-    This is the write-back half of the daily-brief round-trip. Claude Desktop (or
-    Claude Code) composes the brief from generate_daily_insight() context, then
-    calls this to upsert the finished prose into the daily_insights table — the
-    same table the dashboard's morning-brief widget reads via get_daily_insight().
-    Desktop and the dashboard share one database, so no files are involved: once
-    saved, the brief appears in the dashboard on next load.
+    The write-back half of the brief round-trip: Claude Desktop or Claude Code
+    writes the brief from generate_daily_insight(), then calls this. It stores
+    the brief exactly as the dashboard's own generator would — the coverage
+    footer is stripped and recorded (so tomorrow's brief does not repeat
+    today's lead), and the source links shown under the brief are filled in.
 
     Args:
-        content: The finished daily-brief prose (markdown ok). Required.
-        sources: Comma-separated list of what the brief drew on (optional).
-        date: YYYY-MM-DD; empty = today.
-        model: Model identifier that composed it, for provenance (optional).
+        content: The finished brief, ending with its <<THREADS: ...>> line. Required.
+        sources: Leave empty — the source links are filled in from the news table.
+        date: The key generate_daily_insight returned: YYYY-MM-DD, or with a
+            -weekly / -catchup suffix. Empty = today's daily brief.
+        model: Provenance tag. Empty = desktop-brief / desktop-weekly /
+            desktop-catchup, matching the suffix, which is what the dashboard reads.
 
     Returns:
-        Confirmation with the date saved and a pointer to the dashboard widget.
+        Confirmation with the key saved and what was recorded.
     """
+    import json as _json
+    from metis_mcp.tools import brief_prompt as bp
+    from metis_mcp.tools.news_threads import parse_coverage_footer, record_coverage
+
     if not paths.db.exists():
         return [TextContent(type="text", text=f"Database not found: {paths.db}")]
     if not (content or "").strip():
         return [TextContent(type="text", text="Nothing saved: `content` is empty.")]
 
-    now = datetime.datetime.now(datetime.timezone.utc)
+    # Naive local time, like every other daily_insights row. A UTC-aware stamp
+    # crashed the dashboard's naive date arithmetic, and a UTC date filed a
+    # brief written just after local midnight under the previous day.
+    now = datetime.datetime.now()
     if not date:
         date = now.strftime("%Y-%m-%d")
+    period = bp.period_from_key(date)
+    # The dashboard reads weekly and catch-up briefs by tag. A default of
+    # desktop-brief filed them under a tag those panels never look for.
+    model = model or bp.SESSION_MODEL_TAGS[period]
+
+    content, coverage = parse_coverage_footer(content)
 
     try:
         with connect(paths.db) as conn:
             _ensure_tables(conn)
+            if not sources:
+                try:
+                    last = bp.last_brief_at(str(paths.db))
+                    days = max(1, (now - last).days) if last else 1
+                    sources = _json.dumps(bp.source_items(conn, days))
+                except Exception:
+                    sources = ""
             conn.execute(
                 """INSERT INTO daily_insights (insight_date, content, sources, generated_at, model)
                    VALUES (?, ?, ?, ?, ?)
@@ -305,8 +274,13 @@ async def save_daily_brief(
                 (date, content, sources, now.isoformat(), model),
             )
             conn.commit()
+            recorded = record_coverage(conn, date, period, coverage) if coverage else 0
+        note = (f"{recorded} story thread(s) recorded, so they go quiet once it is read."
+                if recorded else
+                "No <<THREADS: ...>> footer found, so nothing was recorded and "
+                "tomorrow's brief may repeat today's lead.")
         return [TextContent(type="text", text=(
-            f"Daily brief saved for {date} ({len(content)} chars). "
+            f"Brief saved for {date} ({len(content)} chars, {model}). {note} "
             f"It will appear in the dashboard's morning-brief widget on next load."
         ))]
     except Exception as e:

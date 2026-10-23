@@ -754,16 +754,24 @@ def _strip_doi(doi: str) -> str:
 
 
 def _crossref(doi: str) -> dict | None:
-    """Fetch one Crossref record. Returns None if it does not resolve."""
-    try:
-        import urllib.parse
-        import requests
-        url = f"{_CROSSREF}/{urllib.parse.quote(_strip_doi(doi), safe='')}"
-        r = requests.get(url, headers=_UA, timeout=15)
+    """Fetch one Crossref record. Returns None if it does not resolve.
+
+    One retry on a network error or a server-side status: a single dropped
+    connection otherwise reads as "unresolved", which looks like a fabricated
+    citation. A 404 is an answer, not a failure, and is not retried.
+    """
+    import urllib.parse
+    import requests
+    url = f"{_CROSSREF}/{urllib.parse.quote(_strip_doi(doi), safe='')}"
+    for _attempt in range(2):
+        try:
+            r = requests.get(url, headers=_UA, timeout=15)
+        except Exception:
+            continue
         if r.status_code == 200:
             return r.json().get("message", {})
-    except Exception:
-        return None
+        if r.status_code < 500 and r.status_code != 429:
+            return None
     return None
 
 

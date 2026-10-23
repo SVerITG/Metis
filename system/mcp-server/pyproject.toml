@@ -42,6 +42,10 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "beautifulsoup4>=4.12"]
+# Office documents — slide decks, posters and letters filled into the
+# researcher's own .pptx/.potx/.docx templates (authoring tools). Without it
+# those tools answer with the install line instead of a file.
+office = ["python-pptx>=1.0", "python-docx>=1.1"]
 # Neural embedding — REQUIRED for all semantic search, RAG, and the knowledge
 # layer (search_pdf_knowledge, vector memory). Pulls ~200 MB of ONNX models (no
 # GPU). setup-mcp.sh installs this by default; without it, semantic search is off.

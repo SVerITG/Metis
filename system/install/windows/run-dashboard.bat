@@ -8,6 +8,29 @@ setlocal
 set "SCRIPT_DIR=%~dp0"
 for %%i in ("%SCRIPT_DIR%..\..\..") do set "METIS_ROOT=%%~fi"
 
+:: ── Native install (MetisSetup.exe / install.ps1): no WSL involved ──────────
+:: A colleague's computer has the Python environment install.ps1 made, and no
+:: WSL at all. This launcher used to require WSL, so every native install got a
+:: dashboard shortcut that answered "Metis requires WSL".
+set "VENV_PY=%METIS_ROOT%\system\mcp-server\.venv-win\Scripts\python.exe"
+if not exist "%VENV_PY%" goto :wsl
+
+if not defined METIS_PORT set "METIS_PORT=8080"
+set "PORT=%METIS_PORT%"
+set "URL=http://127.0.0.1:%PORT%"
+:: Already serving? Then just open it — safe to double-click.
+curl -s -o nul -m 2 "%URL%/health" && goto :ready
+
+set "METIS_RC_ROOT=%METIS_ROOT%"
+set "HF_HUB_OFFLINE=1"
+set "LOGDIR=%LOCALAPPDATA%\Metis"
+if not exist "%LOGDIR%" mkdir "%LOGDIR%"
+cd /d "%METIS_ROOT%\system\app-py"
+:: /b keeps it in this (hidden) console; it outlives this script.
+start "" /b cmd /c ""%VENV_PY%" -m uvicorn main:app --host 127.0.0.1 --port %PORT% >> "%LOGDIR%\dashboard.log" 2>&1"
+goto :wait
+
+:wsl
 :: Check WSL is available
 wsl --status >nul 2>&1
 if errorlevel 1 (
@@ -44,6 +67,8 @@ for /l %%i in (1,1,12) do (
 )
 :have_port
 set "URL=http://127.0.0.1:%PORT%"
+
+:wait
 
 :: Metis's first start can take 10-30s (it loads the agents, scheduler, and
 :: embedding model). Poll the /health endpoint until the dashboard actually

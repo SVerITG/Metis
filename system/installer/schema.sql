@@ -38,7 +38,13 @@ CREATE TABLE IF NOT EXISTS brainstorm_sessions (
     summary         TEXT DEFAULT '',
     linked_idea_ids TEXT DEFAULT '',
     created_at      TEXT NOT NULL,
-    session_uuid    TEXT NOT NULL DEFAULT (lower(hex(randomblob(8))))
+    session_uuid    TEXT NOT NULL DEFAULT (lower(hex(randomblob(8)))),
+    started_at      TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at      TEXT NOT NULL DEFAULT (datetime('now')),
+    title           TEXT NOT NULL DEFAULT '',
+    status          TEXT NOT NULL DEFAULT 'active',
+    synthesis       TEXT DEFAULT NULL,
+    action_items    TEXT DEFAULT NULL
 );
 
 CREATE TABLE IF NOT EXISTS consent_ledger (
@@ -47,7 +53,8 @@ CREATE TABLE IF NOT EXISTS consent_ledger (
     action              TEXT NOT NULL,
     data_classification TEXT DEFAULT 'PUBLIC',
     agent_slug          TEXT DEFAULT '',
-    notes               TEXT DEFAULT ''
+    notes               TEXT DEFAULT '',
+    session_id          TEXT
 );
 
 CREATE TABLE IF NOT EXISTS contacts (
@@ -108,7 +115,8 @@ CREATE TABLE IF NOT EXISTS daily_insights (
     content      TEXT NOT NULL,
     sources      TEXT DEFAULT '',
     generated_at TEXT NOT NULL,
-    model        TEXT DEFAULT ''
+    model        TEXT DEFAULT '',
+    read_at      TEXT
 );
 
 CREATE TABLE IF NOT EXISTS dropzone_intake (
@@ -243,7 +251,8 @@ CREATE TABLE IF NOT EXISTS learning_courses (
     next_lesson       TEXT DEFAULT '',
     course_url        TEXT DEFAULT '',
     lesson_notes      TEXT DEFAULT '',
-    updated_at        TEXT DEFAULT NULL
+    updated_at        TEXT DEFAULT NULL,
+    focused_today     INTEGER DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS learning_resources (
@@ -263,7 +272,11 @@ CREATE TABLE IF NOT EXISTS library_cards (
     tags        TEXT DEFAULT '',
     summary     TEXT DEFAULT '',
     source_path TEXT DEFAULT '',
-    created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+    created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    authors     TEXT DEFAULT '',
+    year        INTEGER,
+    source      TEXT DEFAULT '',
+    status      TEXT DEFAULT 'unread'
 );
 
 CREATE TABLE IF NOT EXISTS library_duplicates (
@@ -279,7 +292,10 @@ CREATE TABLE IF NOT EXISTS library_fulltext (
     title      TEXT,
     text_chunk TEXT,
     word_count INTEGER,
-    indexed_at TEXT
+    indexed_at TEXT,
+    markdown_full TEXT,
+    extraction_mode TEXT DEFAULT 'pymupdf',
+    scope      TEXT DEFAULT 'literature'
 );
 
 CREATE TABLE IF NOT EXISTS library_inventory (
@@ -485,7 +501,8 @@ CREATE TABLE IF NOT EXISTS news_briefs (
     -- Relevance score written by the news scan. Previously added only by the
     -- scan's own ALTER, so a database that had not yet scanned lacked it and
     -- idx_news_briefs_title_norm below failed to build.
-    relevance      REAL DEFAULT 0
+    relevance      REAL DEFAULT 0,
+    image_url      TEXT DEFAULT ''
 );
 
 -- RETIRED 2026-09-14. Written by nothing, read by nothing. Kept as a
@@ -610,7 +627,12 @@ CREATE TABLE IF NOT EXISTS projects (
     started_at       TEXT,
     completed_at     TEXT,
     tags             TEXT DEFAULT '',
-    image_url        TEXT DEFAULT ''
+    image_url        TEXT DEFAULT '',
+    category         TEXT DEFAULT '',
+    accent_color     TEXT DEFAULT '',
+    last_scanned     TEXT,
+    scan_summary     TEXT DEFAULT '',
+    claude_desktop_linked INTEGER DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS content_packs (
@@ -676,7 +698,9 @@ CREATE TABLE IF NOT EXISTS skill_improvement_proposals (
     current_content  TEXT DEFAULT '',
     proposed_content TEXT NOT NULL,
     status           TEXT DEFAULT 'pending',
-    reviewer_note    TEXT DEFAULT ''
+    reviewer_note    TEXT DEFAULT '',
+    applied_at       TEXT,
+    backup_path      TEXT
 );
 
 CREATE TABLE IF NOT EXISTS spaced_repetition (
@@ -805,7 +829,8 @@ CREATE TABLE IF NOT EXISTS knowledge_databases (
     doc_count   INTEGER DEFAULT 0,
     chunk_count INTEGER DEFAULT 0,
     last_built  TEXT,
-    created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+    created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    enabled     INTEGER DEFAULT 1
 );
 
 CREATE TABLE IF NOT EXISTS pdf_chunks (
@@ -870,7 +895,9 @@ CREATE TABLE IF NOT EXISTS session_summaries (
     -- existed, so each raised "no such column", db_query swallowed it, and four
     -- panels rendered nothing while 716 summaries and 2,036 episodic memories sat
     -- in the tables. Same shape as the missing tasks.priority. Added 2026-08-12.
-    archived   INTEGER DEFAULT 0
+    archived   INTEGER DEFAULT 0,
+    summary_hash TEXT DEFAULT '',
+    client       TEXT DEFAULT ''
 );
 
 -- episodic_memory is created by the MCP server (tools/observation.py), not here,
@@ -883,7 +910,10 @@ CREATE TABLE IF NOT EXISTS episodic_memory (
     content    TEXT,
     metadata   TEXT,
     created_at TEXT,
-    archived   INTEGER DEFAULT 0
+    archived   INTEGER DEFAULT 0,
+    agent_id   TEXT DEFAULT '',
+    project_id TEXT DEFAULT '',
+    scope      TEXT DEFAULT 'global'
 );
 
 CREATE TABLE IF NOT EXISTS speakers (
@@ -996,7 +1026,8 @@ CREATE TABLE IF NOT EXISTS today_board_items (
     pin_order   INTEGER DEFAULT 0,
     follow_terms TEXT DEFAULT '',
     created_at  TEXT NOT NULL DEFAULT (datetime('now')),
-    updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
+    updated_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    fit_reason  TEXT DEFAULT ''
 );
 CREATE INDEX IF NOT EXISTS idx_board_items_board ON today_board_items (board, dismissed, created_at);
 
@@ -1016,7 +1047,9 @@ CREATE TABLE IF NOT EXISTS day_plan (
     remind_at   TEXT,
     done        INTEGER NOT NULL DEFAULT 0,
     created_at  TEXT NOT NULL DEFAULT (datetime('now')),
-    updated_at  TEXT
+    updated_at  TEXT,
+    recurrence  TEXT DEFAULT '',
+    duration_days INTEGER DEFAULT 1
 );
 CREATE INDEX IF NOT EXISTS idx_day_plan_start ON day_plan(start_date);
 CREATE INDEX IF NOT EXISTS idx_day_plan_span  ON day_plan(start_date, end_date);
@@ -1152,10 +1185,12 @@ CREATE TABLE IF NOT EXISTS user_decisions (
     scope       TEXT DEFAULT 'always',
     source      TEXT DEFAULT 'user',
     hits        INTEGER DEFAULT 0,
-    created_at  TEXT NOT NULL,
+    created_at  TEXT NOT NULL DEFAULT (datetime('now')),
     agent_slug  TEXT DEFAULT '',
     supersedes  INTEGER,
-    last_applied_at TEXT DEFAULT ''
+    last_applied_at TEXT DEFAULT '',
+    delivered   INTEGER DEFAULT 0,
+    last_delivered_at TEXT DEFAULT ''
 );
 
 -- ---------------------------------------------------------------------------
@@ -1546,3 +1581,186 @@ CREATE TABLE IF NOT EXISTS deck_styles (
 -- With this expression index: 0.003s. A thousandfold, and it builds in 0.01s.
 CREATE INDEX IF NOT EXISTS idx_news_briefs_title_norm
   ON news_briefs(LOWER(TRIM(title)), relevance DESC);
+
+
+-- ── Tables a fresh install was missing (2026-10-23) ─────────────────────────
+-- Each was created on first use by the module that owns it, so a long-running
+-- database had them and a brand-new one did not: the dashboard read them before
+-- anything had written, and 32 panel queries fell back to empty defaults on a
+-- clean install. The definitions match the owners' own CREATE statements; the
+-- owners keep theirs, and the dashboard's migrator applies this file to every
+-- database at start-up, so both new and existing installs converge.
+-- agent_routing_rules is deliberately absent: its owner seeds it on first
+-- server start, and an empty table created here would look already seeded.
+
+CREATE TABLE IF NOT EXISTS semantic_memory (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    concept          TEXT NOT NULL,
+    definition       TEXT NOT NULL,
+    related_concepts TEXT DEFAULT '',
+    source_type      TEXT DEFAULT 'user_defined',
+    source_id        TEXT DEFAULT '',
+    created_at       TEXT NOT NULL,
+    updated_at       TEXT NOT NULL,
+    agent_id         TEXT DEFAULT '',
+    project_id       TEXT DEFAULT '',
+    scope            TEXT DEFAULT 'global'
+);
+
+CREATE TABLE IF NOT EXISTS procedural_memory (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    procedure_name  TEXT NOT NULL,
+    trigger_context TEXT DEFAULT '',
+    steps           TEXT NOT NULL,
+    success_count   INTEGER DEFAULT 1,
+    last_used       TEXT NOT NULL,
+    created_at      TEXT NOT NULL,
+    agent_id        TEXT DEFAULT '',
+    project_id      TEXT DEFAULT '',
+    scope           TEXT DEFAULT 'global'
+);
+
+CREATE TABLE IF NOT EXISTS working_memory (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id  TEXT NOT NULL,
+    key         TEXT NOT NULL,
+    value       TEXT NOT NULL,
+    created_at  TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS library_review_state (
+    surface          TEXT PRIMARY KEY,
+    last_reviewed_at TEXT NOT NULL,
+    items_seen       INTEGER DEFAULT 0,
+    updated_at       TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS glossary (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    term       TEXT NOT NULL UNIQUE,
+    definition TEXT DEFAULT '',
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS inbox_items (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    filename    TEXT NOT NULL,
+    filepath    TEXT NOT NULL,
+    file_type   TEXT DEFAULT 'unknown',
+    status      TEXT DEFAULT 'new',
+    created_at  TEXT NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_inbox_items_filepath ON inbox_items(filepath);
+
+CREATE TABLE IF NOT EXISTS focus_dismissed (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    item_type      TEXT NOT NULL,
+    item_id        TEXT NOT NULL,
+    dismissed_date TEXT NOT NULL,
+    dismissed_at   TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS cross_pollination_links (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_kind  TEXT,
+    source_title TEXT,
+    target_kind  TEXT,
+    target_title TEXT,
+    score        REAL,
+    created_at   TEXT,
+    UNIQUE(source_title, target_kind, target_title)
+);
+
+CREATE TABLE IF NOT EXISTS brainstorm_turns (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_uuid  TEXT    NOT NULL,
+    turn_number   INTEGER NOT NULL DEFAULT 1,
+    topic         TEXT    NOT NULL,
+    steering      TEXT    NOT NULL DEFAULT 'expand',
+    context_json  TEXT    NOT NULL DEFAULT '{}',
+    created_at    TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_bt_sess ON brainstorm_turns(session_uuid, turn_number);
+
+CREATE TABLE IF NOT EXISTS news_topic_summaries (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    topic         TEXT NOT NULL,
+    period        TEXT NOT NULL DEFAULT 'week',
+    summary       TEXT,
+    article_count INTEGER DEFAULT 0,
+    generated_at  TEXT,
+    UNIQUE(topic, period) ON CONFLICT REPLACE
+);
+
+CREATE TABLE IF NOT EXISTS office_documents (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    path        TEXT UNIQUE,
+    kind        TEXT,
+    title       TEXT,
+    slide_count INTEGER,
+    summary     TEXT,
+    content     TEXT,
+    project_id  TEXT,
+    file_mtime  TEXT,
+    ingested_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS research_timeline (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    entity       TEXT    NOT NULL,
+    claim        TEXT    NOT NULL,
+    confidence   TEXT    NOT NULL DEFAULT 'medium',
+    evidence     TEXT    NOT NULL DEFAULT '',
+    source_type  TEXT    NOT NULL DEFAULT 'session',
+    source_ref   TEXT    NOT NULL DEFAULT '',
+    supersedes   INTEGER          DEFAULT NULL,
+    session_date TEXT    NOT NULL,
+    created_at   TEXT    NOT NULL,
+    FOREIGN KEY (supersedes) REFERENCES research_timeline(id)
+);
+
+-- score: best cosine against the indexed corpus · band: covered | thin | absent
+CREATE TABLE IF NOT EXISTS course_topic_coverage (
+    course_id  INTEGER NOT NULL,
+    keyword    TEXT    NOT NULL,
+    score      REAL,
+    band       TEXT,
+    best_doc   TEXT,
+    scored_at  TEXT NOT NULL,
+    PRIMARY KEY (course_id, keyword)
+);
+
+CREATE TABLE IF NOT EXISTS library_acquisition_log (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    pub_id       INTEGER,
+    doi          TEXT DEFAULT '',
+    method       TEXT DEFAULT '',
+    outcome      TEXT DEFAULT '',
+    detail       TEXT DEFAULT '',
+    bytes        INTEGER DEFAULT 0,
+    attempted_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_acqlog_pub ON library_acquisition_log(pub_id);
+
+-- Created by their routers at import time; declared here so the schema is the
+-- whole story and a database the MCP server creates first has them too.
+CREATE TABLE IF NOT EXISTS project_categories (
+    name          TEXT PRIMARY KEY,
+    display_order INTEGER NOT NULL DEFAULT 100,
+    created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS discovery_shown (
+    tip_id   TEXT PRIMARY KEY,
+    shown_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS discovery_state (
+    key   TEXT PRIMARY KEY,
+    value TEXT
+);
+
+CREATE TABLE IF NOT EXISTS ui_seen (
+    key      TEXT PRIMARY KEY,
+    seen_at  TEXT NOT NULL
+);

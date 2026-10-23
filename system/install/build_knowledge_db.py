@@ -142,6 +142,26 @@ _CONN_RECYCLE_EVERY = 20
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
+
+def live_db_path(root: Path) -> Path:
+    """The database the server and dashboard actually read.
+
+    NOT system/app/data/metis.sqlite: that location was retired in June (OneDrive
+    corrupts SQLite's write-ahead log), and a database created or written there is
+    an orphan. The MCP package owns the rule; this mirrors it when the package is
+    not importable: METIS_DB → METIS_DATA_DIR → ~/.local/share/metis/metis.sqlite.
+    """
+    try:
+        from metis_mcp.config import resolve_live_db
+        return resolve_live_db(root)
+    except ImportError:
+        import os
+        if os.environ.get("METIS_DB"):
+            return Path(os.environ["METIS_DB"])
+        data_dir = os.environ.get("METIS_DATA_DIR") or os.path.join(
+            os.path.expanduser("~"), ".local", "share", "metis")
+        return Path(data_dir) / "metis.sqlite"
+
 def _encode_vec(v: List[float]) -> bytes:
     return struct.pack(f"{len(v)}f", *v)
 
@@ -715,13 +735,9 @@ def main() -> None:
     args = parser.parse_args()
 
     rc_root = os.environ.get("METIS_RC_ROOT", "")
-    if rc_root:
-        default_lib = Path(rc_root) / "knowledge" / "library"
-        default_db  = Path(rc_root) / "system" / "app" / "data" / "metis.sqlite"
-    else:
-        root = Path(__file__).resolve().parent.parent.parent
-        default_lib = root / "knowledge" / "library"
-        default_db  = root / "system" / "app" / "data" / "metis.sqlite"
+    root = Path(rc_root) if rc_root else Path(__file__).resolve().parent.parent.parent
+    default_lib = root / "knowledge" / "library"
+    default_db  = live_db_path(root)
 
     library_dir = args.library_dir or default_lib
     db_path     = args.db or default_db

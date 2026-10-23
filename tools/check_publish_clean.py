@@ -7,7 +7,15 @@ tree is the one place where a clean answer proves nothing about what is
 already published.
 
     python3 tools/check_publish_clean.py --repo /path/to/mirror.git
+    python3 tools/check_publish_clean.py --repo COPY --since PUBLISHED_SHA
     python3 tools/check_publish_clean.py --self-test
+
+--since names the commit the public repository is already at. Tool-attribution
+trailers and tags reachable from it are already published; they are listed as
+such and not re-judged, because no export can unpublish them and blocking on
+them only made every export impossible. Everything an export ADDS is judged in
+full. Names, identities and file content are judged across all history either
+way.
 
 Exit codes
 ----------
@@ -243,13 +251,25 @@ def check_messages(repo: Path, rules: dict) -> list[Finding]:
             findings.append(Finding(BLOCK, f"message-word:{word}",
                                     f"{len(hits)} commit(s) name '{word}'",
                                     n, hits[:6]))
+    since = rules.get("since")
+    published: set[str] = set()
+    if since:
+        # Published = reachable from the public commit OR from any branch the
+        # public repository already has (a clone carries them as remotes).
+        published = set(git(repo, "rev-list", since, "--remotes", check=False).split())
     for pat in rules["forbidden_message_patterns"]:
         rx = re.compile(pat, re.I)
-        hits = [e.split("\x00")[0][:9] for e in entries if rx.search(e)]
-        if hits:
+        hits = [e.split("\x00")[0] for e in entries if rx.search(e)]
+        new = [h[:9] for h in hits if h not in published]
+        old = len(hits) - len(new)
+        if new:
             findings.append(Finding(BLOCK, "message-trailer",
-                                    f"{len(hits)} commit(s) match /{pat}/",
-                                    n, hits[:6]))
+                                    f"{len(new)} commit(s) match /{pat}/",
+                                    n, new[:6]))
+        if old:
+            findings.append(Finding("OK", "message-trailer",
+                                    f"{old} already-published commit(s) match /{pat}/ — "
+                                    f"not re-judged (already in the public repository)", n))
     if not findings:
         findings.append(Finding("OK", "messages", "no forbidden words or trailers", n))
     return findings
@@ -283,9 +303,17 @@ def check_identity(repo: Path, rules: dict) -> list[Finding]:
     return findings
 
 
-def check_tags(repo: Path) -> list[Finding]:
+def check_tags(repo: Path, since: str | None = None) -> list[Finding]:
     out = git(repo, "tag", check=False)
     tags = [t for t in out.splitlines() if t.strip()]
+    if since:
+        old = [t for t in tags if subprocess.run(
+            ["git", "-C", str(repo), "merge-base", "--is-ancestor", t, since],
+            capture_output=True).returncode == 0]
+        tags = [t for t in tags if t not in old]
+        if old and not tags:
+            return [Finding("OK", "tags", f"{len(old)} tag(s), all already published "
+                            f"before {since[:9]} — not re-judged", len(old), old[:8])]
     if tags:
         return [Finding(WARN, "tags",
                         f"{len(tags)} tag(s) present — a tag keeps its whole ancestry "
@@ -436,7 +464,7 @@ CHECKS = [
     ("paths", check_paths),
     ("messages", check_messages),
     ("identity", check_identity),
-    ("tags", lambda r, ru: check_tags(r)),
+    ("tags", lambda r, ru: check_tags(r, ru.get("since"))),
     ("tip-content", check_tip_content),
     ("history-content", check_history_content),
 ]
@@ -542,6 +570,26 @@ def self_test() -> int:
             f.check == "negative-controls" and f.level == REFUSE for f in findings
         )
 
+        # --since: a trailer already published is not re-judged, but a trailer
+        # in a commit made after it still blocks. Both directions, or the
+        # option is a hole rather than a scope.
+        base = git(repo, "rev-parse", "HEAD").strip()
+        (repo / "later.txt").write_text("later\n")
+        subprocess.run(["git", "-C", str(repo), "add", "-A"], check=True)
+        subprocess.run(["git", "-C", str(repo), "commit", "-q", "-m", "clean later commit"],
+                       check=True)
+        scoped = {**rules_preview, "since": base}
+        old_ok = not any(f.check == "message-trailer" and f.level == BLOCK
+                         for f in check_messages(repo, scoped))
+        (repo / "later.txt").write_text("later again\n")
+        subprocess.run(["git", "-C", str(repo), "commit", "-q", "-am",
+                        "new commit\n\nCo-Authored-By: Claude <noreply@anthropic.com>"],
+                       check=True)
+        new_caught = any(f.check == "message-trailer" and f.level == BLOCK
+                         for f in check_messages(repo, scoped))
+        must_catch["since: new trailer still blocks"] = new_caught
+        must_catch["since: published trailer not re-judged"] = old_ok
+
         print("  self-test — planted defects and whether each was caught:\n")
         for k, v in must_catch.items():
             print(f"    {'caught' if v else 'MISSED'}  {k}")
@@ -569,6 +617,9 @@ def main() -> int:
                     "what must never ship.")
     ap.add_argument("--repo", help="repository to check "
                                    "(ideally a fresh mirror clone of the remote)")
+    ap.add_argument("--since", help="commit the public repository is already at: "
+                                    "attribution trailers and tags it contains are "
+                                    "published and not re-judged")
     ap.add_argument("--self-test", action="store_true",
                     help="plant every defect and confirm the checker catches it")
     args = ap.parse_args()
@@ -585,6 +636,8 @@ def main() -> int:
         return 4
 
     rules, notes = load_rules()
+    if args.since:
+        rules["since"] = git(repo, "rev-parse", "--verify", args.since + "^{commit}").strip()
     print(f"\ncheck_publish_clean — {repo}\n")
     findings = run_checks(repo, rules)
     return report(findings, notes)

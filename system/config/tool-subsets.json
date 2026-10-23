@@ -28,7 +28,7 @@
     "knowledge_db",
     "vector_memory",
     "fulltext_index",
-    "memory_curator"
+    "memory_curator", "authoring", "anonymization", "verification", "zotero"
   ],
   "_comment_core": "Modules always exposed when METIS_TOOL_SEARCH=1 — the everyday set covering routing, capture, memory, projects/tasks, literature search, news/briefs, files, reflexion and contextual-discovery. Everything else (dhis2, data_tools, anonymization, backup, course_builder, knowledge_db/graph, vector_memory, thinking_profile, zotero, paperqa, transcription, voice, images, code_repository, research_timeline, project_tracker, memory_curator, brainstorm, doctor, pipeline, observability, improvement, config_tools, reviews, observation, ref_miner, fulltext_index, literature_monitor, guardrails) is parked and loaded on demand. Tune freely — membership is module-granular.",
   "groups": {
@@ -120,6 +120,10 @@
       "research_timeline",
       "knowledge_graph",
       "knowledge_db"
+    ],
+    "authoring": [
+      "authoring",
+      "office"
     ]
   },
   "agents": {

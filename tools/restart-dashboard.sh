@@ -10,10 +10,13 @@
 # So: record the old PID, kill it, wait for a DIFFERENT pid to appear, and only
 # then wait for health.
 set -uo pipefail
-OLD=$(pgrep -f "uvicorn main:app" | head -1)
+# The dashboard is whatever owns port 8080, not the first uvicorn found: a
+# preview instance on another port was being killed while the real one ran on.
+_port_pid() { ss -ltnpH "sport = :8080" 2>/dev/null | grep -oP 'pid=\K[0-9]+' | head -1; }
+OLD=$(_port_pid)
 [ -n "$OLD" ] && kill "$OLD" 2>/dev/null
 for _ in $(seq 1 90); do
-    NEW=$(pgrep -f "uvicorn main:app" | head -1)
+    NEW=$(_port_pid)
     [ -n "$NEW" ] && [ "$NEW" != "$OLD" ] && break
     sleep 1
 done

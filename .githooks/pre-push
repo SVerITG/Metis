@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Account guard: refuse a push to a remote that system/config/accounts.json does
+# not declare for this repository. Without that file (a plain installation)
+# nothing is enforced. Always uses the MAIN checkout's guard and registry, so a
+# worktree on an older branch cannot slip past it.
+COMMON="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"
+MAIN="$(dirname "$COMMON")"
+GUARD="$MAIN/system/release/account_guard.py"
+[ -f "$GUARD" ] || exit 0
+exec python3 "$GUARD" pre-push "$(git rev-parse --show-toplevel)" "$2"

@@ -1,37 +1,53 @@
-<!-- learning_course_overview.html — course contents, in the statistics course's idiom -->
+<!-- learning_course_overview.html — the sidebar, in the source course's idiom:
+     a progress card, then an outline of folding groups with numbered lesson rows -->
 {% if tab == "methodology" %}
-
-<div class="rc-head">
-  <div class="rc-kicker">Methodology</div>
-  <h2 class="rc-title">Method recipes</h2>
-  <div class="sidebar-copy" style="font-size:0.82rem;">
-    Methods lifted out of published analyses and generalised away from the pathogen they
-    were used on. Grouped by which of the four questions they answer.
-  </div>
-</div>
 
 {% set qnames = {1: "Is this the same outbreak?", 2: "Where did it come from?", 3: "How fast is it spreading?", 4: "Has the pathogen changed?"} %}
 {% set qs = [] %}
 {% for m in methodologies %}{% if m.question not in qs %}{% set _ = qs.append(m.question) %}{% endif %}{% endfor %}
 
-{% for q in qs | sort %}
-<div class="rc-section">
-  <div class="rc-section-label">Q{{ q }} · {{ qnames.get(q, "") }}</div>
-  {% for m in methodologies if m.question == q %}
-  <button class="rc-item" type="button"
-          hx-get="/api/course/{{ slug }}/methodology/{{ m.id }}"
-          hx-target="#lesson-reader-panel"
-          hx-swap="innerHTML">
-    <span class="rc-dot" style="background:var(--brand);border-color:var(--brand);"></span>
-    <span>{{ m.name }}</span>
-  </button>
-  {% endfor %}
+<div class="sidebar-card">
+  <div class="sidebar-title">Method recipes</div>
+  <div class="sidebar-copy rd-side-note">
+    Methods lifted out of published analyses and generalised away from the pathogen they
+    were used on. Grouped by which question they answer.
+  </div>
 </div>
-{% endfor %}
 
-<div class="sidebar-card" style="padding:14px;">
+<div class="sidebar-card">
+  <div class="sidebar-title">Outline</div>
+  <div class="rd-outline">
+    {% for q in qs | sort %}
+    {% set group = methodologies | selectattr("question", "equalto", q) | list %}
+    <details class="outline-group" open>
+      <summary class="outline-trigger">
+        <span>
+          <span class="outline-title">Question {{ q }}</span>
+          <span class="outline-sub">{{ qnames.get(q, "") }}</span>
+        </span>
+        <span class="lesson-meta">{{ group | length }}</span>
+      </summary>
+      <div class="outline-items">
+        {% for m in group %}
+        <button class="outline-item" type="button"
+                hx-get="/api/course/{{ slug }}/methodology/{{ m.id }}"
+                hx-target="#lesson-reader-panel" hx-swap="innerHTML">
+          <span class="outline-code">Q{{ q }}.{{ loop.index }}</span>
+          <span class="outline-body">
+            <span class="outline-name">{{ m.name }}</span>
+            <span class="outline-meta">{{ m.maturity }} · {{ m.chain | length }} steps</span>
+          </span>
+        </button>
+        {% endfor %}
+      </div>
+    </details>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="sidebar-card">
   <div class="sidebar-title">How this grows</div>
-  <div class="sidebar-copy" style="font-size:0.82rem;">
+  <div class="sidebar-copy rd-side-note">
     Each entry comes from a real paper whose methods section was read, then stripped of its
     pathogen so it reads as something you could do. Provenance is graded on every entry.
   </div>
@@ -39,13 +55,11 @@
 
 {% else %}
 
-<div class="rc-head">
-  <div class="rc-kicker">{{ (course.category or 'COURSE') | upper }}</div>
-  <h2 class="rc-title">{{ course.title or "Untitled Course" }}</h2>
-  <div class="rc-bar"><i style="width:{{ (course.progress_pct or 0)|int }}%;"></i></div>
-  <div class="rc-meta">
-    {{ n_done or 0 }} of {{ n_total or 0 }} lessons · {{ (course.progress_pct or 0)|int }}%
-  </div>
+{% set pct = (course.progress_pct or 0) | int %}
+<div class="sidebar-card">
+  <div class="sidebar-title">Course progress</div>
+  <div class="sidebar-copy"><span class="num">{{ n_done or 0 }}/{{ n_total or 0 }}</span> lessons read · <span class="num">{{ pct }}%</span></div>
+  <progress class="rd-progress" max="100" value="{{ pct }}" aria-label="Course progress">{{ pct }}%</progress>
 </div>
 
 {#- Group by each lesson's own `section`, derived from the lessons themselves so
@@ -56,29 +70,49 @@
   {% if s not in ordered_sections %}{% set _ = ordered_sections.append(s) %}{% endif %}
 {% endfor %}
 
-{% for section in ordered_sections %}
-<div class="rc-section">
-  <div class="rc-section-label">{{ (section or 'Lessons') | upper }}</div>
-  {% for lesson in lessons | selectattr("section", "equalto", section) | list %}
-  <button class="rc-item{% if lesson.done %} is-done{% endif %}"
-          type="button"
-          hx-get="/api/course/{{ slug }}/lesson/{{ lesson.id }}"
-          hx-target="#lesson-reader-panel"
-          hx-swap="innerHTML">
-    <span class="rc-dot"></span>
-    <span>{{ lesson.title }}</span>
-  </button>
-  {% endfor %}
+<div class="sidebar-card">
+  <div class="sidebar-title">Course outline</div>
+  <div class="rd-outline">
+    {% for section in ordered_sections %}
+    {% set group = lessons | selectattr("section", "equalto", section) | list %}
+    {% set g_done = group | selectattr("done") | list | length %}
+    {% set g_min = group | map(attribute='time') | select | sum %}
+    <details class="outline-group" open>
+      <summary class="outline-trigger">
+        <span>
+          <span class="outline-title">{{ section or 'Lessons' }}</span>
+          {% if group[0].phase_title and group[0].phase_title != section %}<span class="outline-sub">{{ group[0].phase_title }}</span>{% endif %}
+        </span>
+        <span class="lesson-meta num">{{ g_done }}/{{ group | length }}{% if g_min %} · {% if g_min >= 60 %}{{ (g_min / 60) | round(1) | replace('.0', '') }} h{% else %}{{ g_min }} min{% endif %}{% endif %}</span>
+      </summary>
+      <div class="outline-items">
+        {% for lesson in group %}
+        <button class="outline-item{% if lesson.done %} done{% endif %}" type="button"
+                data-lesson-id="{{ lesson.id }}"
+                hx-get="/api/course/{{ slug }}/lesson/{{ lesson.id }}"
+                hx-target="#lesson-reader-panel" hx-swap="innerHTML">
+          <span class="outline-code">{% if lesson.day %}{{ lesson.day }}{% elif lesson.order is number %}{{ '%02d' % lesson.order }}{% endif %}</span>
+          <span class="outline-body">
+            <span class="outline-name">{{ lesson.title }}</span>
+            <span class="outline-meta">{% if lesson.time %}{{ lesson.time }} min{% endif %}{% if lesson.optional %} · optional{% endif %}</span>
+          </span>
+          <span class="step-dots" role="img" aria-label="{{ 'Read' if lesson.done else 'Not read yet' }}">
+            <span class="step-dot{% if lesson.done %} done{% endif %}"></span>
+          </span>
+        </button>
+        {% endfor %}
+      </div>
+    </details>
+    {% endfor %}
+  </div>
 </div>
-{% endfor %}
 
-<div class="sidebar-card" style="padding:14px;">
+<div class="sidebar-card">
   <div class="sidebar-title">Review</div>
-  <div class="sidebar-copy" style="font-size:0.82rem;margin-bottom:10px;">
+  <div class="sidebar-copy rd-side-note">
     Send this course's flashcards to the spaced-repetition queue.
   </div>
-  <button class="btn btn-primary btn-block" type="button"
-          style="font-size:0.82rem;padding:9px 14px;"
+  <button class="btn btn-secondary btn-small btn-block" type="button"
           hx-post="/api/course/{{ slug }}/seed-spaced-rep"
           hx-swap="none"
           onclick="showToast('Review cards seeded — check Due Today.')">

@@ -242,7 +242,7 @@ async def thinking_brainstorm_sessions(request: Request):
         "COUNT(bt.id) as turn_count "
         "FROM brainstorm_sessions bs "
         "LEFT JOIN brainstorm_turns bt ON bs.session_uuid = bt.session_uuid "
-        "GROUP BY bs.id ORDER BY bs.updated_at DESC LIMIT 10",
+        "GROUP BY bs.session_uuid ORDER BY bs.updated_at DESC LIMIT 10",
         default=[],
     )
     return templates.TemplateResponse(
@@ -272,8 +272,9 @@ async def note_from_latest_idea():
     now = datetime.datetime.now().isoformat()
     try:
         db_execute(
-            "INSERT INTO personal_notes (content, tags, created_at) VALUES (?, ?, ?)",
-            (content, "exported-from-idea", now),
+            "INSERT INTO personal_notes (content, tags, created_at, updated_at) "
+            "VALUES (?, ?, ?, ?)",
+            (content, "exported-from-idea", now, now),
         )
         return JSONResponse(
             {"status": "ok", "preview": content[:120], "source_idea_id": idea.get("id")}

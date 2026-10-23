@@ -120,7 +120,7 @@ jobs:
             ```
 
             ### Manual / Linux
-            See `system/install/linux/` for shell scripts.
+            See `system/mcp-server/setup-mcp.sh` for the Linux/macOS installer.
 
             ---
             Requires: Windows 10+, Python 3.10+, Anthropic API key.

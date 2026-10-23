@@ -1395,6 +1395,62 @@ async def project_tasks_partial(request: Request, project_id: str):
     )
 
 
+# ---------------------------------------------------------------------------
+# Project figures — HTML visuals saved from a chat (save_project_figure)
+# ---------------------------------------------------------------------------
+# The folder is the only store: what is on disk is what the panel shows.
+
+_FIGURES_ROOT = Path(
+    os.environ.get("METIS_RC_ROOT", str(Path(__file__).resolve().parents[3]))
+) / "outputs" / "figures"
+_FIG_NAME = re.compile(r"^[a-z0-9][a-z0-9-]{0,120}$")
+
+
+def _figure_folder(project_id: str) -> str:
+    # Same slug rule as the MCP tool that writes the folder.
+    import unicodedata
+    t = unicodedata.normalize("NFKD", project_id or "").encode("ascii", "ignore").decode()
+    t = re.sub(r"[^A-Za-z0-9]+", "-", t).strip("-")
+    return (t[:80].strip("-") or "untitled").lower()
+
+
+def project_figures(project_id: str) -> list[dict]:
+    folder = _FIGURES_ROOT / _figure_folder(project_id)
+    if not folder.is_dir():
+        return []
+    out = []
+    for f in sorted(folder.glob("*.html"), key=lambda p: p.stat().st_mtime, reverse=True):
+        meta = {}
+        try:
+            meta = json.loads(f.with_suffix(".json").read_text(encoding="utf-8"))
+        except Exception:
+            pass
+        out.append({
+            "title": meta.get("title") or f.stem.replace("-", " "),
+            "caption": meta.get("caption", ""),
+            "saved_at": (meta.get("saved_at") or "")[:16].replace("T", " "),
+            "url": f"/figures/{folder.name}/{f.stem}",
+        })
+    return out
+
+
+@router.get("/figures/{folder}/{name}")
+async def project_figure(folder: str, name: str):
+    """Serve one saved figure, sandboxed: it runs its own chart code but cannot
+    reach the dashboard's cookies, storage or API as same-origin."""
+    from fastapi.responses import FileResponse
+    name = name.removesuffix(".html")
+    if not (_FIG_NAME.match(folder) and _FIG_NAME.match(name)):
+        return Response("Not found", status_code=404)
+    f = _FIGURES_ROOT / folder / f"{name}.html"
+    if not f.is_file():
+        return Response("Not found", status_code=404)
+    return FileResponse(f, media_type="text/html", headers={
+        "Content-Security-Policy": "sandbox allow-scripts allow-popups",
+        "X-Content-Type-Options": "nosniff",
+    })
+
+
 @router.get("/api/partial/work/project-detail/{project_id}", response_class=HTMLResponse)
 async def project_detail_panel(request: Request, project_id: str):
     rows = db_query(
@@ -1473,6 +1529,7 @@ async def project_detail_panel(request: Request, project_id: str):
             "last_activity": last_activity,
             "history_entries": list(reversed(history_entries)),
             "tags_list": tags_list,
+            "figures": project_figures(project_id),
         },
     )
 

@@ -129,9 +129,10 @@ metis/system/install/*.log
 # PH-specific seeding scripts
 metis/system/install/seed_ph_database.py
 
-# Demo/mockup seeding + filming tools (personal only — never publish)
-metis/system/install/seed_mockup_demo.py
-system/install/seed_mockup_demo.py
+# Filming tools (personal only — never publish). The sample workspace itself,
+# system/install/seed_mockup_demo.py, DOES ship: it is the demo new users are
+# offered at install, all fictional, with no real organisation's name on any of
+# its invented news.
 system/install/setup_demo_root.py
 system/install/demo_setup.sh
 .claude/skills/demo-builder/
@@ -214,11 +215,9 @@ system/config/install-state.json
 
 # Runtime / machine-local artifacts
 system/app-py/.metis-port
-system/app-py/.metis-launch.lock
 system/app-py/eval-results.json
 system/app-py/DESIGN_BRIEF.md
 system/install/seed_ph_database.py
-system/install/seed_mockup_demo.py
 system/install/*.log
 system/tests/
 system/design-docs/
@@ -439,9 +438,24 @@ tools/background-acquisition/
 # in "-" plus seven characters. tool-subsets.json is one. The conflict files
 # themselves are already caught by the eval-results-*/mcp-health-* rules.
 !system/config/tool-subsets.json
+!tools/metis-sync-cleanup.py
 
 # Courses are the owner's own learning material, not part of the software.
 # The shell ships the machinery to BUILD a course — knowledge/course-template/
 # and the Learning surface — and none of the content. This also removes the
 # last citations naming a real institution, which lived in a course.
 knowledge/courses/
+
+# ── Development-only files (added 2026-10-16, when development moved to the
+# private repository and this list became the filter for the public export) ──
+# The accounts registry names the owner's accounts, sites and database ids.
+system/config/accounts.json
+# Research inputs of any kind (data notes, screening data descriptions)
+inputs/
+# Personal preferences, including OneDrive conflict copies of them
+system/config/user-preferences*.json
+system/release/last-export.txt
+
+# Demo state on this computer
+system/config/.demo-mode
+system/config/.demo-rows.json

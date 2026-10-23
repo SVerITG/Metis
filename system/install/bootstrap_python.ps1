@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     bootstrap_python.ps1 — Embedded Python bootstrap for Metis (M11.4)
 
@@ -11,8 +11,11 @@
       4. Extract bundled embeddable Python from {InstallDir}\vendor\python-embed.zip
          (The embeddable zip is bundled by the Inno Setup installer from vendor/)
 
-    Returns the path to a working python.exe via $env:METIS_PYTHON.
-    Exits with code 1 if no Python can be obtained.
+    Writes the path of a working python.exe to {InstallDir}\system\install\.python-path.
+    (It used to set $env:METIS_PYTHON — which exists only inside this process, so
+    the script that called it never saw the answer.) Exits 1 if no Python can be
+    obtained. Accepts 3.11–3.13 only: pyproject.toml requires <3.14, and python.org's
+    default download is now newer than that.
 
 .PARAMETER InstallDir
     Root of the Metis installation (contains vendor\ folder if using offline bundle).
@@ -34,6 +37,15 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
+$Supported = '3\.1[1-3](\.|$|\s)'
+function Set-Result {
+    param([string]$Exe)
+    $out = Join-Path $InstallDir "system\install\.python-path"
+    New-Item -ItemType Directory -Path (Split-Path $out) -Force | Out-Null
+    Set-Content -Path $out -Value $Exe -Encoding UTF8
+    $env:METIS_PYTHON = $Exe
+    exit 0
+}
 function Write-Step  { Write-Host "  → $args" -ForegroundColor Cyan }
 function Write-OK    { Write-Host "  ✓ $args" -ForegroundColor Green }
 function Write-Warn  { Write-Host "  ⚠ $args" -ForegroundColor Yellow }
@@ -45,11 +57,11 @@ Write-Step "Checking for existing Python 3.11+"
 $pythonExe = $null
 
 # Check PATH first
-foreach ($cmd in @("python3.11", "python3", "python")) {
+foreach ($cmd in @("python3.12", "python3.13", "python3.11", "python3", "python")) {
     $found = Get-Command $cmd -ErrorAction SilentlyContinue
     if ($found) {
         $ver = & $found.Source --version 2>&1
-        if ($ver -match "3\.1[1-9]|3\.[2-9]\d") {
+        if ($ver -match $Supported) {
             $pythonExe = $found.Source
             Write-OK "Found on PATH: $pythonExe ($ver)"
             break
@@ -60,8 +72,9 @@ foreach ($cmd in @("python3.11", "python3", "python")) {
 # Check well-known Windows install locations if PATH search failed
 if (-not $pythonExe) {
     $candidates = @(
-        "$env:LOCALAPPDATA\Programs\Python\Python311\python.exe",
         "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe",
+        "$env:LOCALAPPDATA\Programs\Python\Python313\python.exe",
+        "$env:LOCALAPPDATA\Programs\Python\Python311\python.exe",
         "C:\Python311\python.exe",
         "C:\Python312\python.exe",
         "$env:ProgramFiles\Python311\python.exe"
@@ -69,7 +82,7 @@ if (-not $pythonExe) {
     foreach ($c in $candidates) {
         if (Test-Path $c) {
             $ver = & $c --version 2>&1
-            if ($ver -match "3\.1[1-9]") {
+            if ($ver -match $Supported) {
                 $pythonExe = $c
                 Write-OK "Found at known location: $c ($ver)"
                 break
@@ -78,17 +91,14 @@ if (-not $pythonExe) {
     }
 }
 
-if ($pythonExe) {
-    $env:METIS_PYTHON = $pythonExe
-    exit 0
-}
+if ($pythonExe) { Set-Result $pythonExe }
 
 # ── Step 2: winget install ───────────────────────────────────────────────────
 if (-not $OfflineOnly) {
-    Write-Step "Trying winget install (Python 3.11)…"
+    Write-Step "Trying winget install (Python 3.12)…"
     $hasWinget = Get-Command winget -ErrorAction SilentlyContinue
     if ($hasWinget) {
-        winget install --id Python.Python.3.11 --silent `
+        winget install --id Python.Python.3.12 --silent `
             --accept-package-agreements --accept-source-agreements 2>&1 | Out-Null
         # Refresh PATH
         $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" +
@@ -96,11 +106,10 @@ if (-not $OfflineOnly) {
         $found = Get-Command python -ErrorAction SilentlyContinue
         if ($found) {
             $ver = & $found.Source --version 2>&1
-            if ($ver -match "3\.1[1-9]") {
+            if ($ver -match $Supported) {
                 $pythonExe = $found.Source
                 Write-OK "Installed via winget: $pythonExe ($ver)"
-                $env:METIS_PYTHON = $pythonExe
-                exit 0
+                Set-Result $pythonExe
             }
         }
         Write-Warn "winget install returned success but python not found on PATH"
@@ -111,8 +120,8 @@ if (-not $OfflineOnly) {
 
 # ── Step 3: Download python.org full installer ───────────────────────────────
 if (-not $OfflineOnly) {
-    Write-Step "Downloading Python 3.11.9 installer from python.org…"
-    $pyVersion  = "3.11.9"
+    Write-Step "Downloading Python 3.12.10 installer from python.org…"
+    $pyVersion  = "3.12.10"
     $pyUrl      = "https://www.python.org/ftp/python/$pyVersion/python-$pyVersion-amd64.exe"
     $pyInstPath = Join-Path $env:TEMP "python-$pyVersion-amd64.exe"
     try {
@@ -127,11 +136,10 @@ if (-not $OfflineOnly) {
         $found = Get-Command python -ErrorAction SilentlyContinue
         if ($found) {
             $ver = & $found.Source --version 2>&1
-            if ($ver -match "3\.1[1-9]") {
+            if ($ver -match $Supported) {
                 $pythonExe = $found.Source
                 Write-OK "Installed from python.org: $pythonExe ($ver)"
-                $env:METIS_PYTHON = $pythonExe
-                exit 0
+                Set-Result $pythonExe
             }
         }
     }
@@ -154,7 +162,7 @@ if (-not (Test-Path $embedZip)) {
 # Extract embeddable Python
 Write-Step "Extracting $embedZip → $embedDir"
 if (Test-Path $embedDir) { Remove-Item $embedDir -Recurse -Force }
-Add-Type -Assembly System.IO.Compression.FileSystem
+Add-Type -AssemblyName System.IO.Compression.FileSystem
 [System.IO.Compression.ZipFile]::ExtractToDirectory($embedZip, $embedDir)
 
 $embedPython = Join-Path $embedDir "python.exe"
@@ -194,6 +202,4 @@ if (-not (Test-Path $pipExe)) {
 }
 
 Write-OK "Embedded Python ready: $embedPython"
-$env:METIS_PYTHON    = $embedPython
-$env:METIS_PYTHON_DIR = $embedDir
-exit 0
+Set-Result $embedPython

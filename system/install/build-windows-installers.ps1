@@ -1,4 +1,4 @@
-# build-windows-installers.ps1
+﻿# build-windows-installers.ps1
 # Compiles the Metis Windows installer locally and (optionally) uploads it to GitHub.
 #
 # The installer is a SINGLE type-selectable exe — full / minimal / custom are

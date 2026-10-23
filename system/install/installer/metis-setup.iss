@@ -1,4 +1,4 @@
-; Metis — Inno Setup 6 script
+﻿; Metis — Inno Setup 6 script
 ; Compile:  ISCC.exe metis-setup.iss                 -> dist\MetisSetup-<version>.exe
 ;           ISCC.exe /DMyAppVersion=1.2 metis-setup.iss
 ;
@@ -76,7 +76,7 @@ CreateUninstallRegKey=yes
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [CustomMessages]
-english.WelcomeText=Welcome to Metis — your AI research companion.%n%nMetis gives every Claude conversation a persistent memory of your domain, your papers, your projects, and your working history. The longer you use it, the better every response gets — because Metis knows you better, not because the AI changed.%n%nYou don't need to follow developments in AI. Metis does that for you.%n%nYour files and data stay on your computer. Only the text you choose to send for analysis goes to Claude (the Anthropic API); everything else stays local.%n%n────────────────────────────────────────────%n%nThis installer will:%n  1. Install the Metis AI core (MCP server + 34 specialist agents)%n  2. Optionally install the 9-tab research dashboard%n  3. Ask you a few questions to personalise Metis to your work%n%nInstallation takes 5–15 minutes depending on your connection.%nYou will need a free Anthropic API key — instructions are on the next page.
+english.WelcomeText=Welcome to Metis — your AI research companion.%n%nMetis gives every Claude conversation a persistent memory of your domain, your papers, your projects, and your working history. The longer you use it, the better every response gets — because Metis knows you better, not because the AI changed.%n%nYou don't need to follow developments in AI. Metis does that for you.%n%nYour files and data stay on your computer. Only the text you choose to send for analysis goes to Claude (the Anthropic API); everything else stays local.%n%n────────────────────────────────────────────%n%nThis installer will:%n  1. Install the Metis AI core (MCP server + 33 specialist agents)%n  2. Optionally install the 9-tab research dashboard%n  3. Ask you a few questions to personalise Metis to your work%n%nInstallation takes 5–15 minutes depending on your connection.%nAn Anthropic API key is optional: Claude Desktop and Claude Code use your Claude subscription.
 
 ; ── Component descriptions shown in wizard ───────────────────────────────────
 [Types]
@@ -85,7 +85,7 @@ Name: "minimal"; Description: "AI only — just the AI assistant, no dashboard  
 Name: "custom";  Description: "Custom — choose what to include"; Flags: iscustom
 
 [Components]
-Name: "core";      Description: "Metis AI assistant (34 specialist agents, MCP server, persistent memory)"; Types: full minimal custom; Flags: fixed
+Name: "core";      Description: "Metis AI assistant (33 specialist agents, MCP server, persistent memory)"; Types: full minimal custom; Flags: fixed
 Name: "dashboard"; Description: "Research dashboard — 9 tabs: papers, meetings, ideas, projects, tasks, learning"; Types: full custom
 
 [Tasks]
@@ -114,6 +114,10 @@ Source: "{#RepoRoot}\system\config\tool-subsets.json";   DestDir: "{app}\system\
 ; ── MCP server ────────────────────────────────────────────────────────────────
 Source: "{#RepoRoot}\system\mcp-server\src\*";          DestDir: "{app}\system\mcp-server\src"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#RepoRoot}\system\mcp-server\pyproject.toml"; DestDir: "{app}\system\mcp-server";     Flags: ignoreversion
+; The version lock install.ps1 installs under, and the database definition.
+Source: "{#RepoRoot}\system\mcp-server\requirements.txt"; DestDir: "{app}\system\mcp-server"; Flags: ignoreversion
+Source: "{#RepoRoot}\system\installer\schema.sql";        DestDir: "{app}\system\installer";  Flags: ignoreversion
+Source: "{#RepoRoot}\system\installer\init_db.py";        DestDir: "{app}\system\installer";  Flags: ignoreversion
 
 ; ── Dashboard (optional component) ────────────────────────────────────────────
 Source: "{#RepoRoot}\system\app-py\*"; DestDir: "{app}\system\app-py"; \
@@ -137,10 +141,11 @@ Source: "..\tray_launcher.py";           DestDir: "{app}\system\install";       
 Source: "..\dist\MetisTray.exe";         DestDir: "{app}\system\install\windows"; Flags: ignoreversion skipifsourcedoesntexist; Components: dashboard
 Source: "..\vendor_download.py";         DestDir: "{app}\system\install";         Flags: ignoreversion
 Source: "..\config_merger.py";           DestDir: "{app}\system\install";         Flags: ignoreversion
+Source: "..\register_desktop.py";        DestDir: "{app}\system\install";         Flags: ignoreversion
 ; Demo/seed content. Gitignored, so it is absent from a clean clone and the
 ; compile must not depend on it — without skipifsourcedoesntexist, ISCC
 ; fails outright and no installer can be built at all.
-Source: "..\seed_ph_database.py";        DestDir: "{app}\system\install";         Flags: ignoreversion skipifsourcedoesntexist
+Source: "..\seed_mockup_demo.py";        DestDir: "{app}\system\install";         Flags: ignoreversion
 Source: "..\build_knowledge_db.py";      DestDir: "{app}\system\install";         Flags: ignoreversion
 Source: "..\process_wizard_answers.py";  DestDir: "{app}\system\install";         Flags: ignoreversion
 Source: "..\terminal_wizard.py";         DestDir: "{app}\system\install";         Flags: ignoreversion
@@ -167,77 +172,77 @@ Name: "{app}\system\app\data"
 Name: "{app}\system\config"
 
 [Icons]
-; Start Menu
-Name: "{group}\Metis — Open AI";    Filename: "{commonpf}\Anthropic\Claude\Claude.exe"; Tasks: startmenu
-; "Configure & Fix Metis" — the door to metis-doctor / metis-customize (always created)
-Name: "{group}\Configure & Fix Metis"; Filename: "{app}\Configure-and-Fix-Metis.html"; \
-  IconFilename: "{app}\system\install\windows\metis-brain.ico"; IconIndex: 0; Tasks: startmenu
-Name: "{autodesktop}\Configure & Fix Metis"; Filename: "{app}\Configure-and-Fix-Metis.html"; \
-  IconFilename: "{app}\system\install\windows\metis-brain.ico"; IconIndex: 0
-Name: "{group}\Metis — Dashboard";  Filename: "powershell.exe"; \
-  Parameters: "-WindowStyle Hidden -ExecutionPolicy Bypass -File ""{app}\system\install\windows\launch-dashboard.ps1"""; \
+; "Metis — Open AI" (Claude Desktop) is made by install.ps1, not here: Claude
+; Desktop has no fixed path — the Microsoft Store edition has no .exe a shortcut
+; can name — so only a script can find it. The Tasks are passed through to it.
+; The dashboard opens through a VBScript, which starts it with no console window.
+Name: "{group}\Metis — Dashboard";  Filename: "{sys}\wscript.exe"; \
+  Parameters: """{app}\system\install\windows\launch-dashboard-silent.vbs"""; \
   IconFilename: "{app}\system\install\windows\metis-brain.ico"; IconIndex: 0; \
   Tasks: startmenu; Components: dashboard
+; "Configure & Fix Metis" — the door to metis-doctor / metis-customize
+Name: "{group}\Configure & Fix Metis"; Filename: "{app}\Configure-and-Fix-Metis.html"; \
+  IconFilename: "{app}\system\install\windows\metis-brain.ico"; IconIndex: 0; Tasks: startmenu
 Name: "{group}\Uninstall Metis";    Filename: "{uninstallexe}"; Tasks: startmenu
-
-; Desktop — Claude shortcut only created if Claude Desktop is installed
-Name: "{autodesktop}\Metis — Open AI"; Filename: "{commonpf}\Anthropic\Claude\Claude.exe"; Tasks: desktopai; \
-  Check: FileExists(ExpandConstant('{commonpf}\Anthropic\Claude\Claude.exe'))
-Name: "{autodesktop}\Metis";           Filename: "powershell.exe"; \
-  Parameters: "-WindowStyle Hidden -ExecutionPolicy Bypass -File ""{app}\system\install\windows\launch-dashboard.ps1"""; \
+Name: "{autodesktop}\Metis";        Filename: "{sys}\wscript.exe"; \
+  Parameters: """{app}\system\install\windows\launch-dashboard-silent.vbs"""; \
   IconFilename: "{app}\system\install\windows\metis-brain.ico"; IconIndex: 0; \
   Tasks: desktopdash; Components: dashboard
 
 [Run]
-; Step 0 — Python bootstrap (tries winget, python.org, then bundled embed)
+; install.ps1 does the work: Python (via uv), packages under the version lock,
+; the database, Claude Desktop and Claude Code, shortcuts. It never prompts when
+; called with -FromInstaller. Its log: {app}\system\install\install-log.txt
 Filename: "powershell.exe"; \
-  Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\system\install\bootstrap_python.ps1"" -InstallDir ""{app}"""; \
+  Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\system\install\windows\install.ps1"" -FromInstaller -SkipClaude -InstallDir ""{app}"" -ApiKey ""{code:GetApiKey}""{code:ShortcutArgs}"; \
   Flags: waituntilterminated; \
-  StatusMsg: "Setting up Python…"
-
-; Step 1a — Full install (with dashboard)
-Filename: "powershell.exe"; \
-  Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\system\install\windows\install.ps1"" -SkipPython -SkipClaude -InstallDir ""{app}"" -ApiKey ""{code:GetApiKey}"""; \
-  Flags: waituntilterminated; \
-  StatusMsg: "Installing Metis (2–4 minutes)…"; \
+  StatusMsg: "Installing Metis (5–10 minutes)…"; \
   Components: dashboard
 
-; Step 1b — Minimal install (AI only, no dashboard)
 Filename: "powershell.exe"; \
-  Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\system\install\windows\install.ps1"" -Stage1Only -SkipPython -SkipClaude -InstallDir ""{app}"" -ApiKey ""{code:GetApiKey}"""; \
+  Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\system\install\windows\install.ps1"" -Stage1Only -FromInstaller -SkipClaude -InstallDir ""{app}"" -ApiKey ""{code:GetApiKey}""{code:ShortcutArgs}"; \
   Flags: waituntilterminated; \
-  StatusMsg: "Configuring Metis AI assistant…"; \
+  StatusMsg: "Installing the Metis AI assistant (3–6 minutes)…"; \
   Components: not dashboard
 
-; Step 2 — Demo workspace (only when user chose demo on the wizard page)
+; The steps below run in the environment install.ps1 just made — never a bare
+; `python`, which on most computers is a different Python, or none — and write
+; to the live database the server resolves, not the retired system\app\data.
 Filename: "powershell.exe"; \
-  Parameters: "-NoProfile -ExecutionPolicy Bypass -Command ""$py = $env:METIS_PYTHON; if (-not $py) {{ $py = 'python' }}; & $py '{app}\system\install\seed_ph_database.py' --db '{app}\system\app\data\metis.sqlite' --quiet"""; \
+  Parameters: "-NoProfile -ExecutionPolicy Bypass -Command ""$env:METIS_RC_ROOT='{app}'; & '{app}\system\mcp-server\.venv-win\Scripts\python.exe' '{app}\system\install\seed_mockup_demo.py' --load --quiet *>> '{app}\system\install\install-log.txt'"""; \
   Flags: waituntilterminated runhidden; \
   StatusMsg: "Loading demo workspace…"; \
   Check: ShouldSeedDemo
 
-; Step 3 — Build PDF knowledge index (dashboard only, skips gracefully if library is empty)
 Filename: "powershell.exe"; \
-  Parameters: "-NoProfile -ExecutionPolicy Bypass -Command ""$py = $env:METIS_PYTHON; if (-not $py) {{ $py = 'python' }}; & $py '{app}\system\install\build_knowledge_db.py' --library-dir '{app}\knowledge\library' --db '{app}\system\app\data\metis.sqlite' --quiet"""; \
+  Parameters: "-NoProfile -ExecutionPolicy Bypass -Command ""$env:METIS_RC_ROOT='{app}'; & '{app}\system\mcp-server\.venv-win\Scripts\python.exe' '{app}\system\install\build_knowledge_db.py' --library-dir '{app}\knowledge\library' --quiet *>> '{app}\system\install\install-log.txt'"""; \
   Flags: waituntilterminated runhidden; \
   StatusMsg: "Building knowledge database (5–15 min — Metis reads all included documents)…"; \
   Components: dashboard
 
-; Step 4 — Process wizard answers through Claude API → writes metis-persona.md + project stubs
 Filename: "powershell.exe"; \
-  Parameters: "-NoProfile -ExecutionPolicy Bypass -Command ""$py = $env:METIS_PYTHON; if (-not $py) {{ $py = 'python' }}; & $py '{app}\system\install\process_wizard_answers.py' --answers '{app}\system\wizard-answers.json' --metis-root '{app}' --quiet"""; \
+  Parameters: "-NoProfile -ExecutionPolicy Bypass -Command ""$env:METIS_RC_ROOT='{app}'; & '{app}\system\mcp-server\.venv-win\Scripts\python.exe' '{app}\system\install\process_wizard_answers.py' --answers '{app}\system\wizard-answers.json' --metis-root '{app}' --quiet *>> '{app}\system\install\install-log.txt'"""; \
   Flags: waituntilterminated runhidden; \
   StatusMsg: "Personalising Metis to your research profile…"
 
-; Final — offer to launch Claude Desktop only if it is actually installed
-Filename: "{commonpf}\Anthropic\Claude\Claude.exe"; \
-  Description: "Launch Claude Desktop — Metis starts automatically"; \
-  Flags: postinstall nowait skipifsilent; \
-  Check: FileExists(ExpandConstant('{commonpf}\Anthropic\Claude\Claude.exe'))
+; Opens Claude Desktop through the shortcut install.ps1 made, which works for
+; both the classic and the Microsoft Store edition.
+Filename: "{app}\Metis — Open AI.lnk"; \
+  Description: "Open Claude Desktop — Metis is connected"; \
+  Flags: shellexec postinstall nowait skipifsilent; \
+  Check: FileExists(ExpandConstant('{app}\Metis — Open AI.lnk'))
+
+[UninstallRun]
+; Take Metis out of Claude Desktop's settings, leaving every other connector.
+Filename: "{app}\system\mcp-server\.venv-win\Scripts\python.exe"; \
+  Parameters: """{app}\system\install\register_desktop.py"" --remove"; \
+  Flags: runhidden; RunOnceId: "RemoveMetisFromClaudeDesktop"
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}\system\mcp-server\.venv-win"
-Type: files;          Name: "{userappdata}\Claude\claude_desktop_config.json.metis-backup"
+Type: files;          Name: "{app}\Metis — Open AI.lnk"
+Type: files;          Name: "{autodesktop}\Metis — Open AI.lnk"
+Type: files;          Name: "{userprograms}\Metis\Metis — Open AI.lnk"
 
 [Code]
 { ── Page variables ──────────────────────────────────────────────────────── }
@@ -306,8 +311,21 @@ end;
 
 function HaveClaudeDesktop: Boolean;
 begin
-  Result := FileExists(ExpandConstant('{commonpf}\Anthropic\Claude\Claude.exe'))
-         or FileExists(ExpandConstant('{localappdata}\AnthropicClaude\Claude.exe'));
+  { Three install shapes. The Microsoft Store edition has no .exe we can see,
+    but its package folder and its settings folder are fixed. }
+  Result := FileExists(ExpandConstant('{localappdata}\AnthropicClaude\claude.exe'))
+         or FileExists(ExpandConstant('{localappdata}\Programs\Claude\Claude.exe'))
+         or FileExists(ExpandConstant('{commonpf}\Anthropic\Claude\Claude.exe'))
+         or DirExists(ExpandConstant('{localappdata}\Packages\Claude_pzs8sxrjxfjjc'));
+end;
+
+{ install.ps1 makes the "Open AI" shortcuts (it is the only place that can find
+  Claude Desktop); pass the shortcut choices through to it. }
+function ShortcutArgs(Param: String): String;
+begin
+  Result := '';
+  if WizardIsTaskSelected('desktopai') then Result := Result + ' -DesktopShortcut';
+  if WizardIsTaskSelected('startmenu') then Result := Result + ' -StartMenuShortcut';
 end;
 
 function HavePython: Boolean;
@@ -354,12 +372,12 @@ begin
   if HavePython then
   begin
     DepState[2] := DEP_READY;
-    DepRowNote[2].Caption := 'Already on this computer — setup will use it.';
+    DepRowNote[2].Caption := 'Found. Setup still uses its own copy, so yours is not changed.';
   end
   else
   begin
     DepState[2] := DEP_FIXABLE;
-    DepRowNote[2].Caption := 'Not found. Setup installs it for you; this adds a few minutes.';
+    DepRowNote[2].Caption := 'Not needed in advance: setup fetches its own copy, separate from any other Python.';
   end;
 
   { 3 — the chat interface. Optional: Metis runs without it. }
@@ -469,7 +487,7 @@ begin
     the step launched python against a missing file, python exited, and the
     installer moved on reporting success — the demo silently absent. }
   Result := (DemoPage.SelectedValueIndex = 0)
-            and FileExists(ExpandConstant('{app}\system\install\seed_ph_database.py'));
+            and FileExists(ExpandConstant('{app}\system\install\seed_mockup_demo.py'));
 end;
 
 function GetApiKey(Param: String): String;
@@ -561,13 +579,14 @@ begin
     ═══════════════════════════════════════════════════════════════════════ }
   ApiKeyPage := CreateInputQueryPage(
     DemoPage.ID,
-    'Anthropic API Key',
-    'Connect Metis to Claude AI — takes 2 minutes.',
-    'Metis uses the Anthropic API to power its 34 specialist agents.' + #13#10 +
+    'Anthropic API Key (optional)',
+    'Leave this empty if you use Claude Desktop or Claude Code — they do not need it.',
+    'Metis works through your Claude subscription in Claude Desktop and Claude Code.' + #13#10 +
+    'An API key only powers background features, such as the automatic morning brief.' + #13#10 +
     '' + #13#10 +
-    'Get a free key:  https://console.anthropic.com  ->  API Keys  ->  Create Key' + #13#10 +
-    'Your key stays on this PC in a local .env file (it looks like sk-ant-api03-…).' + #13#10 +
-    'Most tasks cost a few cents; set a spending limit in the Anthropic console.');
+    'API keys are paid separately:  https://console.anthropic.com  ->  API Keys' + #13#10 +
+    'It is stored on this PC in a local .env file (it looks like sk-ant-api03-…);' + #13#10 +
+    'what Metis sends to Claude for those features goes to the Anthropic API.');
   ApiKeyPage.Add('Paste your Anthropic API key here:', False);
 
   { ═══════════════════════════════════════════════════════════════════════
@@ -849,9 +868,13 @@ begin
     EnvDir  := ExpandConstant('{app}\system');
     ForceDirectories(EnvDir);
     EnvFile    := EnvDir + '\.env';
-    EnvContent := 'ANTHROPIC_API_KEY=' + ApiKey + #13#10 +
-                  'METIS_RC_ROOT=' + ExpandConstant('{app}') + #13#10;
-    SaveStringToFile(EnvFile, EnvContent, False);
+    { Re-running setup to update Metis must not erase a key entered last time:
+      install.ps1 merges the values in and keeps every other line. }
+    if not FileExists(EnvFile) then
+    begin
+      EnvContent := 'METIS_RC_ROOT=' + ExpandConstant('{app}') + #13#10;
+      SaveStringToFile(EnvFile, EnvContent, False);
+    end;
 
     { Write system/wizard-answers.json for process_wizard_answers.py }
     AnswersFile    := EnvDir + '\wizard-answers.json';

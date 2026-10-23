@@ -131,7 +131,17 @@ _SENSITIVE_COLUMNS = {
     # Name fields, record numbers, identity numbers
     "nom", "prenom", "prénom", "surname", "firstname", "first_name", "last_name",
     "mrn", "record_number", "dossier", "passport_number", "nid", "national_id",
+    # Generic identity and location columns of a line list
+    "name", "full_name", "patient_name", "gps", "latitude", "longitude",
+    "phone", "telephone", "mobile", "phone_number", "address",
 }
+# A header that names a person AND records a result or a location is a line
+# list: one identifiable person per row next to a clinical fact.
+_IDENTITY_COLUMNS = {"name", "full_name", "patient_name", "nom", "prenom", "prénom",
+                     "surname", "firstname", "first_name", "last_name", "dob",
+                     "date_of_birth", "phone", "telephone", "mobile", "phone_number"}
+_RESULT_HINTS = ("result", "positive", "confirm", "diagnos", "test", "gps",
+                 "latitude", "longitude", "case")
 # Merge any field-specific sensitive column names from the local override file.
 _SENSITIVE_COLUMNS |= {
     str(c).lower() for c in load_overrides().get("extra_sensitive_columns", [])
@@ -185,7 +195,13 @@ def _check_sensitive_headers(content: str) -> list[str]:
             headers = {h.strip().strip('"').strip("'") for h in first_line.split(sep)}
             found = headers & _SENSITIVE_COLUMNS
             if found:
-                return [f"Sensitive column(s) detected: {', '.join(sorted(found))}"]
+                out = [f"Sensitive column(s) detected: {', '.join(sorted(found))}"]
+                if headers & _IDENTITY_COLUMNS and any(
+                        h for h in headers - _IDENTITY_COLUMNS
+                        if any(k in h for k in _RESULT_HINTS)):
+                    out.append("Line list: named individual per row with a "
+                               "clinical result or location")
+                return out
     return []
 
 
@@ -264,11 +280,14 @@ def scan_content(content: str, file_path: str = "") -> dict:
         content: Text content to scan.
         file_path: Optional file path for context-based classification.
     """
-    warnings: list[str] = []
+    # Several patterns can share a label (two phone formats); report the label
+    # once, with the larger count, rather than the same warning twice.
+    counts: dict[str, int] = {}
     for pattern, label in _PII_CHECKS:
         hits = pattern.findall(content)
         if hits:
-            warnings.append(f"{label}(s) detected: {len(hits)} found")
+            counts[label] = max(counts.get(label, 0), len(hits))
+    warnings: list[str] = [f"{label}(s) detected: {n} found" for label, n in counts.items()]
     warnings.extend(_check_sensitive_headers(content))
     classification = _classify(warnings, file_path)
     return {"safe": len(warnings) == 0, "classification": classification, "warnings": warnings}
@@ -279,9 +298,17 @@ async def check_data_safety(
     content: str,
     file_path: str = "",
 ) -> list[TextContent]:
-    """Scan content for PII patterns and classify sensitivity level.
+    """Check pasted or shared data for personal identifiers — call FIRST, before analysing it.
 
-    Returns safety status, classification, and specific warnings.
+    Call this as the very first step whenever the researcher pastes or shares
+    rows about individual people (a line list, patient or participant records,
+    a table with names, dates of birth, phone numbers, GPS points or IDs) —
+    before any calculation or answer, even for a simple question. If the result
+    is not PUBLIC, do not analyse the raw rows: mask them with anonymize_text,
+    log the event with log_consent_event, and offer a script the researcher
+    runs locally.
+
+    Returns safety status, classification, specific warnings and the next steps.
 
     Args:
         content: Text content to scan.
@@ -302,5 +329,15 @@ async def check_data_safety(
             lines.append(f"- {w}")
     else:
         lines.append("No PII or sensitive patterns detected.")
+    if classification in ("SENSITIVE", "CONFIDENTIAL"):
+        lines += [
+            "",
+            "**Next — before answering the question:** do not analyse these rows. "
+            "Tell the researcher which identifiers were found; show a masked copy "
+            "(anonymize_text with replace_names=True — the masked table only, not "
+            "the replacement map); log it (log_consent_event); and offer a script "
+            "they run on their own computer against the real file. The pasted rows "
+            "have already reached the model — say so, do not claim otherwise.",
+        ]
 
     return [TextContent(type="text", text="\n".join(lines))]

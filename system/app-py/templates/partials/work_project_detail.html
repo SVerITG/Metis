@@ -62,7 +62,7 @@
 
   <!-- ── Tabs ── -->
   <div class="u-fixed" style="display:flex;gap:0;border-bottom:1px solid var(--m-rule);padding:0 var(--m-space-6);background:var(--m-surface-1);">
-    {% for tab_id, tab_label in [('tasks','Tasks'),('notes','Notes'),('about','About'),('history','History')] %}
+    {% for tab_id, tab_label in [('tasks','Tasks'),('figures','Figures' ~ (' · ' ~ figures|length if figures else '')),('notes','Notes'),('about','About'),('history','History')] %}
     <button id="pd-tab-btn-{{ tab_id }}"
             onclick="pdSwitchTab('{{ p.id }}','{{ tab_id }}')"
             style="background:none;border:none;border-bottom:2px solid {% if tab_id=='tasks' %}var(--m-accent){% else %}transparent{% endif %};
@@ -173,6 +173,31 @@
       {% endif %}
 
     </div><!-- /tasks -->
+
+    <!-- FIGURES TAB — visuals saved from a chat with save_project_figure -->
+    <div class="u-hide" id="pd-panel-figures">
+      {% if figures %}
+        {% for f in figures %}
+        <div class="panel panel-pad u-mb-4 panel--md">
+          <div class="u-row u-mb-2" style="gap:var(--m-space-3);align-items:baseline;">
+            <span class="u-grow u-title">{{ f.title }}</span>
+            {% if f.saved_at %}<span class="u-label u-fixed">{{ f.saved_at }}</span>{% endif %}
+            <a class="u-label u-label--accent u-fixed" href="{{ f.url }}" target="_blank" rel="noopener">Open full size &#8599;</a>
+          </div>
+          {% if f.caption %}
+          <div class="u-ed u-mb-3" style="font-size:var(--t-small);line-height:1.5;">{{ f.caption }}</div>
+          {% endif %}
+          <iframe src="{{ f.url }}" title="{{ f.title }}" loading="lazy"
+                  sandbox="allow-scripts allow-popups"
+                  style="width:100%;height:520px;border:1px solid var(--m-rule);border-radius:var(--m-radius);background:#fff;"></iframe>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="u-ed" style="font-size:var(--t-small);padding:var(--m-space-3) 0;">
+          No figures yet. Ask Claude to draw one for this project and save it here.
+        </div>
+      {% endif %}
+    </div><!-- /figures -->
 
     <!-- NOTES TAB -->
     <div class="u-hide" id="pd-panel-notes">
@@ -311,11 +336,14 @@
   var _pid = '{{ p.id }}';
 
   window.pdSwitchTab = function(pid, tab) {
-    ['tasks','notes','about','history'].forEach(function(t) {
+    ['tasks','figures','notes','about','history'].forEach(function(t) {
       var panel = document.getElementById('pd-panel-' + t);
       var btn   = document.getElementById('pd-tab-btn-' + t);
       if (!panel || !btn) return;
       var active = (t === tab);
+      // .u-hide is display:none !important, so an inline display alone never
+      // revealed a panel that started hidden; toggle the class as well.
+      panel.classList.toggle('u-hide', !active);
       panel.style.display = active ? '' : 'none';
       btn.style.borderBottomColor = active ? 'var(--m-accent)' : 'transparent';
       btn.style.color = active ? 'var(--m-accent)' : 'var(--m-muted)';

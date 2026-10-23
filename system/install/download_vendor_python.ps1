@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     download_vendor_python.ps1 — Pre-download Python embeddable zip for offline bundling.
 

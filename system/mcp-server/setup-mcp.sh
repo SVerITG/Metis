@@ -7,8 +7,22 @@
 #
 # Run once after a fresh WSL install or when adding new tool modules:
 #   bash setup-mcp.sh
+#
+# Options:
+#   --update       re-sync the source and reinstall the package only
+#   --with-voice   also install local speech-to-text (compiles C: needs a compiler)
 
 set -euo pipefail
+
+METIS_WITH_VOICE="${METIS_WITH_VOICE:-0}"
+_UPDATE=0
+for _a in "$@"; do
+  case "$_a" in
+    --with-voice) METIS_WITH_VOICE=1 ;;
+    --update|update) _UPDATE=1 ;;
+  esac
+done
+unset _a
 
 # ── Prerequisites: ensure curl and python3 are available ─────────────────────
 _need_curl=0
@@ -90,7 +104,7 @@ if [ -z "$METIS_PROFILE" ] && [ -t 0 ]; then
   esac
 
   # ── Demo workspace (standard/full only) ──────────────────────────────────
-  SEED_SCRIPT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/system/install/seed_ph_database.py"
+  SEED_SCRIPT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/system/install/seed_mockup_demo.py"
   if [ "$METIS_PROFILE" != "light" ] && [ -f "$SEED_SCRIPT" ]; then
     echo ""
     echo "  Start with a demo workspace?"
@@ -124,12 +138,68 @@ SRC_DIR="$_CODE_ROOT/system/mcp-server"
 
 mkdir -p "$HOME/.local/share/metis-mcp"
 
+# ── Package installation helpers ─────────────────────────────────────────────
+# Extras installed by default:
+#   [embedding]  — fastembed (semantic search / RAG — required for relevance)
+#   [library]    — paper-qa (ask_library)
+#   [ocr]        — pytesseract (scanned PDF extraction)
+# [voice] (local transcription) is opt-in with --with-voice: it pulls webrtcvad,
+# which compiles C, and a laptop without a compiler failed the whole install.
+METIS_EXTRAS="embedding,library,ocr"
+[ "$METIS_WITH_VOICE" = "1" ] && METIS_EXTRAS="$METIS_EXTRAS,voice"
+# Every install runs under the version lock, so a fresh machine gets the versions
+# that were tested rather than whatever was released this morning.
+LOCK_FILE="$SRC_DIR/requirements.txt"
+
+_pip_install() {
+  local uv c=()
+  uv=$(command -v uv 2>/dev/null || echo "$HOME/.local/bin/uv")
+  [ -f "$LOCK_FILE" ] && c=(-c "$LOCK_FILE")
+  if [ -x "$uv" ]; then
+    "$uv" pip install --python "$VENV_DIR/bin/python3" ${c[@]+"${c[@]}"} "$@"
+  else
+    "$VENV_DIR/bin/pip" install ${c[@]+"${c[@]}"} "$@"
+  fi
+}
+
+# Falls back one step at a time, and says what was lost: an extra that fails must
+# never take semantic search down with it.
+_install_package() {
+  echo "Installing metis-mcp-server package (extras: $METIS_EXTRAS)..."
+  _pip_install "$LOCAL_SRC[$METIS_EXTRAS]" && return 0
+  echo "  ⚠ An optional extra failed to install — retrying with semantic search only."
+  if _pip_install "$LOCAL_SRC[embedding]"; then
+    echo "  ⚠ Installed WITHOUT: ${METIS_EXTRAS#embedding,}. Metis works; those features say how to add them."
+    return 0
+  fi
+  echo "  ⚠ Retrying with no extras — semantic search will be OFF until this is fixed."
+  _pip_install "$LOCAL_SRC"
+}
+
+# System packages: ask for the password only when someone is there to type it.
+_sys_install() {
+  local pkg="$1"
+  if command -v apt-get >/dev/null 2>&1; then
+    if [ "$(id -u)" = "0" ]; then
+      apt-get install -y "$pkg" >/dev/null 2>&1
+    elif [ -t 0 ]; then
+      echo "  (your password may be asked, to install $pkg)"
+      sudo apt-get install -y "$pkg" >/dev/null 2>&1
+    else
+      sudo -n apt-get install -y "$pkg" >/dev/null 2>&1
+    fi
+  elif command -v brew >/dev/null 2>&1; then
+    brew install "$pkg" >/dev/null 2>&1
+  else
+    return 1
+  fi
+}
+
 # ── Quick update mode ────────────────────────────────────────────────────────
 # Re-syncs source and reinstalls the package without running the full wizard.
 # Usage:  bash setup-mcp.sh --update
 #         bash setup-mcp.sh update
-_ARG1="${1:-}"
-if [ "$_ARG1" = "--update" ] || [ "$_ARG1" = "update" ]; then
+if [ "$_UPDATE" = "1" ]; then
   echo ""
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo "  Metis — quick update"
@@ -150,17 +220,7 @@ if [ "$_ARG1" = "--update" ] || [ "$_ARG1" = "update" ]; then
   [ -f "$SRC_DIR/requirements.txt" ] && cp "$SRC_DIR/requirements.txt" "$LOCAL_SRC/"
 
   # Re-install package
-  EXTRAS="embedding,library,ocr,voice"
-  UV=$(command -v uv 2>/dev/null || echo "$HOME/.local/bin/uv")
-  if [ -x "$UV" ]; then
-    echo "Reinstalling with uv..."
-    "$UV" pip install --python "$VENV_DIR/bin/python3" "$LOCAL_SRC[$EXTRAS]" \
-      || "$UV" pip install --python "$VENV_DIR/bin/python3" "$LOCAL_SRC"
-  else
-    echo "Reinstalling with pip..."
-    "$VENV_DIR/bin/pip" install "$LOCAL_SRC[$EXTRAS]" \
-      || "$VENV_DIR/bin/pip" install "$LOCAL_SRC"
-  fi
+  _install_package
 
   # Update marker file
   MARKER_FILE="$HOME/.local/share/metis-mcp/.metis-rc-root"
@@ -182,7 +242,6 @@ if [ "$_ARG1" = "--update" ] || [ "$_ARG1" = "update" ]; then
   fi
   exit 0
 fi
-unset _ARG1
 
 # ── Install uv (preferred — no sudo, no python3.X-venv package needed) ───────
 # uv manages its own Python and venv, so it works on any OS/distro without
@@ -276,26 +335,7 @@ cp -r "$SRC_DIR/src" "$LOCAL_SRC/"
 cp "$SRC_DIR/pyproject.toml" "$LOCAL_SRC/"
 [ -f "$SRC_DIR/requirements.txt" ] && cp "$SRC_DIR/requirements.txt" "$LOCAL_SRC/"
 
-echo "Installing MCP server requirements..."
-# Install WITH extras so key features work out of the box:
-#   [embedding]  — fastembed (semantic search / RAG — required for relevance)
-#   [library]    — paper-qa (ask_library)
-#   [ocr]        — pytesseract (scanned PDF extraction)
-#   [voice]      — faster-whisper (local speech-to-text transcription)
-# Without [embedding], all semantic search is silently disabled.
-# Without [voice], transcription tools return install instructions.
-EXTRAS="embedding,library,ocr,voice"
-if [ "$USE_UV" = "1" ]; then
-  [ -f "$LOCAL_SRC/requirements.txt" ] && "$UV" pip install --python "$VENV_DIR/bin/python3" -r "$LOCAL_SRC/requirements.txt"
-  echo "Installing metis-mcp-server package (with $EXTRAS extras)..."
-  "$UV" pip install --python "$VENV_DIR/bin/python3" "$LOCAL_SRC[$EXTRAS]" \
-    || "$UV" pip install --python "$VENV_DIR/bin/python3" "$LOCAL_SRC"
-else
-  [ -f "$LOCAL_SRC/requirements.txt" ] && "$VENV_DIR/bin/pip" install -r "$LOCAL_SRC/requirements.txt"
-  echo "Installing metis-mcp-server package (with $EXTRAS extras)..."
-  "$VENV_DIR/bin/pip" install "$LOCAL_SRC[$EXTRAS]" \
-    || "$VENV_DIR/bin/pip" install "$LOCAL_SRC"
-fi
+_install_package
 
 # ── OCR system binary (Tesseract) — fallback for image-only / scanned PDFs ────
 # The Python wrapper (pytesseract) ships via the [ocr] extra above; OCR also needs
@@ -304,25 +344,15 @@ fi
 # Background Maker, which scrapes heterogeneous web PDFs.
 if ! command -v tesseract >/dev/null 2>&1; then
   echo "Installing Tesseract OCR (for scanned-PDF extraction)…"
-  if command -v apt-get >/dev/null 2>&1; then
-    sudo apt-get install -y tesseract-ocr >/dev/null 2>&1 || echo "  (skip) install manually: sudo apt install tesseract-ocr"
-  elif command -v brew >/dev/null 2>&1; then
-    brew install tesseract >/dev/null 2>&1 || echo "  (skip) install manually: brew install tesseract"
-  else
-    echo "  (skip) Tesseract not found — install it to enable OCR on scanned PDFs."
-  fi
+  _pkg=tesseract-ocr; command -v brew >/dev/null 2>&1 && ! command -v apt-get >/dev/null 2>&1 && _pkg=tesseract
+  _sys_install "$_pkg" \
+    || echo "  (skip) optional — scanned PDFs index without OCR. Later: sudo apt install tesseract-ocr"
 fi
 
 # ── ffmpeg (for Whisper audio decoding + WhisperX diarization) ────────────────
-if ! command -v ffmpeg >/dev/null 2>&1; then
+if [ "$METIS_WITH_VOICE" = "1" ] && ! command -v ffmpeg >/dev/null 2>&1; then
   echo "Installing ffmpeg (for audio transcription)…"
-  if command -v apt-get >/dev/null 2>&1; then
-    sudo apt-get install -y ffmpeg >/dev/null 2>&1 || echo "  (skip) install manually: sudo apt install ffmpeg"
-  elif command -v brew >/dev/null 2>&1; then
-    brew install ffmpeg >/dev/null 2>&1 || echo "  (skip) install manually: brew install ffmpeg"
-  else
-    echo "  (skip) ffmpeg not found — install it for audio transcription support."
-  fi
+  _sys_install ffmpeg || echo "  (skip) install manually: sudo apt install ffmpeg"
 fi
 
 # If a transitive dependency pulled in GPU torch, swap it for the CPU-only build.
@@ -345,11 +375,7 @@ if [ "$METIS_PROFILE" != "light" ]; then
   APP_REQ="$_CODE_ROOT/system/app-py/requirements.txt"
   if [ -f "$APP_REQ" ]; then
     echo "Installing dashboard dependencies..."
-    if [ "$USE_UV" = "1" ]; then
-      "$UV" pip install --python "$VENV_DIR/bin/python3" -r "$APP_REQ"
-    else
-      "$VENV_DIR/bin/pip" install -r "$APP_REQ"
-    fi
+    _pip_install -r "$APP_REQ"
     echo "  Dashboard deps installed"
   fi
 else
@@ -449,39 +475,22 @@ else
 fi
 
 # ── Install Claude Code CLI if missing ──────────────────────────────────────
+# Anthropic's native installer: no Node.js, no sudo, installs to ~/.local/bin.
+# The old route (nodesource + sudo + npm) aborted on any machine without sudo.
 if ! command -v claude >/dev/null 2>&1; then
   echo ""
-  echo "── Installing Claude Code CLI ──"
-  _installed_node=0
-
-  # Ensure Node.js / npm is available
-  if ! command -v npm >/dev/null 2>&1; then
-    if command -v apt-get >/dev/null 2>&1; then
-      echo "  Installing Node.js (LTS)..."
-      if [ "$(id -u)" = "0" ]; then
-        curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - 2>/dev/null
-        apt-get install -y nodejs 2>/dev/null && _installed_node=1
-      else
-        curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo bash - 2>/dev/null
-        sudo apt-get install -y nodejs 2>/dev/null && _installed_node=1
-      fi
-    elif command -v brew >/dev/null 2>&1; then
-      brew install node 2>/dev/null && _installed_node=1
-    fi
+  echo "── Installing Claude Code ──"
+  if curl -fsSL https://claude.ai/install.sh | bash 2>&1 | sed 's/^/    /' \
+     && { [ -x "$HOME/.local/bin/claude" ] || command -v claude >/dev/null 2>&1; }; then
+    export PATH="$HOME/.local/bin:$PATH"
+    echo "  Claude Code installed"
+  elif command -v npm >/dev/null 2>&1 \
+     && npm install -g @anthropic-ai/claude-code 2>&1 | sed 's/^/    /'; then
+    echo "  Claude Code installed (npm)"
   else
-    _installed_node=1
+    echo "  ⚠ Could not install Claude Code automatically. Metis still works in Claude"
+    echo "    Desktop. For Claude Code: https://docs.claude.com/en/docs/claude-code/setup"
   fi
-
-  if [ "$_installed_node" = "1" ] && command -v npm >/dev/null 2>&1; then
-    echo "  Installing Claude Code CLI..."
-    npm install -g @anthropic-ai/claude-code 2>&1 | sed 's/^/    /' \
-      && echo "  Claude Code CLI installed" \
-      || echo "  npm install failed — install manually: npm install -g @anthropic-ai/claude-code"
-  else
-    echo "  Node.js not found — install Claude Code CLI manually:"
-    echo "  https://docs.anthropic.com/en/docs/claude-code/getting-started"
-  fi
-  unset _installed_node
 fi
 
 # ── Install Claude Desktop if missing (macOS only) ──────────────────────────
@@ -615,10 +624,14 @@ else
 fi
 
 # ── Initialize DB if not present ─────────────────────────────────────────────
-DB_PATH="$METIS_RC_ROOT/system/app/data/metis.sqlite"
+# The live database is wherever the server resolves it (~/.local/share/metis by
+# default) — NOT system/app/data, the retired OneDrive location. init_db.py asks
+# the server for the path and skips when a database is already there.
+DB_PATH=$(METIS_RC_ROOT="$METIS_RC_ROOT" "$VENV_DIR/bin/python3" -c \
+  "import os; from pathlib import Path; from metis_mcp.config import resolve_live_db; print(resolve_live_db(Path(os.environ['METIS_RC_ROOT'])))" \
+  2>/dev/null || echo "$HOME/.local/share/metis/metis.sqlite")
 INIT_SCRIPT="$METIS_RC_ROOT/system/installer/init_db.py"
-if [ ! -f "$DB_PATH" ] && [ -f "$INIT_SCRIPT" ]; then
-  echo "Initializing database..."
+if [ -f "$INIT_SCRIPT" ]; then
   "$VENV_DIR/bin/python3" "$INIT_SCRIPT"
 fi
 
@@ -650,6 +663,31 @@ foreach (\$dest in \$dests) {
 }
 Write-Host '  Shortcuts: Desktop + Start Menu created'
 " 2>/dev/null || echo "  Shortcuts: could not create (PowerShell unavailable)"
+fi
+
+# ── Linux app-menu shortcut (desktop Linux only — not WSL, not Docker) ──────
+# WSL gets the Windows shortcuts above. A Linux desktop had none at all.
+if [ "$METIS_PROFILE" != "light" ] && [ "$(uname -s)" = "Linux" ] && [ ! -f "/.dockerenv" ] \
+   && ! grep -qi microsoft /proc/version 2>/dev/null; then
+  _APPS="${XDG_DATA_HOME:-$HOME/.local/share}/applications"
+  mkdir -p "$_APPS"
+  cat > "$_APPS/metis.desktop" <<DESKTOP
+[Desktop Entry]
+Type=Application
+Name=Metis
+Comment=Your research dashboard
+Exec=bash "$_CODE_ROOT/system/app-py/open-dashboard.sh"
+Icon=$_CODE_ROOT/system/app-py/static/metis-icon.png
+Terminal=false
+Categories=Office;Education;
+DESKTOP
+  chmod +x "$_APPS/metis.desktop"
+  _DESK=$(command -v xdg-user-dir >/dev/null 2>&1 && xdg-user-dir DESKTOP 2>/dev/null || echo "$HOME/Desktop")
+  if [ -d "$_DESK" ] && [ "$_DESK" != "$HOME" ]; then
+    cp "$_APPS/metis.desktop" "$_DESK/metis.desktop" && chmod +x "$_DESK/metis.desktop"
+  fi
+  echo "  Shortcut: Metis added to the app menu"
+  unset _APPS _DESK
 fi
 
 # ── Prompt for API key (if not already configured) ───────────────────────────
@@ -755,18 +793,17 @@ echo "  install-state.json written"
 
 # ── Seed demo workspace if requested ─────────────────────────────────────────
 if [ "$SEED_DEMO" = "1" ]; then
-  SEED_SCRIPT_PATH="$_CODE_ROOT/system/install/seed_ph_database.py"
-  DB_PATH="$METIS_RC_ROOT/system/app/data/metis.sqlite"
+  SEED_SCRIPT_PATH="$_CODE_ROOT/system/install/seed_mockup_demo.py"
   echo ""
   echo "── Loading demo workspace ──"
   if [ -f "$SEED_SCRIPT_PATH" ]; then
-    if "$VENV_DIR/bin/python3" "$SEED_SCRIPT_PATH" --db "$DB_PATH" --quiet 2>&1 | sed 's/^/  /'; then
-      echo "  Demo workspace loaded"
+    if METIS_RC_ROOT="$METIS_RC_ROOT" "$VENV_DIR/bin/python3" "$SEED_SCRIPT_PATH" --load --quiet 2>&1 | sed 's/^/  /'; then
+      echo "  Demo workspace loaded — 'Exit demo' on the dashboard removes it"
     else
       echo "  Demo seed encountered an issue — non-fatal, continuing"
     fi
   else
-    echo "  seed_ph_database.py not found — skipping demo seed"
+    echo "  demo not included in this copy — skipping"
   fi
 fi
 
@@ -830,15 +867,17 @@ fi
 
 # 3. Promise harness (only if dashboard happens to be running)
 if [ "$METIS_PROFILE" != "light" ] && command -v curl >/dev/null 2>&1; then
-    if curl -s -o /dev/null -w "%{http_code}" --max-time 2 "http://127.0.0.1:8080/" 2>/dev/null | grep -q "200"; then
+    # A harness that prints no RESULT line (or a dashboard that answers but is not
+    # Metis) must not end the install here: under pipefail an empty grep did.
+    if curl -s -o /dev/null -w "%{http_code}" --max-time 2 "http://127.0.0.1:${METIS_PORT:-8080}/" 2>/dev/null | grep -q "200"; then
         if [ -f "$METIS_RC_ROOT/tests/functional/run_metis_promises.sh" ]; then
-            _RES=$(bash "$METIS_RC_ROOT/tests/functional/run_metis_promises.sh" 2>&1 | grep "^RESULT" | head -1)
+            _RES=$(bash "$METIS_RC_ROOT/tests/functional/run_metis_promises.sh" 2>&1 | grep "^RESULT" | head -1 || true)
             [ -n "$_RES" ] && echo "  $_RES"
             _PASS=$((_PASS + 1))
         fi
     else
         echo "  · Promise harness skipped (dashboard not running)"
-        echo "    Start it with: bash system/app-py/run.sh"
+        echo "    Start it with: bash system/app-py/run-dashboard.sh"
         echo "    Then verify:   bash tests/functional/run_metis_promises.sh"
     fi
 fi
@@ -880,8 +919,7 @@ if [ -f "$WIZARD_SCRIPT" ] && [ ! -f "$USER_CONFIG" ]; then
     ${ANTHROPIC_API_KEY:+--api-key "$ANTHROPIC_API_KEY"}
   if [ "$METIS_PROFILE" != "light" ]; then
     echo ""
-    echo "  Dashboard also available: bash system/app-py/run.sh"
-    echo "  Then open: http://localhost:8080"
+    echo "  Dashboard: bash system/app-py/open-dashboard.sh   (or Metis in your app menu)"
   fi
 else
   echo ""

@@ -1,4 +1,4 @@
-# launch-dashboard.ps1
+﻿# launch-dashboard.ps1
 # Starts the Metis dashboard silently — no visible console window.
 # Used by the desktop shortcut. Works on Windows 10/11 and Windows Sandbox.
 
