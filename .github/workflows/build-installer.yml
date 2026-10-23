@@ -18,6 +18,7 @@ jobs:
   build-installer:
     name: Compile Inno Setup installers (Full / Standard / Minimal)
     runs-on: windows-latest
+    timeout-minutes: 60
     permissions:
       contents: write
 
@@ -83,6 +84,40 @@ jobs:
         run: |
           Get-ChildItem "system\install\installer\dist\*.exe" |
             Select-Object Name, @{n='MB';e={[math]::Round($_.Length/1MB,1)}}
+
+      # Compiling proves the file builds, not that it installs. Run it silently, as a
+      # colleague's double-click would, and check what it left behind. The release
+      # step below only runs if this passes.
+      - name: Install it silently and check the result
+        shell: powershell   # Windows PowerShell 5.1, like the colleague's machine
+        run: |
+          $exe = Get-ChildItem "system\install\installer\dist\MetisSetup-*.exe" | Select-Object -First 1
+          $dir = Join-Path $env:RUNNER_TEMP "MetisTest"
+          $log = Join-Path $env:RUNNER_TEMP "setup.log"
+          $p = Start-Process -FilePath $exe.FullName -PassThru -ArgumentList `
+            "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/DIR=`"$dir`"", "/LOG=`"$log`"", "/TYPE=full"
+          # A hang must explain itself: time-limited, and the logs always printed.
+          if (-not $p.WaitForExit(1500000)) {
+            Write-Host "--- still running after 25 minutes; processes:"
+            Get-CimInstance Win32_Process | Where-Object { $_.Name -match "python|powershell|uv|cmd" } |
+              ForEach-Object { "$($_.ProcessId) $($_.Name) $($_.CommandLine)" }
+            Write-Host "--- setup log:"; Get-Content $log -Tail 40
+            Write-Host "--- install log:"; Get-Content (Join-Path $dir "system\install\install-log.txt") -Tail 60 -ErrorAction SilentlyContinue
+            Stop-Process -Id $p.Id -Force
+            throw "setup did not finish within 25 minutes"
+          }
+          Write-Host "--- setup log (tail):"; Get-Content $log -Tail 25
+          if ($p.ExitCode -ne 0) { throw "setup exited $($p.ExitCode)" }
+          $py = Join-Path $dir "system\mcp-server\.venv-win\Scripts\python.exe"
+          if (-not (Test-Path $py)) {
+            Get-Content (Join-Path $dir "system\install\install-log.txt") -Tail 80 -ErrorAction SilentlyContinue
+            throw "setup finished but the Metis environment was not created"
+          }
+          & $py -c "import metis_mcp.server"
+          if ($LASTEXITCODE -ne 0) { throw "installed Metis tools do not import" }
+          $cfg = Get-Content (Join-Path $env:APPDATA "Claude\claude_desktop_config.json") -Raw | ConvertFrom-Json
+          if (-not $cfg.mcpServers.'metis-rc') { throw "Claude Desktop was not connected" }
+          Write-Host "Installed and connected: $dir"
 
       - name: Upload the installer artifact
         uses: actions/upload-artifact@v4

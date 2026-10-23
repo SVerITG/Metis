@@ -101,7 +101,7 @@ Source: "{#RepoRoot}\.claude\*"; DestDir: "{app}\.claude"; Flags: ignoreversion 
 
 ; ── Knowledge base ────────────────────────────────────────────────────────────
 Source: "{#RepoRoot}\knowledge\course-template\*";  DestDir: "{app}\knowledge\course-template"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#RepoRoot}\knowledge\library\concepts\*"; DestDir: "{app}\knowledge\library\concepts"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#RepoRoot}\knowledge\library\concepts\*"; DestDir: "{app}\knowledge\library\concepts"; Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist
 Source: "{#RepoRoot}\knowledge\library\methods\*";  DestDir: "{app}\knowledge\library\methods";  Flags: ignoreversion recursesubdirs createallsubdirs
 
 ; ── System config (public files only — no personal data) ─────────────────────
@@ -155,8 +155,8 @@ Source: "..\vendor\python-embed.zip"; DestDir: "{app}\vendor"; Flags: ignorevers
 Source: "..\vendor\get-pip.py";       DestDir: "{app}\vendor"; Flags: ignoreversion skipifsourcedoesntexist
 
 ; ── Docs ─────────────────────────────────────────────────────────────────────
-Source: "{#RepoRoot}\..\CONTRIBUTING.md"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
-Source: "{#RepoRoot}\..\README.md";       DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
+Source: "{#RepoRoot}\CONTRIBUTING.md"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
+Source: "{#RepoRoot}\README.md";       DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
 ; "Configure & Fix Metis" help page — the door for metis-doctor / metis-customize
 Source: "..\windows\configure-fix-metis.html"; DestDir: "{app}"; DestName: "Configure-and-Fix-Metis.html"; Flags: ignoreversion
 
@@ -396,7 +396,10 @@ begin
   { 4 — where it will be installed. Informational, but people want to know. }
   DepRowName[4].Caption := 'Install location';
   DepState[4] := DEP_READY;
-  DepRowNote[4].Caption := ExpandConstant('{app}');
+  // Not the app constant: this page comes before the folder is chosen, and
+  // expanding it that early is a runtime error that stopped setup on its first
+  // page. The folder box holds the default now and the choice later.
+  DepRowNote[4].Caption := WizardForm.DirEdit.Text;
 
   ReadyCount := 0;
   DepBlocked := False;
@@ -733,6 +736,11 @@ var
   ApiKey: String;
 begin
   Result := True;
+  { A silent install (/VERYSILENT, used by IT departments and by the release
+    build's own install test) never shows these pages. A check that refuses an
+    empty answer would refuse it for ever, behind a suppressed message box: setup
+    hung indefinitely. Silent means defaults, so the checks do not apply. }
+  if WizardSilent then Exit;
 
   if (DepPage <> nil) and (CurPageID = DepPage.ID) then
   begin

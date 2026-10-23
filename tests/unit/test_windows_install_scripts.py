@@ -91,17 +91,43 @@ def test_install_ps1_never_prompts_when_run_by_setup():
                 "on it and hangs")
 
 
+def _published() -> set[str]:
+    """Tracked files that reach the public repository — what the release build sees."""
+    tracked = set(subprocess.run(["git", "ls-files"], cwd=ROOT, capture_output=True,
+                                 text=True).stdout.splitlines())
+    excluded = set(subprocess.run(
+        ["git", "ls-files", "-i", "-c", "--exclude-from=system/release/public-export.gitignore"],
+        cwd=ROOT, capture_output=True, text=True).stdout.splitlines())
+    return tracked - excluded
+
+
 def test_setup_program_ships_every_file_it_names():
+    """Judged against the PUBLISHED tree, where the installer is actually built.
+
+    A folder that exists only in development (knowledge/library/concepts) made
+    the first release build abort; checking the development tree, this passed.
+    """
+    import os
     text = ISS.read_text(encoding="utf-8-sig")
-    base = ISS.parent
+    published = _published()
+    assert len(published) > 500, "could not list the published files"
     missing = []
     for src, flags in re.findall(r'^Source:\s*"([^"]+)"([^\n]*)', text, re.M):
-        if "skipifsourcedoesntexist" in flags or "*" in src:
+        if "skipifsourcedoesntexist" in flags:
             continue
-        path = (base / src.replace("{#RepoRoot}", "../../..").replace("\\", "/")).resolve()
-        if not path.exists():
+        rel = os.path.normpath(os.path.join(
+            "system/install/installer",
+            src.replace("{#RepoRoot}", "../../..").replace("\\", "/"))).replace(os.sep, "/")
+        if rel.startswith(".."):
+            missing.append(f"{src}  (outside the repository)")
+        elif "*" in rel:
+            folder = rel.split("*")[0].rstrip("/") + "/"
+            if not any(f.startswith(folder) for f in published):
+                missing.append(f"{src}  (nothing published in {folder})")
+        elif rel not in published:
             missing.append(src)
-    assert not missing, "metis-setup.iss names files that do not exist:\n  " + "\n  ".join(missing)
+    assert not missing, ("metis-setup.iss names files the published repository does not "
+                         "have — the release build aborts:\n  " + "\n  ".join(missing))
 
 
 def test_setup_program_ships_what_install_ps1_needs():
