@@ -97,34 +97,34 @@ jobs:
         with:
           name: "Metis ${{ env.VERSION }}"
           body: |
-            ## Metis Research Cortex ${{ env.VERSION }}
+            ## Metis ${{ env.VERSION }}
 
-            ### Windows Installers
+            A research companion for Claude: persistent memory of your work, 33 specialists,
+            and a research dashboard.
 
-            Download the installer that matches your needs:
+            ### Windows
+            Download **`MetisSetup-${{ env.VERSION }}.exe`** below and run it. No administrator
+            rights, no Python and no WSL needed — setup fetches what it needs. Choose a full
+            install (assistant + dashboard) or the assistant only. Setup can load a fictional
+            sample workspace and opens a short tour.
 
-            | File | What it is |
-            |---|---|
-            | `MetisSetup-${{ env.VERSION }}.exe` | The installer. Choose what to include during setup. |
+            Windows SmartScreen may warn that the installer is from an unknown publisher (it is
+            not code-signed yet): choose *More info → Run anyway*.
 
-            The wizard offers a full install, an assistant-only install, or a custom selection.
-
-            ### Docker (no download needed)
+            ### Linux and macOS
             ```bash
             git clone https://github.com/SVerITG/Metis
-            cd Metis/system/install/docker
-            cp .env.example .env   # add your API key
-            docker compose up -d   # standard (dashboard + MCP)
-            # or:
-            docker compose -f docker-compose.light.yml up -d  # MCP only
+            bash Metis/system/mcp-server/setup-mcp.sh
             ```
 
-            ### Manual / Linux
-            See `system/mcp-server/setup-mcp.sh` for the Linux/macOS installer.
+            ### You need
+            - Windows 10 (1809) or later, or a recent Linux / macOS
+            - [Claude Desktop](https://claude.ai/download) or Claude Code, with a Claude account
+            - An Anthropic API key is **optional** — it only powers background features such as
+              the automatic morning brief, and is paid separately
 
-            ---
-            Requires: Windows 10+, Python 3.10+, Anthropic API key.
-            AI integration requires [Claude Desktop](https://claude.ai/download).
+            Your files and database stay on your computer; what you ask Claude is processed by
+            Anthropic's Claude service.
           files: system/install/installer/dist/MetisSetup-*.exe
           draft: false
           prerelease: false
