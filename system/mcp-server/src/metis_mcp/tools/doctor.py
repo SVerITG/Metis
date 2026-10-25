@@ -1,6 +1,16 @@
-"""metis_doctor — one-screen health check for the Metis system.
+"""Health checks: the install doctor's doors, and the server's own self-diagnosis.
 
-Runs a battery of low-cost checks and returns a structured report. Designed
+What a PERSON runs — metis_doctor (report) and verify_install (repair) — is the
+install doctor, system/install/metis_verify.py, driven by the one list of
+essentials in system/install/essentials.json. The dashboard and the installers
+run the same script, so no two of them can give different answers.
+
+run_doctor() below is something else: the server's own fast, in-process
+self-diagnosis at start-up. It must stay cheap and must never start a server
+(the install doctor starts one to test it — calling that from start-up would
+start servers that start servers).
+
+run_doctor runs a battery of low-cost checks and returns a structured report. Designed
 so a non-technical user can copy/paste the output into a support thread or
 read the verdict in plain English from the dashboard.
 
@@ -568,70 +578,20 @@ def run_doctor() -> dict:
     return {"status": status, "summary": summary, "checks": checks}
 
 
-@app.tool()
-async def metis_doctor() -> list[TextContent]:
-    """Run a one-screen health check on Metis.
+async def _install_doctor(fix: bool) -> str:
+    """Run the install doctor (system/install/metis_verify.py) and return its report.
 
-    Verifies Python version, the SQLite database, the Anthropic API key, your
-    user-config.yaml, agent and skill folders, folder-rename hygiene, MCP
-    imports, and that `.env` is gitignored. Returns a structured report so the
-    dashboard or a CLI session can render it cleanly.
-
-    Use when:
-      - Something feels broken and you want a single command to triage.
-      - Just before publishing the repo, to catch hygiene issues.
-      - After a `git pull`, to confirm nothing regressed.
-    """
-    report = run_doctor()
-    _glyph = {"ok": "✓", "warn": "⚠", "fail": "✗"}
-    _verdict = {"ok": "✓ HEALTHY", "warn": "⚠ NEEDS ATTENTION", "fail": "✗ PROBLEMS FOUND"}
-    bar = "═" * 52
-    lines = [
-        bar,
-        "  Metis · Research Cortex — Health Check",
-        bar,
-        f"  Status: {_verdict.get(report['status'], report['status'].upper())}",
-        f"  {report['summary']}",
-        "",
-    ]
-    for c in report["checks"]:
-        g = _glyph["ok"] if c["ok"] else _glyph.get(c["severity"], "•")
-        lines.append(f"  {g}  {c['name']:<26} {c['detail']}")
-    lines.append("─" * 52)
-
-    # Plain-language next step for the most severe open item
-    fail = next((c for c in report["checks"] if not c["ok"] and c["severity"] == "fail"), None)
-    warn = next((c for c in report["checks"] if not c["ok"] and c["severity"] == "warn"), None)
-    focus = fail or warn
-    if focus:
-        lines.append(f"  Next step → {focus['name']}: {focus['detail']}")
-    else:
-        lines.append("  All clear — Metis is healthy.")
-    return [TextContent(type="text", text="\n".join(lines))]
-
-
-@app.tool()
-async def verify_install(fix: bool = True) -> list[TextContent]:
-    """Check that Metis works on this computer the way Claude reaches it, and repair it.
-
-    Runs system/install/metis_verify.py — the same self-check the installers
-    schedule daily. It confirms Metis is registered with Claude Desktop / Claude
-    Code and starts from that registration, that the database is intact and
-    complete, that search works offline, and that Metis knows the person. With
-    fix=True (default) it re-registers Metis, adds missing database tables,
-    reinstalls a broken package and downloads the search model.
-
-    Use when the person says something is not working, after an update, or when
-    they ask whether everything is set up. Tell them the result in plain words;
-    if the Claude Desktop connection was repaired, they must quit Claude Desktop
-    completely (also from the tray) and open it again.
+    The one doctor: the installers, the daily task, the dashboard and these
+    tools all run it, so they cannot disagree. It checks every entry in
+    system/install/essentials.json — computer, Metis's programs, each AI app,
+    dashboard, background tasks, data — and with fix=True repairs what it can.
     """
     import asyncio
     import sys
 
     script = paths.root / "system" / "install" / "metis_verify.py"
     if not script.exists():
-        return [TextContent(type="text", text="The self-check is not included in this installation.")]
+        return "The install doctor is not included in this installation."
     args = [sys.executable, str(script)] + (["--fix"] if fix else [])
     proc = await asyncio.create_subprocess_exec(
         *args, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT,
@@ -640,5 +600,94 @@ async def verify_install(fix: bool = True) -> list[TextContent]:
         out, _ = await asyncio.wait_for(proc.communicate(), timeout=900)
     except asyncio.TimeoutError:
         proc.kill()
-        return [TextContent(type="text", text="The self-check did not finish within 15 minutes.")]
-    return [TextContent(type="text", text=out.decode("utf-8", "replace").strip())]
+        return "The check did not finish within 15 minutes."
+    return out.decode("utf-8", "replace").strip()
+
+
+@app.tool()
+async def metis_doctor() -> list[TextContent]:
+    """Check everything Metis needs on this computer, without changing anything.
+
+    The install doctor's report: the computer (version, disk, internet), Metis's
+    own programs (Python, tools, search engine, search model), each AI app it
+    connects to (Claude Desktop, Claude Code, VS Code, Cursor) and whether
+    Metis starts from that app's settings, the dashboard and its morning scans,
+    the scheduled tasks, and the data (database, specialists, profile, updates).
+    To also repair, use verify_install. Tell the person the result in plain words.
+    """
+    return [TextContent(type="text", text=await _install_doctor(fix=False))]
+
+
+@app.tool()
+async def verify_install(fix: bool = True) -> list[TextContent]:
+    """Check everything Metis needs on this computer, and repair what can be repaired.
+
+    The install doctor — the same check the installers run and schedule daily —
+    over the list in system/install/essentials.json: computer, Metis's
+    programs, every AI app it connects to and whether Metis starts from that
+    app's own settings, the dashboard and its scans, the scheduled tasks, and
+    the data. With fix=True (default) it reinstalls broken or outdated tools,
+    reconnects apps (merging, never replacing their other connectors), adds
+    missing database tables, downloads the search model, starts the dashboard
+    and re-creates missing scheduled tasks — then checks again.
+
+    Use when the person says something is not working, after an update, or when
+    they ask whether everything is set up. Tell them the result in plain words;
+    if an app was reconnected, they must quit it completely (Claude Desktop:
+    also from the tray) and open it again.
+    """
+    return [TextContent(type="text", text=await _install_doctor(fix=fix))]
+
+
+@app.tool()
+async def update_metis(confirm: bool = False) -> list[TextContent]:
+    """Check for a newer version of Metis and, with confirm=True, install it.
+
+    For installs made by MetisSetup.exe on Windows. Without confirm it only
+    reports the installed and the newest published version and what updating
+    does — ask the person before calling again with confirm=True. Updating
+    keeps their profile, library, projects and settings.
+
+    After confirm=True the installer shows a small progress window and stops
+    Metis while it works, so this conversation loses Metis for a few minutes.
+    Tell the person: wait until the progress window closes, then quit Claude
+    Desktop completely (also from the tray) and open it again.
+    """
+    import asyncio
+    from metis_mcp import updates
+    from metis_mcp.config import use_system_certificates
+
+    current = updates.installed_version(paths.root)
+    if not current:
+        return [TextContent(type="text", text=(
+            "This copy of Metis was not installed with the Windows setup program, so it "
+            "cannot update itself. It is updated the way it was installed (for example "
+            "git pull and setup-mcp.sh)."))]
+    use_system_certificates()
+    latest = await asyncio.to_thread(updates.latest_release)
+    if latest is None:
+        return [TextContent(type="text", text=(
+            f"Installed: Metis {current}. The list of releases could not be reached "
+            "(no connection, or GitHub is blocked here), so it is unknown whether an "
+            "update exists. Try again later."))]
+    if not updates.is_newer(latest["version"], current):
+        return [TextContent(type="text", text=f"Metis {current} is the newest version.")]
+    if not confirm:
+        return [TextContent(type="text", text=(
+            f"Metis {latest['version']} is available; this computer has {current}.\n"
+            "Updating downloads the setup program (about 1 minute), then runs it with "
+            "a progress window and no questions; profile, library, projects and "
+            "settings are kept. Metis is unavailable for 5–10 minutes meanwhile.\n\n"
+            f"What is new:\n{latest['notes']}\n\n"
+            "Ask the person; if they agree, call update_metis(confirm=True)."))]
+    try:
+        dest = await asyncio.to_thread(updates.download_and_launch, latest)
+    except Exception as exc:
+        return [TextContent(type="text", text=(
+            f"The update could not be started: {exc}. It can be installed by hand: "
+            f"download {latest['name']} from https://github.com/{updates.REPO}/releases/latest "
+            "and run it."))]
+    return [TextContent(type="text", text=(
+        f"The update to Metis {latest['version']} has started ({dest.name}). A small "
+        "progress window is open. When it closes, quit Claude Desktop completely "
+        "(also from the tray icon) and open it again."))]

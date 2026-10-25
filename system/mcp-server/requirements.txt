@@ -427,6 +427,8 @@ tqdm==4.67.3
     #   fastembed
     #   huggingface-hub
     #   openai
+truststore==0.10.5
+    # via metis-mcp-server (system/mcp-server/pyproject.toml)
 twilio==9.10.5
     # via metis-mcp-server (system/mcp-server/pyproject.toml)
 typer==0.26.4

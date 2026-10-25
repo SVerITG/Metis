@@ -242,16 +242,16 @@ async def setup_verify():
     add("News to watch", bool(news), False,
         f"{len(news)} topic(s)" if news else "none yet — add them on the Metis tab")
 
-    # 6) Deep self-check (non-critical extra signal, best-effort).
+    # 6) The install doctor's last verdict (non-critical extra signal). Read, not
+    # re-run: it starts Metis to test it, which takes too long for this page.
     try:
-        from metis_mcp.tools.doctor import run_doctor
-        rep = run_doctor()
-        fails = [c.get("name") for c in rep.get("checks", [])
-                 if not c.get("ok") and c.get("severity") == "fail"]
+        rd = json.loads((_CONFIG_DIR / "readiness.json").read_text(encoding="utf-8"))
+        fails = [c.get("name") for c in rd.get("checks", []) if c.get("status") == "fail"]
         add("Full self-check", not fails, False,
-            "all checks passed" if not fails else "flags: " + ", ".join(fails))
+            f"{rd.get('overall', '')} ({str(rd.get('run_at', ''))[:16].replace('T', ' ')})"
+            if not fails else "needs attention: " + ", ".join(fails))
     except Exception:
-        pass  # doctor is optional; never block the gate on its absence
+        pass  # no check has run yet; never block the gate on it
 
     ok = all(c["ok"] for c in checks if c["critical"])
     return JSONResponse({"ok": ok, "checks": checks})

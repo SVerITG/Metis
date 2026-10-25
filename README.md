@@ -220,8 +220,9 @@ The installer asks for an API key so automation *can* run, but you can **skip it
    You can load a fictional **sample workspace** to explore first and remove it
    later with one click.
 3. **Open Claude Desktop** with the *Metis — Open AI* shortcut and say hello.
-   Setup installs Claude Desktop if you do not have it, connects Metis to it, and
-   offers to restart it if it was open. The *Metis* shortcut opens the dashboard,
+   Setup installs Claude Desktop if you do not have it, connects Metis to it — and to
+   Claude Code, VS Code and Cursor if you have them — and offers to restart it if it
+   was open. The *Metis* shortcut opens the dashboard,
    with a tour at `/tour`.
 
 *You need: Windows 10 (1809) or later, an internet connection during setup, and a
@@ -242,9 +243,17 @@ and on a Linux desktop adds Metis to the app menu.
 
 ### After installation
 
-**Is everything working?** Metis checks itself every day and repairs what it can;
-the result is on the dashboard's Metis tab. To check now, ask Metis in Claude:
-*"check that everything works"*.
+**Is everything working?** An install doctor checks everything Metis needs every
+day — your computer, Metis's own programs, each AI app it is connected to (and that
+Metis starts from it), the dashboard and its morning scans, the background tasks
+and your data — and repairs what it can. The full list is
+[`system/install/essentials.json`](system/install/essentials.json). The result is on
+the dashboard's Metis tab, with **Run health check** and **Check and repair**
+buttons; in Claude, say *"check that everything works"*.
+
+**A morning briefing every working day:** ask Metis to set it up. Claude Desktop
+runs it as a scheduled task on your Claude subscription (paid plans), so no API key
+is needed; the computer must be on with Claude Desktop open at that time.
 
 **API key (optional, paid separately):** Claude Desktop and Claude Code use your
 Claude account, and that is all Metis needs. A key from
@@ -252,8 +261,9 @@ Claude account, and that is all Metis needs. A key from
 such as the automatic morning brief; add it on the dashboard when you want them.
 It is stored on your computer, in `system/.env`.
 
-**Updating:** on Windows, download the newest `MetisSetup.exe` and run it — your
-answers, files and database are kept. On Linux: `git pull` in the Metis
+**Updating:** on Windows, say *"update Metis"* in Claude Desktop (from 1.3 on), or
+download the newest `MetisSetup.exe` and run it — your answers, files and database
+are kept. On Linux: `git pull` in the Metis
 folder, then `bash system/mcp-server/setup-mcp.sh --update`.
 
 ---
@@ -649,7 +659,8 @@ Methods Coach answers grounded in those passages, citing both sources.
 | Claude Code | ✅ Primary — full MCP + skills + hooks |
 | Claude Desktop | ✅ Primary — full MCP + memory; no CLI skills |
 | Gemini 2.0+ | 🔬 Experimental |
-| OpenAI / Cursor | 🟡 Partial — MCP tools only |
+| VS Code · Cursor | 🟡 Connected by setup and checked by the install doctor — MCP tools and prompts; no skills or hooks |
+| OpenAI | 🟡 Partial — MCP tools only |
 
 ---
 

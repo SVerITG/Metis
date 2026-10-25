@@ -357,60 +357,51 @@ async def metis_sessions(request: Request, limit: int = 12):
 # ---------------------------------------------------------------------------
 
 
-@router.get("/api/partial/metis/health-check", response_class=HTMLResponse)
-async def metis_health_check(request: Request):
-    """Run the full system doctor and render it in plain language — memory,
-    dependencies, stale installs, projects registered, connection, and more —
-    so a non-technical user can check everything with one click, no terminal."""
-    _m = "font-family:var(--m-mono);font-size:11px;color:var(--m-muted);"
+async def _run_install_doctor(fix: bool) -> str | None:
+    """Run the install doctor (system/install/metis_verify.py) — the one check the
+    installers, the daily task and Claude also run — and return an error text, or
+    None when it ran. Its verdict lands in readiness.json, which the panel reads."""
+    import asyncio
+    import sys
+    base = Path(os.environ.get("METIS_RC_ROOT", "") or Path(__file__).resolve().parents[3])
+    script = base / "system" / "install" / "metis_verify.py"
+    if not script.exists():
+        return "The install doctor is not part of this installation."
+    proc = await asyncio.create_subprocess_exec(
+        sys.executable, str(script), "--quiet", *(["--fix"] if fix else []),
+        stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL, cwd=str(base))
     try:
-        from metis_mcp.tools.doctor import run_doctor
-        report = run_doctor()
-    except Exception as e:
-        return HTMLResponse(
-            f'<div class="panel" style="padding:16px 18px;{_m}">Couldn\'t run the health check '
-            f'({_esc_str(e)}). Try reconnecting the Metis server, then run it again.</div>'
-        )
+        await asyncio.wait_for(proc.wait(), timeout=900)
+    except asyncio.TimeoutError:
+        proc.kill()
+        return "The check did not finish within 15 minutes."
+    return None
 
-    status = str(report.get("status") or "unknown").lower()
-    checks = report.get("checks") or []
-    overall_color = {"ok": "var(--m-ok)", "warn": "var(--m-warn)", "fail": "var(--m-alert)"}.get(status, "var(--m-muted)")
-    overall_txt = {
-        "ok": "Everything checks out — Metis is healthy.",
-        "warn": "Metis works, but a few things are worth fixing.",
-        "fail": "Something needs attention before relying on Metis.",
-    }.get(status, "Health check complete.")
 
-    from markupsafe import escape as _esc
-    n_ok = sum(1 for c in checks if c.get("ok"))
-    rows_html = []
-    for c in checks:
-        ok = bool(c.get("ok"))
-        sev = str(c.get("severity") or "info")
-        if ok:
-            color, dot = "var(--m-ok)", "●"
-        elif sev == "fail":
-            color, dot = "var(--m-alert)", "✕"
-        else:
-            color, dot = "var(--m-warn)", "▲"
-        rows_html.append(
-            '<div style="display:flex;align-items:baseline;gap:10px;padding:7px 0;'
-            'border-bottom:1px solid var(--m-rule-soft);">'
-            f'<span style="color:{color};flex-shrink:0;width:14px;">{dot}</span>'
-            f'<span style="font-size:13px;color:var(--m-ink);min-width:170px;flex-shrink:0;">{_esc(str(c.get("name") or ""))}</span>'
-            f'<span style="{_m}line-height:1.5;">{_esc(str(c.get("detail") or ""))}</span></div>'
-        )
+@router.get("/api/partial/metis/health-check", response_class=HTMLResponse)
+async def metis_health_last(request: Request):
+    """The install doctor's last full report. Reading only: a GET must never run
+    the doctor, which starts Metis to test it — a page crawl would run it."""
+    return await readiness_panel(request, full=True)
 
-    return HTMLResponse(
-        '<div class="panel" style="padding:16px 18px;margin-bottom:12px;">'
-        f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">'
-        f'<span style="color:{overall_color};font-weight:600;">● {_esc(overall_txt)}</span></div>'
-        f'<div style="{_m}">{n_ok}/{len(checks)} checks passed · '
-        f'<span style="cursor:pointer;text-decoration:underline;" '
-        f'hx-get="/api/partial/metis/health-check" hx-target="#metis-health-body" hx-swap="innerHTML">run again</span></div>'
-        '</div>'
-        '<div class="panel" style="padding:12px 18px;">' + "".join(rows_html) + '</div>'
-    )
+
+@router.post("/api/partial/metis/health-check", response_class=HTMLResponse)
+async def metis_health_check(request: Request):
+    """Run the install doctor and show its report in plain language — every
+    essential Metis needs on this computer — with one click, no terminal."""
+    err = await _run_install_doctor(fix=False)
+    if err:
+        return HTMLResponse(f'<div class="panel" style="padding:16px 18px;">{_esc_str(err)}</div>')
+    return await readiness_panel(request, full=True)
+
+
+@router.post("/api/partial/metis/health-check/repair", response_class=HTMLResponse)
+async def metis_health_repair(request: Request):
+    """Run the install doctor with repairs, then show what it found and fixed."""
+    err = await _run_install_doctor(fix=True)
+    if err:
+        return HTMLResponse(f'<div class="panel" style="padding:16px 18px;">{_esc_str(err)}</div>')
+    return await readiness_panel(request, full=True)
 
 
 def _esc_str(e) -> str:
@@ -928,9 +919,11 @@ async def startup_eval_strip(request: Request):
 
 
 @router.get("/api/partial/metis/readiness", response_class=HTMLResponse)
-async def readiness_panel(request: Request):
-    """The scheduled readiness check (tools/metis-readiness.py): can work start on
-    this computer — MCP server, dashboard, code, database, embedding model."""
+async def readiness_panel(request: Request, full: bool = False):
+    """The last verdict of the install doctor (system/install/metis_verify.py, run
+    daily): can work start on this computer. Shows what needs attention; with
+    full=True (right after a check from the Health check buttons) every row,
+    grouped, including what was repaired and what does not apply here."""
     from html import escape
     base = Path(os.environ.get("METIS_RC_ROOT", "") or Path(__file__).resolve().parents[3])
     fp = base / "system" / "config" / "readiness.json"
@@ -940,29 +933,47 @@ async def readiness_panel(request: Request):
     except Exception:
         return HTMLResponse(
             f'<div class="panel" style="padding:14px 18px;margin-bottom:24px;{_muted}">'
-            'No readiness check recorded yet. Run <code>bash tools/metis-readiness.sh</code>, '
-            'or schedule it daily with <code>bash tools/install-readiness-schedule.sh</code>.</div>')
+            'No check has run on this computer yet. Use “Run health check” on the Metis tab, '
+            'or say “check that everything works” to Metis in Claude.</div>')
     overall = str(d.get("overall") or "UNKNOWN")
     color = {"READY": "var(--m-ok)", "READY WITH WARNINGS": "var(--m-warn)"}.get(overall, "var(--m-alert)")
     when = str(d.get("run_at") or "")[:16].replace("T", " ")
     counts = d.get("counts") or {}
-    rows = "".join(
-        '<div style="padding:6px 0;border-top:1px solid var(--m-rule-soft);">'
-        f'<span style="color:{"var(--m-alert)" if c["status"] == "fail" else "var(--m-warn)"};">'
-        f'{"✗" if c["status"] == "fail" else "⚠"}</span> '
-        f'<strong>{escape(c["area"])} · {escape(c["name"])}</strong> '
-        f'<span style="color:var(--m-muted);">— {escape(c.get("detail", ""))[:220]}</span>'
-        + (f'<div style="{_muted}margin-left:18px;">fix: {escape(c["fix"])}</div>' if c.get("fix") else "")
-        + '</div>'
-        for c in sorted((c for c in d.get("checks", []) if c.get("status") != "pass"),
-                        key=lambda c: c["status"] != "fail")
-    )
+    _mark = {"pass": ("●", "var(--m-ok)"), "warn": ("⚠", "var(--m-warn)"),
+             "fail": ("✗", "var(--m-alert)"), "skip": ("–", "var(--m-muted)")}
+
+    def _row(c: dict) -> str:
+        dot, col = _mark.get(c.get("status"), ("?", "var(--m-muted)"))
+        detail = escape(c.get("detail", ""))[:220]
+        note = " · repaired" if c.get("repaired") else ""
+        return ('<div style="padding:6px 0;border-top:1px solid var(--m-rule-soft);">'
+                f'<span style="color:{col};">{dot}</span> '
+                f'<strong>{escape(c["name"])}</strong>{note} '
+                + (f'<span style="color:var(--m-muted);">— {detail}</span>' if detail else "")
+                + (f'<div style="{_muted}margin-left:18px;">what to do: {escape(c["fix"])}</div>'
+                   if c.get("fix") else "")
+                + '</div>')
+
+    checks = d.get("checks", [])
+    if full:
+        groups: dict[str, list[dict]] = {}
+        for c in checks:
+            groups.setdefault(c.get("area") or "", []).append(c)
+        rows = "".join(f'<div style="{_muted}margin-top:12px;text-transform:uppercase;">{escape(g)}</div>'
+                       + "".join(_row(c) for c in cs) for g, cs in groups.items())
+    else:
+        rows = "".join(_row(c) for c in sorted(
+            (c for c in checks if c.get("status") in ("warn", "fail")),
+            key=lambda c: c["status"] != "fail"))
     return HTMLResponse(
         '<div class="panel" style="padding:14px 18px;margin-bottom:24px;">'
         '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'
         f'<span style="color:{color};font-weight:600;">● {escape(overall)}</span>'
         f'<span style="{_muted}">{escape(when)} · {counts.get("pass", 0)} pass · '
-        f'{counts.get("warn", 0)} warn · {counts.get("fail", 0)} fail</span></div>'
+        f'{counts.get("warn", 0)} warn · {counts.get("fail", 0)} fail'
+        + (f' · {counts["repaired"]} repaired' if counts.get("repaired") else "")
+        + (f' · {counts["skip"]} not applicable' if counts.get("skip") else "")
+        + '</span></div>'
         f'<div style="margin-top:8px;font-size:13px;">{rows}</div></div>'
     )
 

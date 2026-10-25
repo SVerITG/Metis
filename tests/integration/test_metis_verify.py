@@ -37,8 +37,12 @@ def world(tmp_path):
     # PATH without uv, and no pip in the test's environment: a --fix that decides
     # to reinstall must not be able to reach a real installation from a test.
     env = {**os.environ, "HOME": str(home), "METIS_DB": str(db), "HF_HUB_OFFLINE": "1",
+           # Under WSL Claude Desktop's settings are on the Windows side: never those.
+           "METIS_CLAUDE_DESKTOP_DIR": str(desk),
            "PATH": "/usr/bin:/bin",
-           "METIS_VERIFY_NO_REINSTALL": "1",
+           "METIS_VERIFY_SANDBOX": "1",
+           # Never the real dashboard on this computer.
+           "METIS_VERIFY_DASHBOARD_URL": "http://127.0.0.1:9",
            # A Windows console: cp1252 has no ✓, and every check once crashed on it.
            "PYTHONIOENCODING": "cp1252",
            "METIS_VERIFY_RESULT": str(tmp_path / "readiness.json"),
@@ -74,7 +78,7 @@ def test_notices_then_repairs(world):
     code, out = _run(env, "--fix")
     checks = _by_name(tmp)
     assert checks["Metis is connected to Claude Desktop"]["status"] == "pass", out
-    assert checks["Metis starts when Claude asks"]["status"] in ("pass", "warn"), out
+    assert checks["Metis starts when your AI app asks"]["status"] in ("pass", "warn"), out
     assert checks["Your Metis database"]["status"] == "pass", out
 
     servers = json.loads((home / ".config" / "Claude" / "claude_desktop_config.json").read_text())["mcpServers"]

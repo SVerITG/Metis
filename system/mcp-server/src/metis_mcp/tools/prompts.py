@@ -287,12 +287,63 @@ def _verify(note: str = "") -> str:
         "Check that **Metis works properly on this computer, and fix what is broken**. "
         "Call `verify_install(fix=True)` (if it is not listed, find it with "
         "`find_tools(\"verify install\")`). Then tell the person, in plain words and "
-        "without technical terms: what was checked, what was repaired, and anything "
-        "that still needs them. If the Claude Desktop connection was repaired, tell "
-        "them to quit Claude Desktop completely (also from the tray icon) and open "
-        "it again. If something cannot be fixed automatically, say exactly what to "
-        "do next, one step at a time.\n"
+        "without technical terms: what was checked (their computer, Metis's programs, "
+        "each AI app, the dashboard, the background tasks, their data), what was "
+        "repaired, and anything that still needs them — rows marked as not applying "
+        "need no mention. If an app was reconnected, tell them to quit it completely "
+        "(Claude Desktop: also from the tray icon) and open it again. If something "
+        "cannot be fixed automatically, say exactly what to do next, one step at a time.\n"
         + (f"\nThey mentioned: {note}\n" if note else "")
+    )
+
+
+def _new_version(note: str = "") -> str:
+    return (
+        "Check whether a **newer version of Metis** is available, and install it if the "
+        "person wants. Call `update_metis()` (if it is not listed, find it with "
+        "`find_tools(\"update metis\")`). Tell them in plain words which version they "
+        "have, which is new, and what changes. Only if they say yes, call "
+        "`update_metis(confirm=True)`, then tell them: a small progress window opens; "
+        "when it closes, quit Claude Desktop completely (also from the tray icon) and "
+        "open it again. Their profile, library and projects are kept.\n"
+        + (f"\nThey mentioned: {note}\n" if note else "")
+    )
+
+
+# The text a scheduled task runs every morning. Short and self-contained: a
+# scheduled run starts with no memory of the conversation that created it.
+MORNING_TASK_PROMPT = (
+    "Use the Metis connector to prepare my morning briefing: call "
+    "session_bootstrap, then get_tasks, scan_inbox, get_news_briefs, "
+    "get_new_publications and get_project_status. Write a short briefing in plain "
+    "English — what is pressing today, what is new overnight in the news and the "
+    "literature, what is blocked, and one suggested focus — and save it with "
+    "save_daily_brief so it appears on my Metis dashboard."
+)
+
+
+def _schedule_morning(time_of_day: str = "") -> str:
+    return (
+        "Help the person get a **morning briefing every working day, automatically**, "
+        "through Claude Desktop's scheduled tasks. Metis cannot create the schedule "
+        "itself — only Claude Desktop can — so walk them through it, one step at a "
+        "time, waiting for them between steps:\n"
+        "1. Explain in one sentence: every morning Claude reads their tasks, news and "
+        "new papers in Metis and leaves a short briefing on the dashboard. It uses "
+        "their Claude subscription; no API key is needed.\n"
+        "2. Say it needs a paid Claude plan, and that the computer must be on with "
+        "Claude Desktop open at that time, because Metis runs on their computer. "
+        "If their organisation manages Claude and the 'Scheduled' item is missing "
+        "from the sidebar, their administrator has switched it off.\n"
+        "3. Steps: click **Scheduled** in the left sidebar → **New task** → "
+        "**Set up manually**. Name: *Metis morning briefing*. Frequency: *Weekdays*, "
+        f"at {time_of_day or 'a time when the computer is usually on (for example 08:30)'}. "
+        "Paste these instructions:\n\n"
+        f"> {MORNING_TASK_PROMPT}\n\n"
+        "4. Suggest they press **Run now** once to see the first briefing, and that "
+        "Claude may ask once to allow the Metis tools — they can choose to always allow.\n"
+        "5. Mention that the dashboard collects the news and papers in the background "
+        "after they log on, so the briefing has fresh material.\n"
     )
 
 
@@ -427,6 +478,8 @@ _WORKFLOW_PROMPTS = {
     "metis-weekly": ("Weekly digest — ideas, papers, meetings, projects", _weekly),
     "metis-tour": ("A five-minute, hands-on tour of Metis for someone new", _tour),
     "metis-verify": ("Check that Metis works on this computer, and fix what is broken", _verify),
+    "metis-new-version": ("Is there a newer Metis? Install it, keeping everything you have", _new_version),
+    "metis-schedule-morning": ("Get a morning briefing every working day, through Claude Desktop's scheduled tasks", _schedule_morning),
     "metis-doctor": ("Health check — is Metis working on this computer?", _doctor),
     "metis-customize": ("Make Metis yours — change projects, look, tone, or anything", _customize),
 }

@@ -21,7 +21,8 @@ set "METIS_RC_ROOT=%METIS_ROOT%"
 set "PYTHONPATH=%METIS_ROOT%\system\mcp-server\src"
 
 :: Find Python in the local venv
-set "VENV_PYTHON=%METIS_ROOT%\system\mcp-server\.venv-win\Scripts\python.exe"
+set "VENV_PYTHON=%LOCALAPPDATA%\Metis\venv\Scripts\python.exe"
+if not exist "%VENV_PYTHON%" set "VENV_PYTHON=%METIS_ROOT%\system\mcp-server\.venv-win\Scripts\python.exe"
 if not exist "%VENV_PYTHON%" (
     echo Metis MCP server: Python environment not found.
     echo Please run the Metis installer again to set up the tools.

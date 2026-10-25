@@ -11,8 +11,10 @@ Start with: uvicorn metis_mcp.webhook:app --port 8000
 # simply absent, and every Claude-API feature silently took its degraded path
 # rather than failing. See config.load_env_file() for the full story.
 from metis_mcp.config import load_env_file as _load_env_file
+from metis_mcp.config import use_system_certificates as _use_system_certificates
 
 _LOADED_ENV = _load_env_file()
+_use_system_certificates()
 
 # Use the shared app instance to avoid split registrations across tool modules.
 # All tool modules should import `app` from either server.py or app_instance.py —

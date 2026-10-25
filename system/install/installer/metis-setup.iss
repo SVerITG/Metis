@@ -126,6 +126,8 @@ Source: "{#RepoRoot}\system\app-py\*"; DestDir: "{app}\system\app-py"; \
 
 ; ── Windows launcher and install scripts ──────────────────────────────────────
 Source: "..\windows\install.ps1";               DestDir: "{app}\system\install\windows"; Flags: ignoreversion
+Source: "..\windows\stop-metis.ps1";            DestDir: "{app}\system\install\windows"; Flags: ignoreversion
+Source: "..\windows\register-tasks.ps1";        DestDir: "{app}\system\install\windows"; Flags: ignoreversion
 Source: "..\windows\launch-dashboard-silent.vbs"; DestDir: "{app}\system\install\windows"; Flags: ignoreversion; Components: dashboard
 Source: "..\windows\launch-dashboard.ps1";      DestDir: "{app}\system\install\windows"; Flags: ignoreversion; Components: dashboard
 Source: "..\windows\metis.ico";                 DestDir: "{app}\system\install\windows"; Flags: ignoreversion
@@ -143,6 +145,7 @@ Source: "..\vendor_download.py";         DestDir: "{app}\system\install";       
 Source: "..\config_merger.py";           DestDir: "{app}\system\install";         Flags: ignoreversion
 Source: "..\register_desktop.py";        DestDir: "{app}\system\install";         Flags: ignoreversion
 Source: "..\metis_verify.py";            DestDir: "{app}\system\install";         Flags: ignoreversion
+Source: "..\essentials.json";            DestDir: "{app}\system\install";         Flags: ignoreversion
 ; Demo/seed content. Gitignored, so it is absent from a clean clone and the
 ; compile must not depend on it — without skipifsourcedoesntexist, ISCC
 ; fails outright and no installer can be built at all.
@@ -191,57 +194,41 @@ Name: "{autodesktop}\Metis";        Filename: "{sys}\wscript.exe"; \
   Tasks: desktopdash; Components: dashboard
 
 [Run]
-; install.ps1 does the work: Python (via uv), packages under the version lock,
-; the database, Claude Desktop and Claude Code, shortcuts. It never prompts when
-; called with -FromInstaller. Its log: {app}\system\install\install-log.txt
-Filename: "powershell.exe"; \
-  Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\system\install\windows\install.ps1"" -FromInstaller -InstallDir ""{app}"" -ApiKey ""{code:GetApiKey}""{code:ShortcutArgs}"; \
-  Flags: waituntilterminated; \
-  StatusMsg: "Installing Metis (5–10 minutes)…"; \
-  Components: dashboard
-
-Filename: "powershell.exe"; \
-  Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\system\install\windows\install.ps1"" -Stage1Only -FromInstaller -InstallDir ""{app}"" -ApiKey ""{code:GetApiKey}""{code:ShortcutArgs}"; \
-  Flags: waituntilterminated; \
-  StatusMsg: "Installing the Metis AI assistant (3–6 minutes)…"; \
-  Components: not dashboard
-
-; The steps below run in the environment install.ps1 just made — never a bare
-; `python`, which on most computers is a different Python, or none — and write
-; to the live database the server resolves, not the retired system\app\data.
-Filename: "powershell.exe"; \
-  Parameters: "-NoProfile -ExecutionPolicy Bypass -Command ""$env:METIS_RC_ROOT='{app}'; & '{app}\system\mcp-server\.venv-win\Scripts\python.exe' '{app}\system\install\seed_mockup_demo.py' --load --quiet *>> '{app}\system\install\install-log.txt'"""; \
-  Flags: waituntilterminated runhidden; \
-  StatusMsg: "Loading demo workspace…"; \
-  Check: ShouldSeedDemo
-
-Filename: "powershell.exe"; \
-  Parameters: "-NoProfile -ExecutionPolicy Bypass -Command ""$env:METIS_RC_ROOT='{app}'; & '{app}\system\mcp-server\.venv-win\Scripts\python.exe' '{app}\system\install\build_knowledge_db.py' --library-dir '{app}\knowledge\library' --quiet *>> '{app}\system\install\install-log.txt'"""; \
-  Flags: waituntilterminated runhidden; \
-  StatusMsg: "Building knowledge database (5–15 min — Metis reads all included documents)…"; \
-  Components: dashboard
-
-Filename: "powershell.exe"; \
-  Parameters: "-NoProfile -ExecutionPolicy Bypass -Command ""$env:METIS_RC_ROOT='{app}'; & '{app}\system\mcp-server\.venv-win\Scripts\python.exe' '{app}\system\install\process_wizard_answers.py' --answers '{app}\system\wizard-answers.json' --metis-root '{app}' --quiet *>> '{app}\system\install\install-log.txt'"""; \
-  Flags: waituntilterminated runhidden; \
-  StatusMsg: "Personalising Metis to your research profile…"
-
+; install.ps1 does the work, and it is NOT run from here: [Run] ignores a
+; program's exit code, so a failed install ended on "Setup has finished"
+; with nothing working. It runs from CurStepChanged below, which reads the
+; exit code, shows each step as it happens, and reports a failure honestly.
 ; Opens Claude Desktop through the shortcut install.ps1 made, which works for
 ; both the classic and the Microsoft Store edition.
 Filename: "{app}\Metis — Open AI.lnk"; \
   Description: "Open Claude Desktop — Metis is connected"; \
   Flags: shellexec postinstall nowait skipifsilent; \
-  Check: FileExists(ExpandConstant('{app}\Metis — Open AI.lnk'))
+  Check: CanOpenClaude
 
 [UninstallRun]
+; Stop the running Metis first, or its files cannot be removed.
+Filename: "powershell.exe"; \
+  Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\system\install\windows\stop-metis.ps1"""; \
+  Flags: runhidden; RunOnceId: "StopMetis"
 Filename: "{sys}\schtasks.exe"; Parameters: "/Delete /TN ""Metis self-check"" /F"; \
   Flags: runhidden; RunOnceId: "RemoveMetisSelfCheck"
-; Take Metis out of Claude Desktop's settings, leaving every other connector.
+Filename: "{sys}\schtasks.exe"; Parameters: "/Delete /TN ""Metis dashboard"" /F"; \
+  Flags: runhidden; RunOnceId: "RemoveMetisDashboardTask"
+; Take Metis out of every AI app's settings, leaving every other connector.
+Filename: "{localappdata}\Metis\venv\Scripts\python.exe"; \
+  Parameters: """{app}\system\install\register_desktop.py"" --remove"; \
+  Flags: runhidden skipifdoesntexist; RunOnceId: "RemoveMetisFromClaudeDesktop"
 Filename: "{app}\system\mcp-server\.venv-win\Scripts\python.exe"; \
   Parameters: """{app}\system\install\register_desktop.py"" --remove"; \
-  Flags: runhidden; RunOnceId: "RemoveMetisFromClaudeDesktop"
+  Flags: runhidden skipifdoesntexist; RunOnceId: "RemoveMetisFromClaudeDesktopOld"
 
 [UninstallDelete]
+; The program files only. The database (in .local\share\metis) and the
+; Metis folder's own documents are the person's, and stay.
+Type: filesandordirs; Name: "{localappdata}\Metis\venv"
+Type: filesandordirs; Name: "{localappdata}\Metis\python"
+Type: filesandordirs; Name: "{localappdata}\Metis\uv-cache"
+Type: filesandordirs; Name: "{localappdata}\Metis\bin"
 Type: filesandordirs; Name: "{app}\system\mcp-server\.venv-win"
 Type: files;          Name: "{app}\Metis — Open AI.lnk"
 Type: files;          Name: "{autodesktop}\Metis — Open AI.lnk"
@@ -258,6 +245,9 @@ var
   DepSummary:     TNewStaticText;
   DepFixButton:   TNewButton;
   DepBlocked:     Boolean;
+  IsUpdate:       Boolean;
+  InstallFailed:  Boolean;
+  InstallRan:     Boolean;
   McpConsentPage: TInputOptionWizardPage;
   DemoPage:       TInputOptionWizardPage;
   ApiKeyPage:     TInputQueryWizardPage;
@@ -331,14 +321,27 @@ begin
   if WizardIsTaskSelected('startmenu') then Result := Result + ' -StartMenuShortcut';
 end;
 
-function HavePython: Boolean;
+{ The setup work is a PowerShell script. An organisation can forbid scripts
+  by policy (AllSigned or Restricted); then -ExecutionPolicy Bypass is
+  overruled and setup would fail half-way. Said at the door instead, in words
+  someone can take to IT. Returns '' when scripts may run. }
+function ScriptPolicyBlock: String;
 var
-  Dummy: String;
+  Policy: String;
+  Enabled: Cardinal;
+  Root: Integer;
 begin
-  Result := RegQueryStringValue(HKLM, 'SOFTWARE\Python\PythonCore\3.12\InstallPath', '', Dummy)
-         or RegQueryStringValue(HKLM, 'SOFTWARE\Python\PythonCore\3.11\InstallPath', '', Dummy)
-         or RegQueryStringValue(HKCU, 'SOFTWARE\Python\PythonCore\3.12\InstallPath', '', Dummy)
-         or RegQueryStringValue(HKCU, 'SOFTWARE\Python\PythonCore\3.11\InstallPath', '', Dummy);
+  Result := '';
+  if IsWin64 then Root := HKLM64 else Root := HKLM;
+  if RegQueryDWordValue(Root, 'SOFTWARE\Policies\Microsoft\Windows\PowerShell', 'EnableScripts', Enabled)
+     and (Enabled = 0) then
+    Result := 'Restricted';
+  if RegQueryStringValue(Root, 'SOFTWARE\Policies\Microsoft\Windows\PowerShell', 'ExecutionPolicy', Policy)
+     or RegQueryStringValue(HKCU, 'SOFTWARE\Policies\Microsoft\Windows\PowerShell', 'ExecutionPolicy', Policy) then
+  begin
+    if (CompareText(Policy, 'AllSigned') = 0) or (CompareText(Policy, 'Restricted') = 0) then
+      Result := Policy;
+  end;
 end;
 
 procedure RefreshDependencies;
@@ -370,17 +373,20 @@ begin
     DepRowNote[1].Caption := IntToStr(GB) + ' GB free on this drive.';
   end;
 
-  { 2 — Python. Fixable: setup bootstraps it. }
-  DepRowName[2].Caption := 'Python';
-  if HavePython then
+  { 2 — organisation policy. Blocking: only IT can change it. (Python used to
+    be checked here, but setup brings its own, so that row could only ever say
+    "not needed".) }
+  DepRowName[2].Caption := 'Script policy';
+  if ScriptPolicyBlock = '' then
   begin
     DepState[2] := DEP_READY;
-    DepRowNote[2].Caption := 'Found. Setup still uses its own copy, so yours is not changed.';
+    DepRowNote[2].Caption := 'This computer allows setup to run its steps. Python comes with setup.';
   end
   else
   begin
-    DepState[2] := DEP_FIXABLE;
-    DepRowNote[2].Caption := 'Not needed in advance: setup fetches its own copy, separate from any other Python.';
+    DepState[2] := DEP_BLOCKING;
+    DepRowNote[2].Caption := 'Your organisation''s policy (' + ScriptPolicyBlock + ') blocks PowerShell scripts, '
+      + 'which setup needs. Ask IT to allow it for this install, then run setup again.';
   end;
 
   { 3 — the chat interface. Optional: Metis runs without it. }
@@ -743,6 +749,80 @@ begin
   end;
 end;
 
+{ An update (Metis already in the chosen folder) keeps what the person told
+  Metis last time, so the questions are not asked again: the profile and the
+  workspace are theirs now, and a blank answer must never reach them. }
+function ExistingInstall: Boolean;
+begin
+  Result := FileExists(AddBackslash(WizardDirValue) + 'system\config\install-state.json');
+end;
+
+function ShouldSkipPage(PageID: Integer): Boolean;
+begin
+  Result := False;
+  if not ExistingInstall then Exit;
+  Result := (PageID = McpConsentPage.ID) or (PageID = DemoPage.ID)
+         or (PageID = ApiKeyPage.ID) or (PageID = AboutPage.ID)
+         or (PageID = ResearchPage.ID) or (PageID = StylePage.ID)
+         or (PageID = ProjectsPage.ID);
+end;
+
+function CanOpenClaude: Boolean;
+begin
+  Result := (not InstallFailed) and FileExists(ExpandConstant('{app}\Metis — Open AI.lnk'));
+end;
+
+{ Setup's exit code: 0 installed, 1 not. Silent installs (IT tools, the
+  release build's own test) can only learn the outcome this way. }
+function GetCustomSetupExitCode: Integer;
+begin
+  if InstallFailed then Result := 1 else Result := 0;
+end;
+
+{ install.ps1 prints "  > <step>" as each step starts; show that step in the
+  wizard, so ten minutes of work is not ten minutes of a frozen window. }
+procedure InstallLog(const S: String; const Error, FirstLine: Boolean);
+var
+  Line: String;
+begin
+  Line := Trim(S);
+  if (Length(Line) > 2) and (Copy(Line, 1, 2) = '> ') then
+  begin
+    WizardForm.StatusLabel.Caption := Copy(Line, 3, Length(Line));
+    WizardForm.FilenameLabel.Caption := 'This takes 5–15 minutes. Please keep this window open.';
+  end;
+end;
+
+procedure RunInstallScript(AnswersFile: String; LoadDemo: Boolean);
+var
+  Params: String;
+  ResultCode: Integer;
+begin
+  Params := '-NoProfile -ExecutionPolicy Bypass -File "' + ExpandConstant('{app}\system\install\windows\install.ps1') + '"'
+    + ' -FromInstaller -InstallDir "' + ExpandConstant('{app}') + '"' + ShortcutArgs('');
+  if not WizardIsComponentSelected('dashboard') then Params := Params + ' -Stage1Only';
+  if AnswersFile <> '' then Params := Params + ' -WizardAnswers "' + AnswersFile + '"';
+  if LoadDemo then Params := Params + ' -LoadDemo';
+  if GetApiKey('') <> '' then Params := Params + ' -ApiKey "' + GetApiKey('') + '"';
+
+  WizardForm.StatusLabel.Caption := 'Installing Metis…';
+  WizardForm.ProgressGauge.Style := npbstMarquee;
+  InstallRan := True;
+  if not ExecAndLogOutput(ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe'), Params, ExpandConstant('{app}'),
+                          SW_HIDE, ewWaitUntilTerminated, ResultCode, @InstallLog) then
+    ResultCode := -1;
+  WizardForm.ProgressGauge.Style := npbstNormal;
+  InstallFailed := ResultCode <> 0;
+  Log('install.ps1 exit code: ' + IntToStr(ResultCode));
+
+  if InstallFailed and not WizardSilent then
+    MsgBox('Metis could not be installed completely.' + #13#10 + #13#10 +
+           'Nothing you had before was changed. The details are in this file, which IT or '
+           + 'the person who shared Metis with you can read:' + #13#10 +
+           ExpandConstant('{app}\system\install\install-log.txt') + #13#10 + #13#10 +
+           'Running setup again after fixing the cause is safe.', mbError, MB_OK);
+end;
+
 procedure CurPageChanged(CurPageID: Integer);
 var
   ResultCode: Integer;
@@ -751,10 +831,15 @@ begin
   if (DepPage <> nil) and (CurPageID = DepPage.ID) then
     RefreshDependencies;
 
+  if (CurPageID = wpFinished) and InstallFailed then
+    WizardForm.FinishedLabel.Caption := 'Metis was NOT installed completely, so it will not work yet.'
+      + #13#10 + #13#10 + 'The reason is in ' + ExpandConstant('{app}\system\install\install-log.txt')
+      + '. Running setup again is safe.';
+
   // Claude Desktop reads its connectors only when it starts. If it was open
   // during setup, Metis stays invisible until it is quit completely, which
   // nobody would guess, so offer to do it.
-  if (CurPageID = wpFinished) and (not WizardSilent) and IsClaudeRunning then
+  if (CurPageID = wpFinished) and (not WizardSilent) and (not InstallFailed) and IsClaudeRunning then
   begin
     // One line on purpose: a line that begins with # is read as a preprocessor directive.
     if MsgBox('Claude Desktop is open. It has to restart once to connect to Metis.' + #13#10 + #13#10 + 'Restart Claude Desktop now?', mbConfirmation, MB_YESNO) = IDYES then
@@ -876,6 +961,8 @@ var
 begin
   if CurStep = ssPostInstall then
   begin
+    { Decided before install-state.json is (re)written below. }
+    IsUpdate := FileExists(ExpandConstant('{app}\system\config\install-state.json'));
     ApiKey  := Trim(ApiKeyPage.Values[0]);
     HasDash := WizardIsComponentSelected('dashboard');
     if HasDash then begin Profile := 'full'; DashStr := 'true'; end
@@ -922,8 +1009,11 @@ begin
       SaveStringToFile(EnvFile, EnvContent, False);
     end;
 
-    { Write system/wizard-answers.json for process_wizard_answers.py }
+    { Write system/wizard-answers.json for process_wizard_answers.py — on a
+      first install only. An update skipped those pages, so its answers are
+      blank, and the profile they would describe already exists. }
     AnswersFile    := EnvDir + '\wizard-answers.json';
+    if IsUpdate then DeleteFile(AnswersFile);
     AnswersContent :=
       '{' + #13#10 +
       '  "name": "'        + JsonEsc(Trim(AboutPage.Values[0]))    + '",' + #13#10 +
@@ -942,7 +1032,7 @@ begin
       '  "projects": ' + ProjectLines + ',' + #13#10 +
       '  "language": "English"' + #13#10 +
       '}' + #13#10;
-    SaveStringToFile(AnswersFile, AnswersContent, False);
+    if not IsUpdate then SaveStringToFile(AnswersFile, AnswersContent, False);
 
     { Write system/config/install-state.json }
     StateFile    := ExpandConstant('{app}\system\config\install-state.json');
@@ -950,6 +1040,9 @@ begin
       '{' + #13#10 +
       '  "profile": "'  + Profile + '",' + #13#10 +
       '  "version": "'  + '{#MyAppVersion}' + '",' + #13#10 +
+      { What makes an install updatable by update_metis: a git checkout can
+        carry an install-state.json too, and must not be offered an installer. }
+      '  "installed_by": "MetisSetup",' + #13#10 +
       '  "demo_workspace": ' + DemoStr + ',' + #13#10 +
       '  "mcp_consent": true,' + #13#10 +
       '  "installed_at": "' + GetDateTimeString('yyyy/mm/dd hh:nn:ss', '-', ':') + '",' + #13#10 +
@@ -960,6 +1053,14 @@ begin
       '  }' + #13#10 +
       '}' + #13#10;
     SaveStringToFile(StateFile, StateContent, False);
+
+    { Now the actual work, with its result read. The API key is written to
+      system\.env by install.ps1 (merged, keeping what is there) — passed as
+      an argument, not stored here. }
+    if IsUpdate then
+      RunInstallScript('', False)
+    else
+      RunInstallScript(AnswersFile, DemoPage.SelectedValueIndex = 0);
   end;
 end;
 

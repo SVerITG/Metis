@@ -53,6 +53,25 @@ def load_env_file() -> list[str]:
     return loaded
 
 
+def use_system_certificates() -> bool:
+    """Trust the certificates the operating system trusts, not only Python's bundle.
+
+    Institutional networks commonly inspect HTTPS traffic and re-sign it with the
+    organisation's own certificate, which IT installs in the Windows certificate
+    store. Python's requests and httpx ignore that store and carry their own list,
+    so on such a network every download fails with CERTIFICATE_VERIFY_FAILED
+    (the search model, news feeds, literature searches) while the browser works
+    fine. truststore makes Python's TLS use the system store. Returns whether it
+    is active; absent or failing, behaviour is unchanged.
+    """
+    try:
+        import truststore
+        truststore.inject_into_ssl()
+        return True
+    except Exception:
+        return False
+
+
 # NOTE: the two helpers below are intentionally duplicated verbatim in the
 # dashboard's system/app-py/db.py. Both processes must resolve the live DB to the
 # SAME location, and the two codebases don't share a module. Keep them in sync.

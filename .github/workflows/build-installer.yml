@@ -110,7 +110,7 @@ jobs:
           }
           Write-Host "--- setup log (tail):"; Get-Content $log -Tail 25
           if ($p.ExitCode -ne 0) { throw "setup exited $($p.ExitCode)" }
-          $py = Join-Path $dir "system\mcp-server\.venv-win\Scripts\python.exe"
+          $py = Join-Path $env:LOCALAPPDATA "Metis\venv\Scripts\python.exe"
           if (-not (Test-Path $py)) {
             Get-Content (Join-Path $dir "system\install\install-log.txt") -Tail 80 -ErrorAction SilentlyContinue
             throw "setup finished but the Metis environment was not created"
@@ -122,6 +122,20 @@ jobs:
           if (-not (Get-ScheduledTask -TaskName "Metis self-check" -ErrorAction SilentlyContinue)) {
             throw "the daily self-check was not scheduled"
           }
+          if (-not (Get-ScheduledTask -TaskName "Metis dashboard" -ErrorAction SilentlyContinue)) {
+            throw "the dashboard is not started at log-on"
+          }
+          # An update: setup run again over the installed copy, with Metis running.
+          # It must skip the questions, keep the profile, and still succeed.
+          $p2 = Start-Process -FilePath $exe.FullName -PassThru -ArgumentList `
+            "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/DIR=`"$dir`"", "/LOG=`"$log`""
+          if (-not $p2.WaitForExit(1500000)) { Stop-Process -Id $p2.Id -Force; throw "the update did not finish within 25 minutes" }
+          if ($p2.ExitCode -ne 0) {
+            Get-Content (Join-Path $dir "system\install\install-log.txt") -Tail 80 -ErrorAction SilentlyContinue
+            throw "the update exited $($p2.ExitCode)"
+          }
+          & $py -c "import metis_mcp.server"
+          if ($LASTEXITCODE -ne 0) { throw "Metis tools do not import after the update" }
           Write-Host "Installed and connected: $dir"
 
       - name: Upload the installer artifact
@@ -150,6 +164,26 @@ jobs:
 
             Windows SmartScreen may warn that the installer is from an unknown publisher (it is
             not code-signed yet): choose *More info → Run anyway*.
+
+            **Already have Metis?** Run the new setup over it: it skips the questions and keeps
+            your profile, library and projects. From 1.3 on you can also say *"update Metis"*
+            in Claude Desktop.
+
+            ### What setup checks and looks after
+            - Works on institutional laptops: a Documents folder inside OneDrive, a proxy,
+              networks that inspect secure connections, Windows on ARM. If your organisation's
+              policy blocks setup, the first page says so in words you can take to IT.
+            - Connects Metis to Claude Desktop, Claude Code, VS Code and Cursor — whichever you
+              have — without touching your other connectors.
+            - An **install doctor** checks everything Metis needs (your computer, its programs,
+              each AI app, the dashboard, the background tasks, your data) every day and repairs
+              what it can. Run it any time from the dashboard's Metis tab, or say *"check that
+              everything works"* to Metis.
+            - The dashboard starts quietly when you log on, so the morning news and paper scans
+              run. A morning briefing can arrive every working day through Claude Desktop's
+              scheduled tasks (paid Claude plans) — Metis walks you through setting it up.
+            - If setup cannot finish, it says so and where the details are, instead of
+              finishing as if all were well.
 
             ### Linux and macOS
             ```bash

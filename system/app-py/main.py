@@ -9,6 +9,14 @@ import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+# Before anything downloads: trust the system's certificates, so a network that
+# re-signs HTTPS traffic does not break every feed and model fetch.
+try:
+    from metis_mcp.config import use_system_certificates
+    use_system_certificates()
+except Exception:
+    pass
+
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles

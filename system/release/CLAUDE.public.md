@@ -23,6 +23,13 @@ If they just want to ask something, answer first and offer setup afterwards.
 - Record substantial work so the dashboard shows it (`log_agent_run`,
   `save_session_summary`).
 
+## Morning briefing and updates
+
+- A daily briefing runs as a Claude Desktop scheduled task; the
+  `metis-schedule-morning` prompt walks them through setting one up.
+- `update_metis()` says whether a newer Metis exists; install it only after
+  they agree (`update_metis(confirm=True)`).
+
 ## If something is not working
 
 Run `verify_install()` — it checks Metis the way Claude reaches it and repairs

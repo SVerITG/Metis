@@ -11,6 +11,9 @@ dependencies = [
     "uvicorn[standard]>=0.29.0",
     "python-multipart>=0.0.9",
     "httpx>=0.28.0",
+    # Use the operating system's certificate store, so networks that inspect
+    # HTTPS (re-signing it with an institutional certificate) do not break downloads.
+    "truststore>=0.10",
     # Phase 5 — vector memory (fastembed is optional — see [embedding] extra)
     "sqlite-vec>=0.1.9",
     "onnxruntime>=1.20",

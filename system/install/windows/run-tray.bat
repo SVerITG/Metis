@@ -20,7 +20,8 @@ set "METIS_RC_ROOT=%METIS_ROOT%"
 set "PYTHONPATH=%METIS_ROOT%\system\mcp-server\src"
 
 :: Use pythonw.exe so no console window appears
-set "PYTHONW=%METIS_ROOT%\system\mcp-server\.venv-win\Scripts\pythonw.exe"
+set "PYTHONW=%LOCALAPPDATA%\Metis\venv\Scripts\pythonw.exe"
+if not exist "%PYTHONW%" set "PYTHONW=%METIS_ROOT%\system\mcp-server\.venv-win\Scripts\pythonw.exe"
 if not exist "%PYTHONW%" (
     set "PYTHONW=%METIS_ROOT%\system\mcp-server\.venv-win\Scripts\python.exe"
 )

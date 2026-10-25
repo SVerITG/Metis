@@ -7,7 +7,11 @@ name: Windows install
 #
 # Before installing, it plants another Claude Desktop connector and a personal
 # CLAUDE.md, and afterwards checks both are still there: the old installer
-# deleted them. Then it starts the dashboard through the shortcut's launcher.
+# deleted them. It also plants a 1.2-style environment inside the Metis folder,
+# which an upgrade must replace with the one in %LOCALAPPDATA%\Metis and remove.
+# The second run happens while Metis is RUNNING — the dashboard and a stand-in
+# for the server Claude Desktop starts — because updating with Claude Desktop
+# open used to fail on files Windows would not replace.
 on:
   workflow_dispatch:
   push:
@@ -44,6 +48,14 @@ jobs:
           $cc = Join-Path $env:USERPROFILE ".claude"
           New-Item -ItemType Directory -Path $cc -Force | Out-Null
           "# My own instructions`r`nAlways answer in Dutch." | Set-Content (Join-Path $cc "CLAUDE.md") -Encoding UTF8
+          # VS Code and Cursor, as their settings folders show them to be installed.
+          New-Item -ItemType Directory -Path (Join-Path $env:APPDATA "Code\User") -Force | Out-Null
+          '{"servers":{"theirs":{"type":"stdio","command":"x.exe"}}}' |
+            Set-Content (Join-Path $env:APPDATA "Code\User\mcp.json") -Encoding UTF8
+          New-Item -ItemType Directory -Path (Join-Path $env:USERPROFILE ".cursor") -Force | Out-Null
+          $old = "system\mcp-server\.venv-win\Scripts"
+          New-Item -ItemType Directory -Path $old -Force | Out-Null
+          "stand-in" | Set-Content (Join-Path $old "python.exe")
 
       - name: Run install.ps1 as MetisSetup.exe does
         run: |
@@ -56,9 +68,10 @@ jobs:
 
       - name: The Metis tools start
         run: |
-          $py = "system\mcp-server\.venv-win\Scripts\python.exe"
+          $py = Join-Path $env:LOCALAPPDATA "Metis\venv\Scripts\python.exe"
           & $py -c "import metis_mcp.server; print('import ok')"
           if ($LASTEXITCODE -ne 0) { throw "metis_mcp does not import" }
+          if (Test-Path "system\mcp-server\.venv-win") { throw "the 1.2 environment inside the Metis folder was not removed" }
 
       - name: The database exists where the server reads it
         run: |
@@ -73,21 +86,32 @@ jobs:
           if (-not $cfg.mcpServers.'other-tool') { throw "the existing connector was deleted" }
           if (-not $cfg.preferences.keep)       { throw "existing preferences were deleted" }
           if (-not (Test-Path $cfg.mcpServers.'metis-rc'.command)) { throw "registered python does not exist" }
+          $vs = Get-Content (Join-Path $env:APPDATA "Code\User\mcp.json") -Raw | ConvertFrom-Json
+          if (-not $vs.servers.'metis-rc') { throw "VS Code was not connected" }
+          if (-not $vs.servers.theirs) { throw "VS Code's existing connector was deleted" }
+          $cu = Get-Content (Join-Path $env:USERPROFILE ".cursor\mcp.json") -Raw | ConvertFrom-Json
+          if (-not $cu.mcpServers.'metis-rc') { throw "Cursor was not connected" }
 
       - name: The self-check passes — Metis starts from Claude Desktop's own settings
         run: |
-          $py = "system\mcp-server\.venv-win\Scripts\python.exe"
+          $py = Join-Path $env:LOCALAPPDATA "Metis\venv\Scripts\python.exe"
           & $py system\install\metis_verify.py
           $code = $LASTEXITCODE
           $r = Get-Content system\config\readiness.json -Raw | ConvertFrom-Json
-          $starts = $r.checks | Where-Object { $_.area -eq "starts" }
-          if (-not $starts -or $starts.status -eq "fail") { throw "Metis did not start from the Claude Desktop registration" }
+          $r.checks | ForEach-Object { "{0,-5} {1} {2}" -f $_.status, $_.name, $_.detail }
+          $starts = $r.checks | Where-Object { $_.id -eq "server_starts" }
+          if (-not $starts -or $starts.status -eq "fail") { throw "Metis did not start from the apps' own settings" }
+          $failed = @($r.checks | Where-Object { $_.status -eq "fail" })
+          if ($failed.Count) { throw "the install doctor reports failures: $($failed.name -join ', ')" }
           if ($code -gt 1) { throw "self-check says NOT READY" }
           if (-not (Get-ScheduledTask -TaskName "Metis self-check" -ErrorAction SilentlyContinue)) {
             throw "the daily self-check was not scheduled"
           }
           $t = Get-ScheduledTask -TaskName "Metis self-check"
           if ($t.Settings.DisallowStartIfOnBatteries) { throw "the self-check would never run on battery" }
+          $d = Get-ScheduledTask -TaskName "Metis dashboard" -ErrorAction SilentlyContinue
+          if (-not $d) { throw "the dashboard is not started at log-on, so the morning scans would not run" }
+          if ($d.Settings.DisallowStartIfOnBatteries) { throw "the dashboard task would never run on battery" }
           # READY WITH WARNINGS (exit 1) is the expected verdict on a fresh install:
           # nobody has told Metis their name yet. GitHub ends a PowerShell step with
           # the last program's exit code, which would turn that warning into a failure.
@@ -99,8 +123,18 @@ jobs:
           if ($md -notmatch "Always answer in Dutch") { throw "the person's instructions were overwritten" }
           if ($md -notmatch "metis:start") { throw "no Metis section was added" }
 
-      - name: A second run changes nothing it should not
+      - name: A second run, with Metis running, changes nothing it should not
         run: |
+          # install.ps1 started the dashboard in the background; wait for it, and
+          # start a stand-in for the server Claude Desktop keeps open.
+          foreach ($i in 1..60) {
+            try { if ((Invoke-WebRequest "http://127.0.0.1:8080/health" -UseBasicParsing -TimeoutSec 3).StatusCode -eq 200) { break } } catch { }
+            Start-Sleep -Seconds 2
+          }
+          $py = Join-Path $env:LOCALAPPDATA "Metis\venv\Scripts\python.exe"
+          $held = Start-Process -FilePath $py -PassThru -WindowStyle Hidden `
+            -ArgumentList "-c", "`"import time, metis_mcp.server; time.sleep(900)`""
+          Start-Sleep -Seconds 15
           powershell.exe -NoProfile -ExecutionPolicy Bypass -File system\install\windows\install.ps1 `
             -FromInstaller -SkipClaude -InstallDir "$env:GITHUB_WORKSPACE"
           if ($LASTEXITCODE -ne 0) { throw "re-running install.ps1 failed" }

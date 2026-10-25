@@ -40,7 +40,11 @@ except ImportError:
 
 _THIS_DIR   = Path(__file__).parent.resolve()
 _METIS_ROOT = _THIS_DIR.parent.parent          # system/install → system → metis/
-_VENV       = _METIS_ROOT / "system" / "mcp-server" / ".venv-win"
+# Since 1.3 the environment lives in %LOCALAPPDATA%\Metis (off OneDrive); 1.2
+# and earlier kept it inside the Metis folder.
+_VENV       = Path(os.environ.get("LOCALAPPDATA", "")) / "Metis" / "venv"
+if not (_VENV / "Scripts").exists():
+    _VENV   = _METIS_ROOT / "system" / "mcp-server" / ".venv-win"
 _PYTHON     = _VENV / "Scripts" / "pythonw.exe"
 _MCP_SRC    = _METIS_ROOT / "system" / "mcp-server" / "src"
 _APP_DIR    = _METIS_ROOT / "system" / "app-py"

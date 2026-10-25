@@ -110,19 +110,27 @@
 
       {{ sec_label("Health check", tail="CHECK YOUR WHOLE SETUP") }}
       <div class="metis-note u-mb-3">
-        One click checks everything in plain language — the memory system, dependencies and packages,
-        anything that needs installing or updating, whether your projects are registered, and whether
-        Claude can reach Metis. Nothing technical required.
+        One click checks everything Metis needs on this computer, in plain language: your computer,
+        Metis's own programs, every AI app it is connected to (and that Metis starts from it), this
+        dashboard and its morning scans, the background tasks, and your data. “Check and repair” also
+        fixes what can be fixed. In Claude you can simply say “check that everything works”.
       </div>
       <div class="u-mb-3" style="display:flex;gap:var(--m-space-2);flex-wrap:wrap;">
         <button class="btn btn--primary btn--caps"
-                hx-get="/api/partial/metis/health-check"
-                hx-target="#metis-health-body" hx-swap="innerHTML">
+                hx-post="/api/partial/metis/health-check"
+                hx-target="#metis-health-body" hx-swap="innerHTML"
+                hx-indicator="#metis-health-wait">
           Run health check
         </button>
-        <button class="btn btn--ghost btn--caps" onclick="openHealthCheckInClaude()">
-          Open in Claude Code
+        <button class="btn btn--ghost btn--caps"
+                hx-post="/api/partial/metis/health-check/repair"
+                hx-target="#metis-health-body" hx-swap="innerHTML"
+                hx-indicator="#metis-health-wait">
+          Check and repair
         </button>
+        <span id="metis-health-wait" class="htmx-indicator metis-note u-label">
+          Checking — this takes one to three minutes…
+        </span>
       </div>
       <div class="u-mb-2" id="metis-health-body">
         <div class="metis-note u-label">

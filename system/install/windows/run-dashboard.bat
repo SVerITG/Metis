@@ -12,7 +12,10 @@ for %%i in ("%SCRIPT_DIR%..\..\..") do set "METIS_ROOT=%%~fi"
 :: A colleague's computer has the Python environment install.ps1 made, and no
 :: WSL at all. This launcher used to require WSL, so every native install got a
 :: dashboard shortcut that answered "Metis requires WSL".
-set "VENV_PY=%METIS_ROOT%\system\mcp-server\.venv-win\Scripts\python.exe"
+:: Since 1.3 the environment lives in %LOCALAPPDATA%\Metis (never synced by
+:: OneDrive); 1.2 and earlier kept it inside the Metis folder.
+set "VENV_PY=%LOCALAPPDATA%\Metis\venv\Scripts\python.exe"
+if not exist "%VENV_PY%" set "VENV_PY=%METIS_ROOT%\system\mcp-server\.venv-win\Scripts\python.exe"
 if not exist "%VENV_PY%" goto :wsl
 
 if not defined METIS_PORT set "METIS_PORT=8080"
@@ -81,4 +84,6 @@ for /l %%i in (1,1,60) do (
 )
 :: After 60s, open the browser anyway — user can manually refresh.
 :ready
+:: /background: started at log-on to run the morning scans — no browser window.
+if /i "%~1"=="/background" exit /b 0
 start "" "%URL%"
