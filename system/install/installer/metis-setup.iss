@@ -142,6 +142,7 @@ Source: "..\dist\MetisTray.exe";         DestDir: "{app}\system\install\windows"
 Source: "..\vendor_download.py";         DestDir: "{app}\system\install";         Flags: ignoreversion
 Source: "..\config_merger.py";           DestDir: "{app}\system\install";         Flags: ignoreversion
 Source: "..\register_desktop.py";        DestDir: "{app}\system\install";         Flags: ignoreversion
+Source: "..\metis_verify.py";            DestDir: "{app}\system\install";         Flags: ignoreversion
 ; Demo/seed content. Gitignored, so it is absent from a clean clone and the
 ; compile must not depend on it — without skipifsourcedoesntexist, ISCC
 ; fails outright and no installer can be built at all.
@@ -194,13 +195,13 @@ Name: "{autodesktop}\Metis";        Filename: "{sys}\wscript.exe"; \
 ; the database, Claude Desktop and Claude Code, shortcuts. It never prompts when
 ; called with -FromInstaller. Its log: {app}\system\install\install-log.txt
 Filename: "powershell.exe"; \
-  Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\system\install\windows\install.ps1"" -FromInstaller -SkipClaude -InstallDir ""{app}"" -ApiKey ""{code:GetApiKey}""{code:ShortcutArgs}"; \
+  Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\system\install\windows\install.ps1"" -FromInstaller -InstallDir ""{app}"" -ApiKey ""{code:GetApiKey}""{code:ShortcutArgs}"; \
   Flags: waituntilterminated; \
   StatusMsg: "Installing Metis (5–10 minutes)…"; \
   Components: dashboard
 
 Filename: "powershell.exe"; \
-  Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\system\install\windows\install.ps1"" -Stage1Only -FromInstaller -SkipClaude -InstallDir ""{app}"" -ApiKey ""{code:GetApiKey}""{code:ShortcutArgs}"; \
+  Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\system\install\windows\install.ps1"" -Stage1Only -FromInstaller -InstallDir ""{app}"" -ApiKey ""{code:GetApiKey}""{code:ShortcutArgs}"; \
   Flags: waituntilterminated; \
   StatusMsg: "Installing the Metis AI assistant (3–6 minutes)…"; \
   Components: not dashboard
@@ -233,6 +234,8 @@ Filename: "{app}\Metis — Open AI.lnk"; \
   Check: FileExists(ExpandConstant('{app}\Metis — Open AI.lnk'))
 
 [UninstallRun]
+Filename: "{sys}\schtasks.exe"; Parameters: "/Delete /TN ""Metis self-check"" /F"; \
+  Flags: runhidden; RunOnceId: "RemoveMetisSelfCheck"
 ; Take Metis out of Claude Desktop's settings, leaving every other connector.
 Filename: "{app}\system\mcp-server\.venv-win\Scripts\python.exe"; \
   Parameters: """{app}\system\install\register_desktop.py"" --remove"; \
@@ -389,8 +392,8 @@ begin
   end
   else
   begin
-    DepState[3] := DEP_OPTIONAL;
-    DepRowNote[3].Caption := 'Not found. Metis and the dashboard still work; you will not get the chat interface until you install it.';
+    DepState[3] := DEP_FIXABLE;
+    DepRowNote[3].Caption := 'Not found. Setup will try to install it for you; if that fails, use the button below.';
   end;
 
   { 4 — where it will be installed. Informational, but people want to know. }
@@ -725,10 +728,45 @@ begin
 end;
 
 { ── Validation on Next ──────────────────────────────────────────────────── }
+function IsClaudeRunning: Boolean;
+var
+  Locator, Service, Procs: Variant;
+begin
+  Result := False;
+  try
+    Locator := CreateOleObject('WbemScripting.SWbemLocator');
+    Service := Locator.ConnectServer('.', 'root\CIMV2');
+    Procs := Service.ExecQuery('SELECT ProcessId FROM Win32_Process WHERE Name = ''claude.exe''');
+    Result := Procs.Count > 0;
+  except
+    Result := False;
+  end;
+end;
+
 procedure CurPageChanged(CurPageID: Integer);
+var
+  ResultCode: Integer;
+  Link: String;
 begin
   if (DepPage <> nil) and (CurPageID = DepPage.ID) then
     RefreshDependencies;
+
+  // Claude Desktop reads its connectors only when it starts. If it was open
+  // during setup, Metis stays invisible until it is quit completely, which
+  // nobody would guess, so offer to do it.
+  if (CurPageID = wpFinished) and (not WizardSilent) and IsClaudeRunning then
+  begin
+    // One line on purpose: a line that begins with # is read as a preprocessor directive.
+    if MsgBox('Claude Desktop is open. It has to restart once to connect to Metis.' + #13#10 + #13#10 + 'Restart Claude Desktop now?', mbConfirmation, MB_YESNO) = IDYES then
+    begin
+      Exec(ExpandConstant('{sys}\taskkill.exe'), '/IM claude.exe /F', '', SW_HIDE,
+           ewWaitUntilTerminated, ResultCode);
+      Sleep(1500);
+      Link := ExpandConstant('{app}\Metis — Open AI.lnk');
+      if FileExists(Link) then
+        ShellExec('open', Link, '', '', SW_SHOWNORMAL, ewNoWait, ResultCode);
+    end;
+  end;
 end;
 
 function NextButtonClick(CurPageID: Integer): Boolean;

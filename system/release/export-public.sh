@@ -89,6 +89,10 @@ while IFS= read -r f; do
 done <<< "$EXCLUDED"
 find "$TMP" -type d -empty -delete
 cp "$FILTER" "$TMP/.gitignore"
+# The development CLAUDE.md is instructions for building Metis (routing tests,
+# graph tools, release rules). A colleague opening Claude Code in their Metis
+# folder needs instructions for USING it, so the public copy gets those instead.
+[ -f "$DEV/system/release/CLAUDE.public.md" ] && cp "$DEV/system/release/CLAUDE.public.md" "$TMP/CLAUDE.md"
 rsync -a --delete --exclude '.git/' "$TMP"/ "$EXPORT"/
 echo "Development commit $HEAD_SHA: $(git ls-files | wc -l) tracked files, $n_excluded kept private."
 

@@ -74,6 +74,21 @@ jobs:
           if (-not $cfg.preferences.keep)       { throw "existing preferences were deleted" }
           if (-not (Test-Path $cfg.mcpServers.'metis-rc'.command)) { throw "registered python does not exist" }
 
+      - name: The self-check passes — Metis starts from Claude Desktop's own settings
+        run: |
+          $py = "system\mcp-server\.venv-win\Scripts\python.exe"
+          & $py system\install\metis_verify.py
+          $code = $LASTEXITCODE
+          $r = Get-Content system\config\readiness.json -Raw | ConvertFrom-Json
+          $starts = $r.checks | Where-Object { $_.area -eq "starts" }
+          if (-not $starts -or $starts.status -eq "fail") { throw "Metis did not start from the Claude Desktop registration" }
+          if ($code -gt 1) { throw "self-check says NOT READY" }
+          if (-not (Get-ScheduledTask -TaskName "Metis self-check" -ErrorAction SilentlyContinue)) {
+            throw "the daily self-check was not scheduled"
+          }
+          $t = Get-ScheduledTask -TaskName "Metis self-check"
+          if ($t.Settings.DisallowStartIfOnBatteries) { throw "the self-check would never run on battery" }
+
       - name: The person's own CLAUDE.md was kept
         run: |
           $md = Get-Content (Join-Path $env:USERPROFILE ".claude\CLAUDE.md") -Raw

@@ -215,12 +215,22 @@ Set-EnvValue -File $envFile -Key "METIS_RC_ROOT" -Value $InstallDir
 Set-EnvValue -File $envFile -Key "ANTHROPIC_API_KEY" -Value $ApiKey
 
 # ── Claude Desktop ───────────────────────────────────────────────────────────
+# METIS_SKIP_CLAUDE lets the release build's install test skip the download.
+if ($env:METIS_SKIP_CLAUDE -eq "1") { $SkipClaude = $true }
 $claude = Find-ClaudeDesktop
 if (-not $claude -and -not $SkipClaude) {
     Write-Step "Installing Claude Desktop"
-    if (Get-Command winget -ErrorAction SilentlyContinue) {
-        $code = Invoke-Logged "winget" @("install", "--id", "Anthropic.Claude", "--silent",
-                                         "--accept-package-agreements", "--accept-source-agreements")
+    $winget = Get-Command winget -ErrorAction SilentlyContinue
+    if ($winget) {
+        # Time-limited: winget can wait on a prompt nobody sees, and setup must
+        # never hang on an optional step.
+        $wp = Start-Process -FilePath $winget.Source -WindowStyle Hidden -PassThru -ArgumentList `
+            "install", "--id", "Anthropic.Claude", "--silent", "--scope", "user",
+            "--accept-package-agreements", "--accept-source-agreements"
+        if (-not $wp.WaitForExit(600000)) {
+            Stop-Process -Id $wp.Id -Force -ErrorAction SilentlyContinue
+            "winget: timed out after 10 minutes" | Add-Content -Path $script:LogFile
+        }
         $claude = Find-ClaudeDesktop
     }
     if ($claude) { Write-OK "Claude Desktop installed" }
@@ -344,6 +354,40 @@ if ($claudeCli) {
     else { Write-Warn "Claude Code did not accept the connection; see the log." }
 }
 
+# ── Daily self-check ─────────────────────────────────────────────────────────
+# metis_verify.py checks Metis the way Claude reaches it and repairs what it can;
+# the dashboard shows its verdict. pythonw: no window. Battery settings set
+# explicitly — Task Scheduler's default refuses to start on battery, which on a
+# laptop means the task silently never runs.
+Write-Step "Scheduling the daily self-check"
+$verify = Join-Path $InstallDir "system\install\metis_verify.py"
+$pyw = Join-Path $venv "Scripts\pythonw.exe"
+$taskName = "Metis self-check"
+try {
+    $action = New-ScheduledTaskAction -Execute $pyw -Argument "`"$verify`" --fix --quiet" `
+        -WorkingDirectory $InstallDir
+    $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries `
+        -StartWhenAvailable -ExecutionTimeLimit (New-TimeSpan -Hours 1)
+    $daily = New-ScheduledTaskTrigger -Daily -At "09:30"
+    $desc = "Checks that Metis works with Claude and repairs what it can. Result on the Metis dashboard."
+    try {
+        $logon = New-ScheduledTaskTrigger -AtLogOn -User "$env:USERDOMAIN\$env:USERNAME"
+        $logon.Delay = "PT5M"
+        Register-ScheduledTask -TaskName $taskName -Action $action -Trigger @($daily, $logon) `
+            -Settings $settings -Description $desc -Force | Out-Null
+    }
+    catch {
+        # A log-on trigger can need rights a normal account lacks; daily alone still works.
+        Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $daily `
+            -Settings $settings -Description $desc -Force | Out-Null
+    }
+    Write-OK "Metis checks itself every day (and repairs what it can)"
+}
+catch {
+    "self-check task: $_" | Add-Content -Path $script:LogFile
+    Write-Warn "Could not schedule the daily self-check. Ask Metis to 'check that everything works' instead."
+}
+
 # ── Personal Claude instructions: add a Metis section, never replace ─────────
 # %USERPROFILE%\.claude\CLAUDE.md is the person's OWN instructions for Claude
 # Code. The old installer overwrote it. Now Metis keeps one marked section and
@@ -409,6 +453,15 @@ if (-not $Stage1Only -and -not $FromInstaller) {
     }
 }
 Write-OK "Shortcuts created"
+
+# ── First self-check, so the dashboard has a verdict from the start ──────────
+Write-Step "Checking that everything works"
+if ((Invoke-Logged $venvPy @($verify, "--fix")) -le 1) {
+    Write-OK "Metis works with Claude on this computer"
+}
+else {
+    Write-Warn "Something still needs attention — see the Metis tab on the dashboard, or ask Metis to check."
+}
 
 # ── Done ─────────────────────────────────────────────────────────────────────
 "Completed $(Get-Date -Format s)" | Add-Content -Path $script:LogFile

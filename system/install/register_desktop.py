@@ -32,6 +32,11 @@ ENTRY = "metis-rc"
 def config_path() -> Path:
     # Both the classic and the Microsoft Store editions of Claude Desktop read
     # %APPDATA%\Claude\claude_desktop_config.json.
+    import platform
+    if platform.system() == "Darwin":
+        return Path.home() / "Library" / "Application Support" / "Claude" / "claude_desktop_config.json"
+    if platform.system() != "Windows":
+        return Path.home() / ".config" / "Claude" / "claude_desktop_config.json"
     appdata = os.environ.get("APPDATA") or str(Path.home() / "AppData" / "Roaming")
     return Path(appdata) / "Claude" / "claude_desktop_config.json"
 

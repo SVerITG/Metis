@@ -498,6 +498,7 @@ async def set_research_interests(
     mode: str = "replace",
     interests: list[str] | None = None,
     news_topics: list[str] | None = None,
+    display_name: str = "",
 ) -> list[TextContent]:
     """Save the two interest lists after interviewing the person.
 
@@ -530,6 +531,8 @@ async def set_research_interests(
         library_interests: What the literature collection and knowledge layer
             should build on. Omit to leave unchanged.
         role: Optional one-line role description.
+        display_name: The name to address them by. Set it when someone new tells
+            you their name — without it they are greeted as "Researcher".
         mode: "replace" (default) overwrites; "add" merges into what is there.
         interests: DEPRECATED alias for `library_interests` — the old combined
             field. Accepted so existing callers keep working.
@@ -544,10 +547,10 @@ async def set_research_interests(
     if news_interests is None and news_topics is not None:
         news_interests = news_topics
 
-    if news_interests is None and library_interests is None and not role:
+    if news_interests is None and library_interests is None and not role and not display_name:
         return [TextContent(type="text", text=(
             "Nothing to save — pass `news_interests`, `library_interests`, "
-            "or `role`."
+            "`role` or `display_name`."
         ))]
     if mode not in ("replace", "add"):
         mode = "replace"
@@ -565,6 +568,8 @@ async def set_research_interests(
             _clean_terms(current["library"] + new_l) if mode == "add" else new_l)
     if role:
         prefs["role"] = role.strip()[:120]
+    if display_name.strip():
+        prefs["display_name"] = display_name.strip()[:120]
 
     # Keep the legacy fields in sync so the ~8 existing readers of `interests`
     # and `news_topics` (dashboard identity card, brief prompt builder, setup
@@ -676,5 +681,9 @@ async def get_user_profile() -> list[TextContent]:
         "has_declared_library_interests": lists.get("declared_library", False),
         "active_model": prefs.get("active_model") or "sonnet",
         "style": style,
+        # True for someone who has not told Metis who they are yet: no name and
+        # no chosen interests. The server instructions tell Claude to welcome
+        # them and ask, instead of carrying on as if it knew them.
+        "needs_setup": not prefs.get("display_name") and not lists.get("declared", False),
     }
     return [TextContent(type="text", text=json.dumps(profile, ensure_ascii=False, indent=2))]

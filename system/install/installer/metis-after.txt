@@ -1,70 +1,48 @@
-METIS IS INSTALLED — YOUR NEXT STEPS
+METIS IS INSTALLED — HERE IS HOW TO START
 
 
-  ① INSTALL CLAUDE DESKTOP  (free — required)
-  Metis connects to Claude Desktop automatically on first open.
+  1. OPEN CLAUDE DESKTOP
+  Use the "Metis — Open AI" shortcut. Metis is already connected.
+  If Claude Desktop was open during setup, setup offers to restart it;
+  otherwise quit it completely (also from the tray icon) and open it again.
 
-  Download from:  https://claude.ai/download
-
-  Once installed, open Claude Desktop — Metis will register itself
-  and your setup wizard will start on the first conversation.
-
-
-  ② START THE METIS DASHBOARD  (if you chose Full install)
-  Double-click "Metis" on your desktop, or start it manually:
-
-    Documents\Metis\system\install\windows\run-dashboard.bat
-
-  Then open in your browser:  http://localhost:8080
-
-  Your setup wizard is also available at:  http://localhost:8080/setup
+  Not installed yet? Setup tried to install it for you. If it is still
+  missing, download it from  https://claude.ai/download  — Metis connects
+  itself the first time it opens.
 
 
-  ③ COMPLETE YOUR SETUP WIZARD
-  The wizard personalises Metis to your research domain, your
-  working style, and your projects. It takes about 3 minutes.
-
-  • In Claude Desktop:  it starts automatically on first open
-  • In the dashboard:  go to http://localhost:8080/setup
-  • Any time later:  type  /metis_config  in Claude
+  2. SAY HELLO
+  Type anything — "Hi Metis" is enough. Metis introduces itself and, if
+  setup did not catch everything, asks a few questions about your work.
+  Prefer a guided start? In the message box, open the "+" menu and pick
+  the  metis-tour  prompt.
 
 
-  ④ LEARN CLAUDE DESKTOP AND CLAUDE CODE
-  Claude Desktop — conversational AI for research (no coding):
-    https://claude.ai/download
-
-  Claude Code — for developers and power users:
-    https://docs.anthropic.com/en/docs/claude-code/getting-started
-
-  Metis works with both. Claude Desktop is the natural starting point.
+  3. OPEN THE DASHBOARD  (if you chose the full install)
+  Double-click "Metis" on your desktop. It opens in your browser at
+  http://127.0.0.1:8080 — a tour of every tab is at  /tour .
+  Want to see it with something in it first? The tour page can load a
+  fictional sample workspace, and remove it again with one click.
 
 
-  YOUR ANTHROPIC API KEY — FULL GUIDE
-
-  Metis uses the Anthropic API to power its 34 specialist agents
-  (Epidemiologist, Writing Partner, Librarian, Methods Coach, and more).
-  You need a free API key from Anthropic to use them.
-
-  HOW TO GET YOUR FREE API KEY
-    1. Go to:  https://console.anthropic.com
-    2. Sign up or log in (free — no credit card needed to start)
-    3. Click "API Keys" in the left sidebar, then "Create Key"
-    4. Copy the key (it looks like  sk-ant-api03-…)
-
-  WHERE METIS STORES IT
-    Locally only, in:  Documents\Metis\system\.env
-    It is never uploaded or shared — it is sent only to Anthropic's own
-    API when you run an agent. Paste or update it during the installer
-    wizard, in the dashboard setup, or by editing that .env file.
-
-  COSTS
-    Most daily research tasks cost a few cents. Metis shows you exactly
-    what each agent run costs — there are no hidden charges. You can set a
-    monthly spending limit in the Anthropic console.
+  IF SOMETHING DOES NOT WORK
+  Metis checks itself every day and repairs what it can; the result is
+  on the Metis tab of the dashboard. To check now, ask Metis in Claude:
+  "check that everything works"  (or pick the  metis-verify  prompt).
 
 
-  USEFUL LINKS
+  ABOUT THE ANTHROPIC API KEY — OPTIONAL
+  Claude Desktop and Claude Code use your Claude account; Metis needs
+  nothing more to work. An API key (paid separately, from
+  https://console.anthropic.com) only adds background features such as
+  the automatic morning brief. You can add one later on the dashboard.
+  It is stored on this computer, in Documents\Metis\system\.env.
 
-  Documentation:  https://github.com/SVerITG/Metis
-  Get API key:  https://console.anthropic.com
-  Questions / bugs:  https://github.com/SVerITG/Metis/issues
+
+  WHAT STAYS ON YOUR COMPUTER
+  Your files, library, notes and Metis's memory stay on this computer.
+  What you ask or paste into Claude is processed by Anthropic's Claude
+  service, as with any Claude conversation.
+
+
+  Documentation and help:  https://github.com/SVerITG/Metis

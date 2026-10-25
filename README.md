@@ -206,61 +206,55 @@ The installer asks for an API key so automation *can* run, but you can **skip it
 
 ---
 
-### Install in 3 steps
+### Install
 
-> **Step 1 — (Optional) Get an Anthropic API key — only for unattended automation (free, 2 minutes)**
->
-> 1. Go to **[console.anthropic.com](https://console.anthropic.com)** and create an account.
-> 2. Click **API Keys → Create Key**. Copy the key (it starts with `sk-ant-…`).
-> 3. Keep that tab open — the installer will ask for it once.
->
-> The key stays on your computer. It is never uploaded or shared.
-
----
-
-**Windows**
+**Windows** (most people)
 
 > **[⬇ Download MetisSetup.exe](https://github.com/SVerITG/Metis/releases/latest)**
 
-Double-click the installer. The wizard walks you through:
-1. **Full or AI only** — Full gives you the AI assistant + 9-tab research dashboard (~15 min). AI only is faster (~5 min) and you can add the dashboard later.
-2. **Your projects** — Tell Metis what you're working on. It creates a tracking record for each project, writes a context file into the project folder, and registers it in Claude Desktop automatically.
-3. **Demo workspace** — Pre-loads realistic example projects, meetings, literature, and tasks so you can explore every feature immediately. Recommended for first-time users.
-4. **API key** — Paste it once.
+1. **Run it.** Windows may say the app is from an unknown publisher (the installer
+   is not code-signed yet): click **More info → Run anyway**. No administrator
+   rights, no Python and no WSL needed — setup fetches what it needs.
+2. **Answer a few questions** — your name, role, what you work on and what you want
+   to follow in the news. Choose **Full** (assistant + dashboard) or **AI only**.
+   You can load a fictional **sample workspace** to explore first and remove it
+   later with one click.
+3. **Open Claude Desktop** with the *Metis — Open AI* shortcut and say hello.
+   Setup installs Claude Desktop if you do not have it, connects Metis to it, and
+   offers to restart it if it was open. The *Metis* shortcut opens the dashboard,
+   with a tour at `/tour`.
 
-Everything else is automatic. Claude Desktop opens at the end with Metis ready to go.
+*You need: Windows 10 (1809) or later, an internet connection during setup, and a
+Claude account for Claude Desktop. An Anthropic API key is optional — see below.*
 
-*Requirements: Windows 10 or 11 · Internet connection · [API key](https://console.anthropic.com)*
+**Linux** (macOS should work the same way, but has not been tested yet)
+
+```bash
+git clone https://github.com/SVerITG/Metis.git
+bash Metis/system/mcp-server/setup-mcp.sh
+```
+
+The script asks two questions (Full or AI only, sample workspace) and does the
+rest: it fetches its own Python, connects Metis to Claude Desktop and Claude Code,
+and on a Linux desktop adds Metis to the app menu.
 
 ---
 
-**macOS or Linux**
+### After installation
 
-Open Terminal and paste:
+**Is everything working?** Metis checks itself every day and repairs what it can;
+the result is on the dashboard's Metis tab. To check now, ask Metis in Claude:
+*"check that everything works"*.
 
-```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/SVerITG/Metis/main/system/mcp-server/setup-mcp.sh)
-```
+**API key (optional, paid separately):** Claude Desktop and Claude Code use your
+Claude account, and that is all Metis needs. A key from
+[console.anthropic.com](https://console.anthropic.com) only adds background features
+such as the automatic morning brief; add it on the dashboard when you want them.
+It is stored on your computer, in `system/.env`.
 
-The script asks two questions (Full or AI only, demo workspace) and does the rest. Registers Metis with Claude Desktop and Claude Code automatically. Works on Ubuntu 20/22/24, Debian, and macOS.
-
-> **Requirements:** Python **3.10–3.13**. The installer prefers [`uv`](https://astral.sh/uv) (which downloads its own Python 3.12 — no system packages needed). If `uv` isn't available it falls back to your system Python; on a bare system you may need `sudo apt install python3-venv`. Very new Python (3.14+) isn't supported yet — some packages don't publish wheels for it. If you hit *"ensurepip is not available"*, install `uv` (the line above) or `python3-venv` and re-run.
-
----
-
-### After installation — API key and updating
-
-**API key (optional):** Copy `system/.env.example` to `system/.env` and add your key, or the installer will prompt you. The key enables automated features (morning briefs, scheduled scans); interactive use through Claude works without it.
-
-**Updating after `git pull`:** The MCP server runs from a local copy of the source (not the repo directly). After pulling new code, re-sync with:
-
-```bash
-bash system/mcp-server/setup-mcp.sh --update
-```
-
-This re-copies the source, reinstalls the package, and applies migrations — without re-running the full wizard.
-
-**Moved the Metis folder?** Update the marker file at `~/.local/share/metis-mcp/.metis-rc-root` with the new path, or re-run the installer.
+**Updating:** on Windows, download the newest `MetisSetup.exe` and run it — your
+answers, files and database are kept. On Linux: `git pull` in the Metis
+folder, then `bash system/mcp-server/setup-mcp.sh --update`.
 
 ---
 

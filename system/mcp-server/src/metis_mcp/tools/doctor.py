@@ -608,3 +608,37 @@ async def metis_doctor() -> list[TextContent]:
     else:
         lines.append("  All clear — Metis is healthy.")
     return [TextContent(type="text", text="\n".join(lines))]
+
+
+@app.tool()
+async def verify_install(fix: bool = True) -> list[TextContent]:
+    """Check that Metis works on this computer the way Claude reaches it, and repair it.
+
+    Runs system/install/metis_verify.py — the same self-check the installers
+    schedule daily. It confirms Metis is registered with Claude Desktop / Claude
+    Code and starts from that registration, that the database is intact and
+    complete, that search works offline, and that Metis knows the person. With
+    fix=True (default) it re-registers Metis, adds missing database tables,
+    reinstalls a broken package and downloads the search model.
+
+    Use when the person says something is not working, after an update, or when
+    they ask whether everything is set up. Tell them the result in plain words;
+    if the Claude Desktop connection was repaired, they must quit Claude Desktop
+    completely (also from the tray) and open it again.
+    """
+    import asyncio
+    import sys
+
+    script = paths.root / "system" / "install" / "metis_verify.py"
+    if not script.exists():
+        return [TextContent(type="text", text="The self-check is not included in this installation.")]
+    args = [sys.executable, str(script)] + (["--fix"] if fix else [])
+    proc = await asyncio.create_subprocess_exec(
+        *args, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT,
+        cwd=str(paths.root))
+    try:
+        out, _ = await asyncio.wait_for(proc.communicate(), timeout=900)
+    except asyncio.TimeoutError:
+        proc.kill()
+        return [TextContent(type="text", text="The self-check did not finish within 15 minutes.")]
+    return [TextContent(type="text", text=out.decode("utf-8", "replace").strip())]

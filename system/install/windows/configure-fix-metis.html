@@ -43,9 +43,10 @@
   Both reach the same two things:</p>
 
   <div class="card">
-    <h3><span class="cmd">metis-doctor</span></h3>
-    Checks that Metis is working on <em>your</em> computer and tells you, in plain
-    language, how to fix anything that isn't.
+    <h3><span class="cmd">metis-verify</span></h3>
+    Checks that Metis is working on <em>your</em> computer, repairs what it can by
+    itself, and tells you in plain language about anything that still needs you.
+    (It also runs on its own every day.)
   </div>
   <div class="card">
     <h3><span class="cmd">metis-customize</span></h3>
@@ -59,7 +60,7 @@
     <li>Install Claude Desktop (free): <a href="https://claude.ai/download">claude.ai/download</a></li>
     <li>Open it — Metis registers itself automatically the first time (it appears as <code>metis-rc</code>).</li>
     <li>Click the <strong>＋ / prompt menu</strong> in the message box.</li>
-    <li>Pick <strong>“Metis Doctor”</strong> to check your install, or <strong>“Metis Customize”</strong> to change something.</li>
+    <li>Pick <strong>“metis-verify”</strong> to check your install and repair it, or <strong>“Metis Customize”</strong> to change something. Or simply type: <em>check that everything works</em>.</li>
     <li>Answer the questions in plain language. Done.</li>
   </ol>
   <p style="color:var(--m-muted);font-size:14px">Don't see the Metis prompts? Quit Claude Desktop completely and reopen it.</p>
@@ -69,7 +70,7 @@
   <ol>
     <li>Install Claude Code: <a href="https://docs.anthropic.com/en/docs/claude-code/getting-started">docs.anthropic.com/en/docs/claude-code</a></li>
     <li>Open it <strong>in your Metis / Research Cortex folder</strong> (in VS Code: open the folder, then <code>Ctrl+`</code> for the terminal).</li>
-    <li>Type <code>/metis-doctor</code> to check the install, or <code>/metis-customize</code> to change something.</li>
+    <li>Type <em>check that everything works</em> to check and repair the install, or <code>/metis-customize</code> to change something.</li>
   </ol>
 
   <h2>Which door?</h2>
@@ -81,7 +82,7 @@
     <strong>Changing Metis:</strong> small changes (your projects, Metis's tone) are applied
     safely and instantly. For bigger <em>structural</em> changes (the look of the dashboard,
     new behaviour), Metis warns you first — it's your Metis, so of course you can change it,
-    but after a structural change run <span class="cmd">metis-doctor</span> to check, and any
+    but after a structural change ask it to <span class="cmd">check that everything works</span>, and any
     change can be undone with git.
   </div>
 

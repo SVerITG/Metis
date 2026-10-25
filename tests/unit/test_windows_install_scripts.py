@@ -149,3 +149,12 @@ def test_batch_files_get_windows_line_endings():
     for ext in ("bat", "ps1", "vbs"):
         assert re.search(rf"^\*\.{ext}\s+text\s+eol=crlf", attrs, re.M), (
             f"*.{ext} must be checked out with CRLF — cmd.exe misreads labels otherwise")
+
+
+def test_no_setup_code_line_starts_with_a_hash():
+    """Inno's preprocessor reads any line that BEGINS with # as a directive. A
+    continued string expression starting with #13#10 aborted the compile."""
+    text = ISS.read_text(encoding="utf-8-sig")
+    code = text[text.index("[Code]"):]
+    bad = [line.strip() for line in code.splitlines() if re.match(r"\s*#\d", line)]
+    assert not bad, "lines the preprocessor will misread:\n  " + "\n  ".join(bad)

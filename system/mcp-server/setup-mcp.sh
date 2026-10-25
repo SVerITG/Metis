@@ -533,7 +533,10 @@ fi
 unset _OS
 
 # ── Auto-register with Claude Code ──────────────────────────────────────────
-# Claude Code stores MCP servers in ~/.claude.json (per-project) via `claude mcp add`.
+# Claude Code stores MCP servers in ~/.claude.json via `claude mcp add`.
+# --scope user: available in EVERY folder. Without it Claude Code registers for
+# the folder setup ran in only, so a colleague opening Claude Code anywhere else
+# had no Metis at all.
 # ~/.claude/settings.json is used only for permissions (tool auto-approval).
 CC_SETTINGS="$HOME/.claude/settings.json"
 mkdir -p "$HOME/.claude"
@@ -542,14 +545,15 @@ mkdir -p "$HOME/.claude"
 if command -v claude >/dev/null 2>&1; then
   # Remove old registration first to avoid duplicates, then re-add
   claude mcp remove metis-rc >/dev/null 2>&1 || true
-  if claude mcp add metis-rc "$RUN_SCRIPT" >/dev/null 2>&1; then
-    echo "  Claude Code: registered metis-rc via claude mcp add"
+  claude mcp remove --scope user metis-rc >/dev/null 2>&1 || true
+  if claude mcp add --scope user metis-rc "$RUN_SCRIPT" >/dev/null 2>&1; then
+    echo "  Claude Code: Metis connected (every folder)"
   else
-    echo "  Claude Code: mcp add failed — you may need to run: claude mcp add metis-rc $RUN_SCRIPT"
+    echo "  Claude Code: could not connect automatically — run: claude mcp add --scope user metis-rc $RUN_SCRIPT"
   fi
 else
   echo "  Claude Code CLI not found — skipping auto-registration"
-  echo "  Once installed, run: claude mcp add metis-rc $RUN_SCRIPT"
+  echo "  Once installed, run: claude mcp add --scope user metis-rc $RUN_SCRIPT"
 fi
 
 # Write permissions to settings.json so MCP tools are auto-approved
@@ -901,6 +905,25 @@ if [ -x "$VENV_PYTHON" ]; then
         echo "    extra not installed). It will download on first ONLINE use; until then"
         echo "    semantic search is degraded. Log: /tmp/metis-embed-warmup.log"
     fi
+fi
+
+# ── Daily self-check (and a first one now) ───────────────────────────────────
+# metis_verify.py checks Metis the way Claude reaches it and repairs what it can;
+# the dashboard shows its verdict. Not under WSL: there the Windows side owns
+# scheduling (tools/install-readiness-schedule.sh).
+VERIFY="$_CODE_ROOT/system/install/metis_verify.py"
+if [ -f "$VERIFY" ] && [ -x "$VENV_PYTHON" ]; then
+  echo ""
+  echo "── Checking that everything works ──"
+  METIS_RC_ROOT="$METIS_RC_ROOT" "$VENV_PYTHON" "$VERIFY" --fix 2>&1 | sed 's/^/  /' || true
+  if ! grep -qi microsoft /proc/version 2>/dev/null && [ ! -f "/.dockerenv" ] \
+     && command -v crontab >/dev/null 2>&1; then
+    _LINE="35 9 * * * METIS_RC_ROOT='$METIS_RC_ROOT' '$VENV_PYTHON' '$VERIFY' --fix --quiet"
+    { crontab -l 2>/dev/null | grep -v "metis_verify.py" || true; echo "$_LINE"; } | crontab - \
+      && echo "  Metis checks itself every day at 09:35 (and repairs what it can)" \
+      || echo "  (could not schedule the daily self-check — ask Metis to check instead)"
+    unset _LINE
+  fi
 fi
 
 echo ""

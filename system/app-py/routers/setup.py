@@ -304,8 +304,9 @@ async def api_key_status(request: Request):
     <path d="M8 1.5L1.5 13.5h13z"/><line x1="8" y1="6" x2="8" y2="9.5"/><circle cx="8" cy="11.5" r=".7" fill="#7a5a13"/>
   </svg>
   <div style="flex:1;line-height:1.5;">
-    <strong>I'm running without an API key.</strong>
-    The morning brief, retrieval, and Claude-backed agents need an Anthropic key. Get one at
+    <strong>Optional: add an Anthropic API key.</strong>
+    Metis works fully in Claude Desktop and Claude Code without one. A key (paid separately)
+    adds background features such as the automatic morning brief. Get one at
     <a href="https://console.anthropic.com" target="_blank" rel="noopener" style="color:#5b4a17;text-decoration:underline;">console.anthropic.com</a>
     and paste it here — Metis saves it locally for you, no setup:
     <div style="display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap;">
@@ -317,15 +318,17 @@ async def api_key_status(request: Request):
     </div>
     <div style="margin-top:6px;font-size:11.5px;color:#7a5a13;font-style:italic;">
       Saved to <code style="font-family:var(--m-mono);">system/.env</code> on your machine — never uploaded.
-      (A Windows environment variable won't work here: Metis runs inside WSL and can't read them.)
     </div>
   </div>
-  <button onclick="this.parentElement.style.display='none'"
+  <button onclick="this.parentElement.style.display='none';try{localStorage.setItem('metisApiKeyBannerHidden','1')}catch(e){}"
           style="background:transparent;border:1px solid #b8983e;color:#5b4a17;font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;padding:6px 12px;border-radius:3px;cursor:pointer;flex-shrink:0;">
-    HIDE
+    NOT NOW
   </button>
 </div>
 <script>
+// Optional, so a "not now" is remembered in this browser; the Metis tab keeps the setting.
+try { if (localStorage.getItem('metisApiKeyBannerHidden') === '1') {
+  var _b = document.getElementById('api-key-banner'); if (_b) _b.style.display = 'none'; } } catch (e) {}
 function saveInlineApiKey(btn){
   var el=document.getElementById('inline-api-key'), msg=document.getElementById('inline-api-key-msg');
   var v=(el.value||'').trim();

@@ -90,6 +90,8 @@ jobs:
       # step below only runs if this passes.
       - name: Install it silently and check the result
         shell: powershell   # Windows PowerShell 5.1, like the colleague's machine
+        env:
+          METIS_SKIP_CLAUDE: "1"   # do not download Claude Desktop onto the build machine
         run: |
           $exe = Get-ChildItem "system\install\installer\dist\MetisSetup-*.exe" | Select-Object -First 1
           $dir = Join-Path $env:RUNNER_TEMP "MetisTest"
@@ -117,6 +119,9 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "installed Metis tools do not import" }
           $cfg = Get-Content (Join-Path $env:APPDATA "Claude\claude_desktop_config.json") -Raw | ConvertFrom-Json
           if (-not $cfg.mcpServers.'metis-rc') { throw "Claude Desktop was not connected" }
+          if (-not (Get-ScheduledTask -TaskName "Metis self-check" -ErrorAction SilentlyContinue)) {
+            throw "the daily self-check was not scheduled"
+          }
           Write-Host "Installed and connected: $dir"
 
       - name: Upload the installer artifact
