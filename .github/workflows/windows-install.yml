@@ -88,6 +88,10 @@ jobs:
           }
           $t = Get-ScheduledTask -TaskName "Metis self-check"
           if ($t.Settings.DisallowStartIfOnBatteries) { throw "the self-check would never run on battery" }
+          # READY WITH WARNINGS (exit 1) is the expected verdict on a fresh install:
+          # nobody has told Metis their name yet. GitHub ends a PowerShell step with
+          # the last program's exit code, which would turn that warning into a failure.
+          $global:LASTEXITCODE = 0
 
       - name: The person's own CLAUDE.md was kept
         run: |
