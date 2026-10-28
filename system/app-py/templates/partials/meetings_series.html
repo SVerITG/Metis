@@ -1,0 +1,59 @@
+{#- Meeting series: recurring meetings whose actions carry from one meeting to
+    the next. One card per series; the detail opens in #meeting-detail-panel. -#}
+<div id="meetings-series">
+  {% if error %}
+  <div class="u-mono u-mb-2" style="color:var(--m-alert);">{{ error }}</div>
+  {% endif %}
+
+  {% if series %}
+  <div class="panel u-mb-2">
+    {% for s in series %}
+    <div style="display:grid;grid-template-columns:1fr auto;gap:var(--m-space-2);padding:var(--m-space-3) var(--m-space-4);cursor:pointer;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}"
+         hx-get="/api/partial/meetings/series/{{ s.series_id }}"
+         hx-target="#meeting-detail-panel"
+         hx-swap="innerHTML">
+      <div>
+        <div class="u-title u-title--sm">{{ s.name }}{% if s.code %} <span class="u-label">· {{ s.code }}</span>{% endif %}</div>
+        <div class="u-label" style="margin-top:var(--m-space-1);">
+          {{ s.n_meetings }} MEETING{{ 'S' if s.n_meetings != 1 else '' }}
+          {% if s.last_meeting %} · LAST {{ (s.last_meeting.sequence_label or s.last_meeting.meeting_date) | upper }}{% endif %}
+          {% if s.next_expected %} · NEXT ≈ {{ s.next_expected }}{% endif %}
+        </div>
+      </div>
+      <div style="text-align:right;">
+        {% if s.n_open_actions %}
+        <span class="u-mono" style="display:inline-flex;padding:1px 6px;letter-spacing:0.12em;background:var(--m-ochre-wash);color:var(--m-ochre-deep);border-radius:var(--m-radius-sm);">{{ s.n_open_actions }} OPEN</span>
+        {% else %}
+        <span class="u-label">ALL CLEAR</span>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="ed u-mb-2" style="font-size:var(--t-small);color:var(--m-muted);">
+    <em>No series yet. A series is a recurring meeting with one group — its open actions come back at the next meeting.</em>
+  </div>
+  {% endif %}
+
+  <details>
+    <summary class="u-label" style="cursor:pointer;">+ NEW SERIES</summary>
+    <form hx-post="/api/meeting/series" hx-target="#meetings-series" hx-swap="outerHTML"
+          style="display:grid;gap:var(--m-space-2);margin-top:var(--m-space-2);">
+      <input class="u-tile" name="name" required placeholder="Name, e.g. Quarterly review — group"
+             style="padding:var(--m-space-2);font-family:var(--m-sans);font-size:var(--t-small);" aria-label="Series name">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--m-space-2);">
+        <input class="u-tile" name="code" placeholder="Code (in file names)"
+               title="The group's short code as it appears in titles and file names — the key that recognises the next meeting"
+               style="padding:var(--m-space-2);font-family:var(--m-sans);font-size:var(--t-small);" aria-label="Code">
+        <input class="u-tile" name="cadence_days" type="number" min="0" placeholder="Every … days (91)"
+               style="padding:var(--m-space-2);font-family:var(--m-sans);font-size:var(--t-small);" aria-label="Cadence in days">
+        <input class="u-tile" name="language" placeholder="Language (fr, en)"
+               style="padding:var(--m-space-2);font-family:var(--m-sans);font-size:var(--t-small);" aria-label="Report language">
+      </div>
+      <input class="u-tile" name="organisation" placeholder="With whom (organisation)"
+             style="padding:var(--m-space-2);font-family:var(--m-sans);font-size:var(--t-small);" aria-label="Organisation">
+      <button type="submit" class="btn btn--sec btn--caps">Create series</button>
+    </form>
+  </details>
+</div>

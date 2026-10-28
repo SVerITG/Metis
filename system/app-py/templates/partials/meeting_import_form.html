@@ -35,6 +35,32 @@
         </div>
       </div>
 
+      <div class="u-mb-3" style="display:grid;grid-template-columns:1fr 1fr 120px;gap:var(--m-space-3);">
+        <div>
+          <label class="u-label u-mb-1" style="display:block;">SERIES</label>
+          {#- "Detect" saves the meeting and PROPOSES a series to confirm; picking
+              one here is the confirmation. -#}
+          <select class="u-tile" name="series_id" aria-label="Meeting series"
+                  style="width:100%;box-sizing:border-box;padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);">
+            <option value="auto">Detect — ask me to confirm</option>
+            <option value="none">One-off meeting</option>
+            {% for s in series %}
+            <option value="{{ s.series_id }}">{{ s.name }}{% if s.code %} ({{ s.code }}){% endif %}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="u-label u-mb-1" style="display:block;">PLACE</label>
+          <input class="u-tile" type="text" name="location" placeholder="Room, town, or video call"
+                 style="width:100%;box-sizing:border-box;padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);" aria-label="Place">
+        </div>
+        <div>
+          <label class="u-label u-mb-1" style="display:block;">LABEL</label>
+          <input class="u-tile" type="text" name="sequence_label" placeholder="e.g. T3 2026"
+                 style="width:100%;box-sizing:border-box;padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);" aria-label="Label in the series">
+        </div>
+      </div>
+
       <div class="u-mb-3">
         <label class="u-label u-mb-1" style="display:block;">PARTICIPANTS</label>
         <input class="u-tile" type="text" name="attendees" placeholder="Name 1, Name 2, …"

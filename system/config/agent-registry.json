@@ -423,6 +423,7 @@
       "internet_scope": null,
       "allowed_paths": [
         "inputs/meetings/",
+        "outputs/meetings/",
         "outputs/reviews/meeting-memory/"
       ],
       "forbidden_actions": [

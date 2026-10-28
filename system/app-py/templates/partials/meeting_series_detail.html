@@ -1,0 +1,102 @@
+{#- One series: its meetings, every action raised in it with its current
+    status, the report rules, and the briefing for the next meeting. Status
+    changes post back and re-render this partial in place. -#}
+<div class="panel u-mb-4" id="series-detail-{{ series.series_id }}" style="padding:var(--m-space-6);">
+  <div class="kicker kicker--ochre u-mb-2">
+    SERIES{% if series.code %} · {{ series.code }}{% endif %}
+    {% if series.cadence_days %} · EVERY {{ series.cadence_days }} DAYS{% endif %}
+    {% if next_expected %} · NEXT ≈ {{ next_expected }}{% endif %}
+  </div>
+  <h2 style="font-family:var(--m-display);font-size:var(--t-h2);font-weight:500;letter-spacing:-0.018em;margin:0 0 var(--m-space-4);color:var(--m-ink);">{{ series.name }}</h2>
+
+  <!-- Meetings, newest first -->
+  <div class="u-label u-mb-2">MEETINGS ({{ meetings|length }})</div>
+  {% if meetings %}
+  <div class="u-mb-4">
+    {% for m in meetings %}
+    <div class="u-row u-row--between u-rule" style="padding:var(--m-space-1) 0;">
+      <span style="cursor:pointer;" hx-get="/api/partial/meetings/detail/{{ m.meeting_id }}" hx-target="#meeting-detail-panel" hx-swap="innerHTML">
+        <span class="u-label">{{ m.meeting_date[:10] }}</span>
+        <span class="u-title u-title--sm">{{ m.sequence_label or m.title }}</span>
+      </span>
+      <a class="u-label" href="/api/meeting/{{ m.meeting_id }}/report.docx" title="Draft report as Word">REPORT .DOCX</a>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="ed u-mb-4" style="font-size:var(--t-small);color:var(--m-muted);"><em>No meeting in this series yet.</em></div>
+  {% endif %}
+
+  <!-- Actions across the series -->
+  <div class="u-mb-2 u-mono" style="letter-spacing:0.14em;color:var(--m-ochre);">ACTIONS ({{ actions|length }})</div>
+  {% if actions %}
+  <div class="u-mb-4" style="overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;font-family:var(--m-sans);font-size:var(--t-small);">
+      <thead>
+        <tr class="u-label" style="text-align:left;">
+          <th style="padding:var(--m-space-1);">Action</th>
+          <th style="padding:var(--m-space-1);">Owner</th>
+          <th style="padding:var(--m-space-1);">Due</th>
+          <th style="padding:var(--m-space-1);">Raised</th>
+          <th style="padding:var(--m-space-1);">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in actions %}
+        {% set st = a.status or 'open' %}
+        <tr style="border-top:1px solid var(--m-rule-soft);{% if st in ('done','dropped') %}opacity:.55;{% endif %}">
+          <td style="padding:var(--m-space-1);color:var(--m-ink);">{{ a.description }}{% if a.status_note %}<div class="u-label">{{ a.status_note }}</div>{% endif %}</td>
+          <td style="padding:var(--m-space-1);">{{ a.owner or '—' }}</td>
+          <td style="padding:var(--m-space-1);{% if a.overdue %}color:var(--m-alert);{% endif %}">{{ a.due_date or '—' }}</td>
+          <td style="padding:var(--m-space-1);" class="u-label">{{ a.sequence_label or a.meeting_date[:10] }}</td>
+          <td style="padding:var(--m-space-1);">
+            <form hx-post="/api/meeting/series-action/{{ a.id }}/status"
+                  hx-target="#series-detail-{{ series.series_id }}" hx-swap="outerHTML"
+                  hx-trigger="change">
+              <input type="hidden" name="series_id" value="{{ series.series_id }}">
+              {#- A change made here is recorded AT the latest meeting, unless the
+                  action was raised at that meeting itself (then it is just its status). -#}
+              <input type="hidden" name="at_meeting" value="{{ latest_meeting_id if a.meeting_id != latest_meeting_id else '' }}">
+              <select name="status" class="u-tile" aria-label="Status"
+                      style="padding:2px var(--m-space-1);font-family:var(--m-sans);font-size:var(--t-meta);">
+                {% for s in statuses %}
+                <option value="{{ s }}" {% if s == st %}selected{% endif %}>{{ s.replace('_', ' ') }}</option>
+                {% endfor %}
+              </select>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="ed u-mb-4" style="font-size:var(--t-small);color:var(--m-muted);"><em>No actions recorded yet.</em></div>
+  {% endif %}
+
+  <!-- Report rules -->
+  <div class="u-label u-mb-2">REPORT RULES FOR THIS SERIES ({{ series.report_rules|length }})</div>
+  <div class="u-mb-4">
+    {% for r in series.report_rules %}
+    <div class="u-row u-row--between" style="padding:var(--m-space-1) 0 var(--m-space-1) var(--m-space-3);border-left:2px solid var(--m-accent);font-family:var(--m-sans);font-size:var(--t-small);">
+      <span>{{ r }}</span>
+      <form hx-post="/api/meeting/series/{{ series.series_id }}/rule" hx-target="#series-detail-{{ series.series_id }}" hx-swap="outerHTML" style="margin:0;">
+        <input type="hidden" name="remove_index" value="{{ loop.index0 }}">
+        <button class="btn btn--ghost u-label" type="submit" title="Remove this rule" aria-label="Remove rule">✕</button>
+      </form>
+    </div>
+    {% endfor %}
+    <form hx-post="/api/meeting/series/{{ series.series_id }}/rule" hx-target="#series-detail-{{ series.series_id }}" hx-swap="outerHTML"
+          class="u-row" style="gap:var(--m-space-2);margin-top:var(--m-space-2);">
+      <input class="u-tile u-grow" name="rule" placeholder="e.g. No meeting duration in the header"
+             style="padding:var(--m-space-1) var(--m-space-2);font-family:var(--m-sans);font-size:var(--t-small);" aria-label="New report rule">
+      <button class="btn btn--ghost btn--caps" type="submit">Add rule</button>
+    </form>
+  </div>
+
+  <!-- Briefing -->
+  <details>
+    <summary class="u-label" style="cursor:pointer;">BRIEFING FOR THE NEXT MEETING</summary>
+    <pre style="white-space:pre-wrap;font-family:var(--m-mono);font-size:var(--t-meta);color:var(--m-text);margin-top:var(--m-space-2);">{{ briefing }}</pre>
+  </details>
+</div>

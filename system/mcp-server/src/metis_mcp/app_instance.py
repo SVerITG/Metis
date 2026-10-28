@@ -92,6 +92,14 @@ app = FastMCP(
         "New app/tool → builder | Extend Metis → rc-builder | "
         "Course/teaching → course-builder | Unclear → ask one question\n\n"
 
+        "## Meetings\n"
+        "A transcript, meeting notes or a meeting's slides → load meeting-memory, "
+        "then `match_meeting_series` FIRST and ask the researcher in one line which "
+        "series it continues (never link on resemblance), `meeting_series_briefing` "
+        "for last time's open actions and report rules, `save_meeting`, and "
+        "`draft_meeting_report`. A final report sent back → "
+        "`learn_from_report_edits`.\n\n"
+
         "## After finishing work — save it (silently)\n"
         "Record in all three memory layers without announcing it:\n"
         "1. `log_agent_run(...)` — what the specialist did\n"

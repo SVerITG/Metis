@@ -24,6 +24,44 @@ log = logging.getLogger("metis.meetings")
 router = APIRouter()
 
 
+def _ms():
+    """The meeting-series core, shared with the MCP tools so the two never drift.
+
+    The dashboard may import an INSTALLED copy of metis_mcp that predates this
+    module (the MCP server runs from an install, not the source). The module has
+    no package-relative imports, so it is then loaded straight from the source
+    tree rather than leaving the Meetings tab broken until a reinstall.
+    """
+    try:
+        from metis_mcp import meeting_series
+        return meeting_series
+    except ImportError:
+        import importlib.util
+        import sys
+        name = "metis_meeting_series_src"
+        if name in sys.modules:
+            return sys.modules[name]
+        src = (Path(__file__).resolve().parents[2] / "mcp-server" / "src"
+               / "metis_mcp" / "meeting_series.py")
+        spec = importlib.util.spec_from_file_location(name, src)
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules[name] = mod
+        spec.loader.exec_module(mod)
+        return mod
+
+
+def _series_rows() -> list[dict]:
+    try:
+        conn = _connect()
+        try:
+            return _ms().list_series(conn)
+        finally:
+            conn.close()
+    except Exception as exc:
+        log.warning("meeting series: list failed (%s)", exc)
+        return []
+
+
 # ---------------------------------------------------------------------------
 # Ingestion guardrail
 # ---------------------------------------------------------------------------
@@ -119,6 +157,27 @@ _FOLLOWUP_RE = re.compile(
 )
 
 
+# The transcript is read in windows of this size, with an overlap so an action
+# agreed across a window boundary is seen whole in at least one of them. The cap
+# is a cost guard (~10 windows ≈ a three-hour meeting), and it is logged when hit.
+_EXTRACT_WINDOW = 12000
+_EXTRACT_OVERLAP = 800
+_EXTRACT_MAX_WINDOWS = 10
+
+
+def _transcript_windows(text: str) -> list[str]:
+    if len(text) <= _EXTRACT_WINDOW:
+        return [text]
+    out, start = [], 0
+    while start < len(text) and len(out) < _EXTRACT_MAX_WINDOWS:
+        out.append(text[start:start + _EXTRACT_WINDOW])
+        start += _EXTRACT_WINDOW - _EXTRACT_OVERLAP
+    if start < len(text):
+        log.warning("meeting extract: transcript of %d chars cut after %d windows",
+                    len(text), _EXTRACT_MAX_WINDOWS)
+    return out
+
+
 def _extract_structure_llm(text: str) -> dict | None:
     """Extract {actions, decisions, follow_ups} from a NATURAL transcript via Claude.
 
@@ -129,6 +188,11 @@ def _extract_structure_llm(text: str) -> dict | None:
     bullets, so the heuristic returns NOTHING. That is why every real meeting
     produced zero action items and the headline feature looked dead.
 
+    The whole transcript is read, window by window. It used to be cut at 8,000
+    characters — about ten minutes of speech — and actions are mostly agreed at
+    the END of a meeting, so a one-hour meeting lost exactly the part that
+    mattered.
+
     Returns None (not {}) on any failure, so the caller falls back to the
     heuristic. Needs ANTHROPIC_API_KEY, which the dashboard now loads from
     system/.env.
@@ -136,29 +200,55 @@ def _extract_structure_llm(text: str) -> dict | None:
     api_key = os.environ.get("ANTHROPIC_API_KEY", "")
     if not api_key or len(text.strip()) < 120:
         return None
+    windows = _transcript_windows(text)
+    merged: dict[str, list[str]] = {"actions": [], "decisions": [], "follow_ups": []}
+    seen: dict[str, set[str]] = {k: set() for k in merged}
+    got_any = False
+    for n, window in enumerate(windows, 1):
+        part = _extract_window_llm(window, api_key, n, len(windows))
+        if part is None:
+            # One failed window is a gap, not a reason to discard the others —
+            # unless nothing has worked, in which case fall back as before.
+            continue
+        got_any = True
+        for k in merged:
+            for item in part.get(k, []):
+                key = re.sub(r"\W+", " ", item.lower()).strip()
+                if key and key not in seen[k]:
+                    seen[k].add(key)
+                    merged[k].append(item)
+    if not got_any:
+        return None
+    return merged if any(merged.values()) else None
+
+
+def _extract_window_llm(text: str, api_key: str, n: int, total: int) -> dict | None:
     try:
         import httpx
         from models import model_for
 
+        where = (f" This is part {n} of {total} of one transcript; extract only "
+                 "what is in this part." if total > 1 else "")
         prompt = (
             "You are extracting structure from a meeting transcript. Return ONLY a "
             "JSON object with exactly three keys: \"actions\" (concrete things "
             "someone agreed to DO, each starting with a verb and naming the owner "
             "if stated), \"decisions\" (things the group decided or agreed), and "
             "\"follow_ups\" (open items / next steps to revisit). Each is an array "
-            "of short strings. If a category is empty, use []. No commentary.\n\n"
-            "TRANSCRIPT:\n" + text[:8000]
+            "of short strings, in the language of the transcript. If a category is "
+            "empty, use []. No commentary." + where + "\n\n"
+            "TRANSCRIPT:\n" + text
         )
         resp = httpx.post(
             "https://api.anthropic.com/v1/messages",
             headers={"x-api-key": api_key, "anthropic-version": "2023-06-01",
                      "content-type": "application/json"},
-            json={"model": model_for("brief"), "max_tokens": 700,
+            json={"model": model_for("brief"), "max_tokens": 1200,
                   "messages": [{"role": "user", "content": prompt}]},
-            timeout=30.0,
+            timeout=60.0,
         )
         if resp.status_code != 200:
-            log.warning("meeting extract: LLM HTTP %s — falling back to heuristic", resp.status_code)
+            log.warning("meeting extract: LLM HTTP %s on part %d/%d", resp.status_code, n, total)
             return None
         _payload = resp.json()
         try:  # record real token usage for the monitor (Keystone B6.3)
@@ -174,11 +264,10 @@ def _extract_structure_llm(text: str) -> dict | None:
         if start < 0 or end <= start:
             return None
         data = json.loads(raw[start:end])
-        out = {k: [str(x).strip() for x in (data.get(k) or []) if str(x).strip()]
-               for k in ("actions", "decisions", "follow_ups")}
-        return out if any(out.values()) else None
+        return {k: [str(x).strip() for x in (data.get(k) or []) if str(x).strip()]
+                for k in ("actions", "decisions", "follow_ups")}
     except Exception as exc:
-        log.warning("meeting extract: LLM path failed (%s) — using heuristic", exc)
+        log.warning("meeting extract: LLM path failed on part %d/%d (%s)", n, total, exc)
         return None
 
 
@@ -522,9 +611,17 @@ def _sync_meeting_actions() -> int:
 
 @router.get("/api/partial/meetings/follow-ups", response_class=HTMLResponse)
 async def meetings_follow_ups(request: Request):
+    try:  # `owner` arrived with the series layer; a missed migration must not blank this
+        conn = _connect()
+        try:
+            _ms().ensure_schema(conn)
+        finally:
+            conn.close()
+    except Exception:
+        pass
     _sync_meeting_actions()
     actions = db_query(
-        "SELECT ma.description, ma.status, ma.due_date, "
+        "SELECT ma.description, ma.status, ma.due_date, ma.owner, "
         "m.title as meeting_title, m.meeting_date as meeting_date "
         "FROM meeting_actions ma JOIN meetings m ON ma.meeting_id = m.meeting_id "
         "WHERE ma.status != 'done' ORDER BY ma.due_date NULLS LAST LIMIT 10"
@@ -635,7 +732,8 @@ async def meetings_search(request: Request, q: str = ""):
 async def meetings_import_form(request: Request):
     today = datetime.date.today().isoformat()
     return templates.TemplateResponse(
-        request, "partials/meeting_import_form.html", {"today": today}
+        request, "partials/meeting_import_form.html",
+        {"today": today, "series": _series_rows()},
     )
 
 
@@ -901,13 +999,14 @@ async def meeting_import(
     duration_minutes: str = Form(""),
     meeting_type: str = Form("meeting"),
     transcript: str = Form(""),
+    location: str = Form(""),
+    series_id: str = Form("auto"),
+    sequence_label: str = Form(""),
 ):
-    now = datetime.datetime.now().isoformat(timespec="seconds")
-
+    # The docstring of _sanitize_ingest promised every import was probed; this
+    # route — the main one — never called it.
+    transcript = _sanitize_ingest(transcript.strip(), f"meeting-import:{title[:60]}")
     extracted = _extract_structure(transcript)
-    actions_json = json.dumps(extracted["actions"])
-    decisions_json = json.dumps(extracted["decisions"])
-    followups_json = json.dumps(extracted["follow_ups"])
 
     dur = None
     try:
@@ -915,50 +1014,31 @@ async def meeting_import(
     except ValueError:
         pass
 
+    # A series chosen in the form IS the researcher's confirmation. "auto" saves
+    # the meeting unlinked and proposes a series to confirm in the result.
+    chosen = series_id if series_id not in ("", "auto", "none") else ""
+    match = None
+    ms = _ms()
     try:
-        db_execute(
-            """INSERT INTO meetings
-               (meeting_id, title, meeting_date, attendees, meeting_type, transcript,
-                action_items, decisions, follow_ups, transcript_status,
-                duration_minutes, created_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'filed', ?, ?)""",
-            (
-                _new_meeting_id(),
-                title.strip(),
-                meeting_date,
-                attendees.strip(),
-                meeting_type,
-                transcript.strip(),
-                actions_json,
-                decisions_json,
-                followups_json,
-                dur,
-                now,
-            ),
-        )
-
-        # Save extracted actions to meeting_actions table
-        if extracted["actions"]:
-            row = db_query(
-                "SELECT meeting_id FROM meetings WHERE created_at = ? LIMIT 1", (now,)
-            )
-            if row:
-                mid = row[0]["meeting_id"]
-                for act in extracted["actions"]:
-                    db_execute(
-                        "INSERT INTO meeting_actions (meeting_id, description, status, created_at) "
-                        "VALUES (?, ?, 'open', ?)",
-                        (mid, act, now),
-                    )
-
-        connections = _surface_connections(
-            (title + " " + transcript)[:800]
-        )
-
+        conn = _connect()
+        try:
+            mid = ms.save_meeting(
+                conn, title, meeting_date, attendees=attendees, location=location,
+                series_id=chosen, sequence_label=sequence_label,
+                decisions=extracted["decisions"], actions=extracted["actions"],
+                follow_ups=extracted["follow_ups"], transcript=transcript,
+                meeting_type=meeting_type, duration_minutes=dur)
+            if series_id == "auto":
+                match = ms.match_series(conn, title=title, meeting_date=meeting_date,
+                                        attendees=attendees, text=transcript)
+            chosen_series = ms.get_series(conn, chosen) if chosen else None
+        finally:
+            conn.close()
+        connections = _surface_connections((title + " " + transcript)[:800])
     except Exception as e:
         return HTMLResponse(
             f'<div style="color:var(--m-alert);font-family:var(--m-mono);font-size:10px;'
-            f'padding:12px 0;">ERROR: {e}</div>'
+            f'padding:12px 0;">ERROR: {html.escape(str(e))}</div>'
         )
 
     return templates.TemplateResponse(
@@ -966,8 +1046,12 @@ async def meeting_import(
         "partials/meeting_import_result.html",
         {
             "title": title,
+            "meeting_id": mid,
             "extracted": extracted,
             "connections": connections,
+            "match": match,
+            "chosen_series": chosen_series,
+            "sequence_label": sequence_label,
         },
     )
 
@@ -978,7 +1062,7 @@ async def meeting_import(
 
 
 @router.get("/api/partial/meetings/detail/{meeting_id}", response_class=HTMLResponse)
-async def meeting_detail(request: Request, meeting_id: int):
+async def meeting_detail(request: Request, meeting_id: str):
     rows = db_query(
         "SELECT meeting_id as id, title, meeting_date as date, attendees as participants, "
         "duration_minutes, transcript_status as status, transcript, "
@@ -1008,6 +1092,25 @@ async def meeting_detail(request: Request, meeting_id: int):
         ((m.get("title") or "") + " " + (m.get("transcript") or ""))[:800]
     )
 
+    # Series context: which series this meeting belongs to, or the choice of one.
+    series, full, series_rows = None, None, []
+    try:
+        conn = _connect()
+        try:
+            full = _ms().get_meeting(conn, meeting_id)
+            if full and full.get("series_id"):
+                series = _ms().get_series(conn, full["series_id"])
+            else:
+                series_rows = _ms().list_series(conn)
+        finally:
+            conn.close()
+    except Exception as exc:
+        log.warning("meeting detail: series context unavailable (%s)", exc)
+    if full and full.get("actions"):
+        # Owned actions from meeting_actions beat the bare strings in the JSON.
+        actions = [a["description"] + (f" — {a['owner']}" if a.get("owner") else "")
+                   for a in full["actions"]]
+
     return templates.TemplateResponse(
         request,
         "partials/meeting_detail.html",
@@ -1017,6 +1120,9 @@ async def meeting_detail(request: Request, meeting_id: int):
             "decisions": decisions,
             "follow_ups": follow_ups,
             "connections": connections,
+            "full": full,
+            "series": series,
+            "series_rows": series_rows,
         },
     )
 
@@ -1300,7 +1406,7 @@ async def toggle_action(action_id: int):
 
 
 @router.post("/api/meeting/{meeting_id}/create-tasks", response_class=HTMLResponse)
-async def meeting_create_tasks(request: Request, meeting_id: int):
+async def meeting_create_tasks(request: Request, meeting_id: str):
     """Parse action items from a meeting and insert them as tasks."""
     # Fetch meeting row
     rows = db_query(
@@ -1448,3 +1554,172 @@ async def meetings_transcribe_audio(
             os.unlink(tmp_path)
         except Exception:
             pass
+
+
+# ---------------------------------------------------------------------------
+# Meeting series — recurring meetings whose actions are followed up
+# ---------------------------------------------------------------------------
+#
+# The logic lives in metis_mcp.meeting_series; these routes only render it. A
+# meeting is linked to a series only by an explicit choice here (a series picked
+# in the import form, or the confirm button the import result shows) — never by
+# the matcher alone.
+
+
+def _series_detail_ctx(series_id: str) -> dict | None:
+    ms = _ms()
+    conn = _connect()
+    try:
+        s = ms.get_series(conn, series_id)
+        if not s:
+            return None
+        meetings = ms.series_meetings(conn, series_id)
+        actions = ms.series_actions(conn, series_id)
+        briefing = ms.briefing(conn, series_id)
+        nxt = ms.list_series(conn, include_inactive=True)
+    finally:
+        conn.close()
+    next_expected = next((x["next_expected"] for x in nxt
+                          if x["series_id"] == series_id), "")
+    today = datetime.date.today().isoformat()
+    for a in actions:
+        a["overdue"] = bool(a.get("due_date") and a["due_date"][:10] < today
+                            and re.match(r"\d{4}-\d\d-\d\d", a["due_date"])
+                            and (a.get("status") or "open") not in ("done", "dropped"))
+    return {"series": s, "meetings": list(reversed(meetings)), "actions": actions,
+            "briefing": briefing, "next_expected": next_expected,
+            "statuses": ms.ACTION_STATUSES,
+            "latest_meeting_id": meetings[-1]["meeting_id"] if meetings else ""}
+
+
+@router.get("/api/partial/meetings/series", response_class=HTMLResponse)
+async def meetings_series(request: Request):
+    return templates.TemplateResponse(
+        request, "partials/meetings_series.html", {"series": _series_rows()})
+
+
+@router.post("/api/meeting/series", response_class=HTMLResponse)
+async def meeting_series_create(
+    request: Request,
+    name: str = Form(...),
+    code: str = Form(""),
+    organisation: str = Form(""),
+    cadence_days: str = Form("0"),
+    language: str = Form(""),
+):
+    error = ""
+    try:
+        cad = int(cadence_days or 0)
+    except ValueError:
+        cad = 0
+    try:
+        conn = _connect()
+        try:
+            _ms().create_series(conn, name, code=code, organisation=organisation,
+                                cadence_days=cad, language=language)
+        finally:
+            conn.close()
+    except ValueError as e:
+        error = str(e)
+    return templates.TemplateResponse(
+        request, "partials/meetings_series.html",
+        {"series": _series_rows(), "error": error})
+
+
+@router.get("/api/partial/meetings/series/{series_id}", response_class=HTMLResponse)
+async def meeting_series_detail(request: Request, series_id: str):
+    ctx = _series_detail_ctx(series_id)
+    if not ctx:
+        return HTMLResponse('<div class="panel panel-pad">Series not found.</div>')
+    return templates.TemplateResponse(request, "partials/meeting_series_detail.html", ctx)
+
+
+@router.post("/api/meeting/series-action/{action_id}/status", response_class=HTMLResponse)
+async def meeting_series_action_status(
+    request: Request,
+    action_id: int,
+    series_id: str = Form(...),
+    status: str = Form(...),
+    note: str = Form(""),
+    at_meeting: str = Form(""),
+):
+    """Change an action's status; with at_meeting, record it as reviewed there."""
+    try:
+        conn = _connect()
+        try:
+            _ms().review_action(conn, action_id, status, meeting_id=at_meeting, note=note)
+        finally:
+            conn.close()
+    except ValueError as e:
+        return HTMLResponse(f'<div class="u-mono" style="color:var(--m-alert);">'
+                            f'{html.escape(str(e))}</div>')
+    return await meeting_series_detail(request, series_id)
+
+
+@router.post("/api/meeting/series/{series_id}/rule", response_class=HTMLResponse)
+async def meeting_series_rule(request: Request, series_id: str,
+                              rule: str = Form(""), remove_index: int = Form(-1)):
+    try:
+        conn = _connect()
+        try:
+            if remove_index >= 0:
+                _ms().remove_report_rule(conn, series_id, remove_index)
+            elif rule.strip():
+                _ms().add_report_rule(conn, series_id, rule)
+        finally:
+            conn.close()
+    except ValueError as e:
+        return HTMLResponse(f'<div class="u-mono" style="color:var(--m-alert);">'
+                            f'{html.escape(str(e))}</div>')
+    return await meeting_series_detail(request, series_id)
+
+
+@router.post("/api/meeting/{meeting_id}/link-series", response_class=HTMLResponse)
+async def meeting_link_series(meeting_id: str, series_id: str = Form(...),
+                              sequence_label: str = Form("")):
+    """The researcher's confirmation that a meeting continues a series."""
+    try:
+        conn = _connect()
+        try:
+            r = _ms().link_meeting_to_series(conn, meeting_id, series_id, sequence_label)
+            s = _ms().get_series(conn, series_id)
+            n_open = len(_ms().open_actions(conn, series_id))
+        finally:
+            conn.close()
+    except ValueError as e:
+        return HTMLResponse(f'<div class="u-mono" style="color:var(--m-alert);">'
+                            f'{html.escape(str(e))}</div>')
+    prev = "it follows the previous meeting" if r["previous_meeting_id"] else \
+        "it is the first meeting of the series"
+    return HTMLResponse(
+        f'<div class="u-mono" style="color:var(--m-ok);letter-spacing:0.08em;">'
+        f'&#10003; LINKED to {html.escape(s["name"])} — {prev}; '
+        f'{n_open} open action(s) in the series.</div>')
+
+
+@router.get("/api/meeting/{meeting_id}/report.docx")
+async def meeting_report_docx(meeting_id: str):
+    """The draft report as a compact Word file, in the meeting's language."""
+    from fastapi.responses import FileResponse
+
+    try:
+        conn = _connect()
+        try:
+            text = _ms().draft_report(conn, meeting_id)
+            m = _ms().get_meeting(conn, meeting_id)
+        finally:
+            conn.close()
+        fd, tmp = tempfile.mkstemp(suffix=".docx")
+        os.close(fd)
+        _ms().markdown_to_docx(text, tmp)
+    except ImportError:
+        return JSONResponse({"error": "python-docx is not installed"}, status_code=501)
+    except ValueError as e:
+        return JSONResponse({"error": str(e)}, status_code=404)
+    stem = re.sub(r"[^A-Za-z0-9._-]+", "_",
+                  f"{m['meeting_date']}_{m.get('sequence_label') or m['title']}")[:80]
+    from starlette.background import BackgroundTask
+    return FileResponse(tmp, filename=f"{stem}.docx",
+                        background=BackgroundTask(os.remove, tmp),
+                        media_type="application/vnd.openxmlformats-officedocument."
+                                   "wordprocessingml.document")

@@ -351,7 +351,43 @@ CREATE TABLE IF NOT EXISTS meeting_actions (
     description TEXT NOT NULL,
     status      TEXT DEFAULT 'open',
     due_date    TEXT,
-    created_at  TEXT
+    created_at  TEXT,
+    owner       TEXT DEFAULT '',
+    series_id   TEXT DEFAULT '',
+    updated_at  TEXT DEFAULT '',
+    status_note TEXT DEFAULT ''
+);
+
+-- A recurring meeting with ONE group, whose actions are followed up from one
+-- meeting to the next. See system/mcp-server/src/metis_mcp/meeting_series.py.
+-- `code` is the group's short code as it appears in titles and file names: the
+-- decisive key for recognising the next meeting of the series, so it is unique.
+-- `report_rules` is a JSON list learned from the researcher's corrections to a
+-- report, kept per series so one group's rules never leak into another's.
+CREATE TABLE IF NOT EXISTS meeting_series (
+    series_id    TEXT PRIMARY KEY,
+    name         TEXT NOT NULL,
+    code         TEXT DEFAULT '',
+    organisation TEXT DEFAULT '',
+    cadence_days INTEGER DEFAULT 0,
+    language     TEXT DEFAULT '',
+    project      TEXT DEFAULT '',
+    report_rules TEXT DEFAULT '[]',
+    notes        TEXT DEFAULT '',
+    status       TEXT DEFAULT 'active',
+    created_at   TEXT,
+    updated_at   TEXT
+);
+
+-- The status of an action AT a given meeting. One action keeps one identity for
+-- its whole life; each meeting that reviews it adds a row here.
+CREATE TABLE IF NOT EXISTS meeting_action_reviews (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    action_id   INTEGER NOT NULL,
+    meeting_id  TEXT NOT NULL,
+    status      TEXT NOT NULL,
+    note        TEXT DEFAULT '',
+    reviewed_at TEXT
 );
 
 CREATE TABLE IF NOT EXISTS meeting_attendance (
@@ -389,8 +425,23 @@ CREATE TABLE IF NOT EXISTS meetings (
     pre_briefing_path     TEXT,
     transcript            TEXT,
     duration_minutes      INTEGER,
-    status                TEXT DEFAULT 'filed'
+    status                TEXT DEFAULT 'filed',
+    series_id             TEXT DEFAULT '',
+    sequence_label        TEXT DEFAULT '',
+    previous_meeting_id   TEXT DEFAULT '',
+    location              TEXT DEFAULT '',
+    summary               TEXT DEFAULT '',
+    discussion            TEXT DEFAULT '[]',
+    attachments           TEXT DEFAULT '[]',
+    report_path           TEXT DEFAULT '',
+    language              TEXT DEFAULT '',
+    next_meeting          TEXT DEFAULT '',
+    notes                 TEXT DEFAULT ''
 );
+
+CREATE INDEX IF NOT EXISTS idx_meetings_series ON meetings(series_id, meeting_date);
+CREATE INDEX IF NOT EXISTS idx_meeting_actions_meeting ON meeting_actions(meeting_id);
+CREATE INDEX IF NOT EXISTS idx_meeting_action_reviews_action ON meeting_action_reviews(action_id);
 
 CREATE TABLE IF NOT EXISTS memory_entries (
     entry_id   TEXT PRIMARY KEY,

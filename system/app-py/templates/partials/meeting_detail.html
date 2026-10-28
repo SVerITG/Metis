@@ -7,7 +7,26 @@
     {% if meeting.participants %} · {{ meeting.participants }}{% endif %}
     {% if meeting.duration_minutes %} · {{ meeting.duration_minutes }} MIN{% endif %}
   </div>
-  <h2 style="font-family:var(--m-display);font-size:var(--t-h2);font-weight:500;letter-spacing:-0.018em;margin:0 0 var(--m-space-5);color:var(--m-ink);">{{ meeting.title or 'Meeting' }}</h2>
+  <h2 style="font-family:var(--m-display);font-size:var(--t-h2);font-weight:500;letter-spacing:-0.018em;margin:0 0 var(--m-space-3);color:var(--m-ink);">{{ meeting.title or 'Meeting' }}</h2>
+
+  <!-- Series -->
+  <div class="u-row u-row--wrap u-mb-5" style="gap:var(--m-space-3);">
+    {% if series %}
+    <span class="u-label" style="cursor:pointer;" hx-get="/api/partial/meetings/series/{{ series.series_id }}" hx-target="#meeting-detail-panel" hx-swap="innerHTML">
+      SERIES · {{ series.name | upper }}{% if full and full.sequence_label %} · {{ full.sequence_label }}{% endif %} →
+    </span>
+    {% elif series_rows %}
+    <form id="link-series-{{ meeting.id }}" hx-post="/api/meeting/{{ meeting.id }}/link-series" hx-target="#link-series-{{ meeting.id }}" hx-swap="innerHTML" class="u-row" style="gap:var(--m-space-2);margin:0;">
+      <select name="series_id" class="u-tile" aria-label="Link to a series" style="padding:2px var(--m-space-2);font-family:var(--m-sans);font-size:var(--t-meta);">
+        {% for s in series_rows %}<option value="{{ s.series_id }}">{{ s.name }}</option>{% endfor %}
+      </select>
+      <input name="sequence_label" class="u-tile" placeholder="Label" aria-label="Label in the series" style="width:90px;padding:2px var(--m-space-2);font-family:var(--m-sans);font-size:var(--t-meta);">
+      <button class="btn btn--ghost btn--caps" type="submit">Link to series</button>
+    </form>
+    {% endif %}
+    {% if full and full.location %}<span class="u-label">· {{ full.location | upper }}</span>{% endif %}
+    <a class="u-label" href="/api/meeting/{{ meeting.id }}/report.docx">REPORT .DOCX</a>
+  </div>
 
   <div class="u-mb-5" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--m-space-5);">
 

@@ -1,8 +1,8 @@
 ---
 name: meeting-memory
-description: meeting notes, action items, meeting summary, transcription, decisions captured, follow-up tracking, meeting recap, briefing note, post-meeting, meeting extraction
+description: meeting report, compte rendu, meeting notes, action items, follow-up of last meeting's actions, recurring or quarterly meeting series, transcript to report, meeting recap, briefing before a meeting, transcription, decisions captured
 tools: Read, Grep, Glob, Bash, mcp__metis-rc__*
-model: haiku
+model: sonnet
 memory: project
 ---
 

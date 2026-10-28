@@ -5,6 +5,28 @@
     <span class="u-mono" style="color:var(--m-ok);letter-spacing:0.12em;">&#10003; SAVED — {{ title | clip(60) }}</span>
   </div>
 
+  <!-- Series: confirmed in the form, or proposed here for one-click confirmation -->
+  {% if chosen_series %}
+  <div class="u-mb-4 u-mono" style="letter-spacing:0.08em;color:var(--m-ok);">
+    PART OF {{ chosen_series.name | upper }}{% if sequence_label %} · {{ sequence_label }}{% endif %}
+  </div>
+  {% elif match %}
+  <div class="u-mb-4" id="series-confirm-{{ meeting_id }}" style="padding:var(--m-space-3);border-left:2px solid var(--m-ochre);">
+    <div class="u-label u-mb-1">SERIES</div>
+    <div style="font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);margin-bottom:var(--m-space-2);">{{ match.question }}</div>
+    {% for c in match.candidates[:3] %}
+    <form hx-post="/api/meeting/{{ meeting_id }}/link-series" hx-target="#series-confirm-{{ meeting_id }}" hx-swap="innerHTML" style="display:inline;">
+      <input type="hidden" name="series_id" value="{{ c.series_id }}">
+      <input type="hidden" name="sequence_label" value="{{ sequence_label }}">
+      <button type="submit" class="btn {{ 'btn--primary' if loop.first and match.decision == 'propose' else 'btn--ghost' }} btn--caps">
+        {{ 'Yes — ' if loop.first and match.decision == 'propose' else '' }}{{ c.name }}
+      </button>
+    </form>
+    {% endfor %}
+    <span class="u-label" style="margin-left:var(--m-space-2);">or leave it as a one-off</span>
+  </div>
+  {% endif %}
+
   <!-- Extracted structure -->
   {% if extracted.decisions or extracted.actions or extracted.follow_ups %}
   <div class="u-mb-4">

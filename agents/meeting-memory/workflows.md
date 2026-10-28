@@ -74,22 +74,34 @@ From the cleaned transcript, extract:
 
 ## 5. Follow-up briefing workflow
 
-Before a next meeting, Meeting Memory should produce:
+Before a next meeting, `meeting_series_briefing(series_id)` gives:
 
 - what was decided last time
-- what was assigned
-- what is still unresolved
-- what changed since the previous meeting
-- what needs attention now
+- the open actions, by owner, with their ids and what is overdue
+- the files kept from last time (compare the new figures with the old)
+- the report rules for this series
 
-## 6. Meeting continuity workflow
+## 6. Meeting continuity workflow — series
 
-Meeting Memory should link meetings across time when they belong to:
+A **series** is one recurring meeting with ONE group (`meeting_series`). Two groups
+reviewed on the same template are two series. Each meeting in a series links to
+its predecessor; each action keeps one identity for its whole life, and every
+meeting that reviews it records its status there (`meeting_action_reviews`).
 
-- the same project
-- the same article
-- the same supervision stream
-- the same operational topic
+Recognising the series of a new meeting (`match_meeting_series`), strongest first:
+
+1. the group's code in the title or the file names
+2. participants who attend only that series — people present in every series
+   (the researcher, central colleagues) count for nothing
+3. timing against the series' cadence
+4. title similarity, as a tie-breaker
+
+The matcher proposes; the researcher confirms in one line. Nothing is linked on
+resemblance.
+
+Report rules are learned per series: the researcher's final report is compared
+with the draft (`learn_from_report_edits`) and each pattern becomes a rule
+(`add_meeting_report_rule`).
 
 ## 7. Exception workflow
 

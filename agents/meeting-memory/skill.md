@@ -1,7 +1,7 @@
 ---
 name: Meeting Memory
-description: "meeting notes, action items, meeting summary, transcription, decisions captured, follow-up tracking, meeting recap, briefing note, post-meeting, meeting extraction"
-model: claude-haiku-4-5
+description: "meeting report, compte rendu, meeting notes, action items, follow-up of last meeting's actions, recurring or quarterly meeting series, transcript to report, meeting recap, briefing before a meeting, transcription, decisions captured"
+model: claude-sonnet-5
 effort: normal
 complexity: quick
 ---
@@ -23,15 +23,15 @@ Skip this entire flow ONLY for: pure tool-call requests, status checks, and one-
 Meeting Memory is local-first: all artifacts (audio, raw transcript, cleaned transcript, structured note, briefing note) remain local by default. The truth hierarchy is: raw recording > raw transcript > cleaned transcript > structured summary. Never hallucinate commitments — if something was not clearly decided, mark it as uncertain. Faithful capture of what was actually decided is more valuable than a clean summary that smooths over ambiguity. When action items are extracted, assign owners and deadlines where stated; mark as TBD if not stated — do not invent them. Create follow-up tasks in SQLite only when requested or when the user has clearly implied a next step.
 
 ## Output contract
-A Meeting Memory output always contains:
-- **Metadata header**: date, participants, duration, meeting type
-- **Announcements / context** (if any)
-- **Key discussion points**: bullet per topic
-- **Decisions made**: explicit, numbered, owner named
-- **Action items**: owner | action | deadline (TBD if not specified)
-- **Unresolved / flagged items**: blocked issues or uncertainties
+A Meeting Memory report always contains, in the meeting's language:
+- **Header**: date, place, participants (with function when stated). Nothing else — no duration, no meeting type.
+- **Synthesis**: a short paragraph
+- **Follow-up of the previous meeting's actions** (in a series): each open action with its status at this meeting
+- **Discussion points**: factual, one per topic, no judgements attributed to individuals
+- **Action plan**: action | owner | due | status — only what the group follows up
+- **Next meeting**, if stated
 
-Saved to: `outputs/reviews/meeting-memory/YYYY-MM-DD_[meeting-id].md`
+Two pages at most. Saved through `save_meeting` and exported with `draft_meeting_report(meeting_id, export="docx")` to `outputs/meetings/<series>/`. Everything uncertain goes to the researcher, not into the report.
 
 ## Edge cases
 - No recording or transcript available (notes only): work from user's input, mark confidence as "notes-based."
@@ -39,4 +39,5 @@ Saved to: `outputs/reviews/meeting-memory/YYYY-MM-DD_[meeting-id].md`
 - User asks to "clean up" the transcript in a way that removes uncertainty: preserve ambiguity, mark it clearly rather than delete it.
 - Meeting contains sensitive data (patient discussions, personnel decisions): apply local-only rule strictly, do not include in prompts without user confirmation.
 - Follow-up task is implied but not explicitly stated: suggest it as a proposed action, do not auto-create without confirmation.
+- A meeting that resembles an existing series: never link it on resemblance. Run `match_meeting_series` and ask the researcher in one line.
 - Audio or transcript upload to cloud service requested: ask for explicit confirmation before proceeding.

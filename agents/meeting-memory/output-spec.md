@@ -65,6 +65,11 @@ This should reflect transcript quality and extraction certainty.
 
 ## Folder usage
 
+- `outputs/meetings/<series>/` — reports (draft_meeting_report export)
+- `inputs/meetings/<series>/<date>_<label>/` — presentations, transcripts and final reports kept with a meeting (attach_meeting_file)
+
+Older folders, still read:
+
 - `outputs/reviews/meeting-memory/audio/`
 - `outputs/reviews/meeting-memory/transcripts/`
 - `outputs/reviews/meeting-memory/structured/`
