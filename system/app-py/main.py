@@ -152,12 +152,24 @@ async def lifespan(app: FastAPI):
             import time as _time
             _time.sleep(25)
             try:
-                if _hours_since_last_scan() > 4:
+                # The scheduler's own catch-up may already be scanning (it starts
+                # first); and on a secondary computer the main one does the scan.
+                from scheduler import _main_computer_active, job_running
+                if job_running("morning_scan"):
+                    log.info("[startup] Morning scan already running — no separate boot scan")
+                elif _main_computer_active():
+                    log.info("[startup] Main computer is active — its scan arrives by sync")
+                elif _hours_since_last_scan() > 4:
                     log.info("[startup] Running news scan (last scan >4 h ago)")
                     from metis_mcp.tools.content_scan import scan_literature_folder, scan_news_feeds
-                    scan_news_feeds(max_per_feed=10)
+                    _news_r = scan_news_feeds(max_per_feed=10)
                     scan_literature_folder()
-                    # Log success so the scheduler doesn't double-scan today
+                    _n_feeds = _news_r.get("feeds_checked", 0)
+                    _n_err = len(_news_r.get("errors") or [])
+                    # Logged as 'news_scan', NOT 'morning_scan': this covers the
+                    # feeds and the folder only. Logged as the morning scan, it
+                    # counted the whole job as done for the day and the PubMed and
+                    # OpenAlex searches for new papers never ran.
                     try:
                         import datetime as _dt
                         from db import get_db_path
@@ -165,7 +177,11 @@ async def lifespan(app: FastAPI):
                         conn = _sq3.connect(db_p, timeout=5)
                         conn.execute(
                             "INSERT INTO jobs_log (job_type, status, details, created_at) VALUES (?,?,?,?)",
-                            ("morning_scan", "ok", "startup scan", _dt.datetime.now().isoformat()),
+                            ("news_scan",
+                             "error" if _n_feeds and _n_err >= _n_feeds else "ok",
+                             f"startup scan (news + folder): {_news_r.get('news_added', 0)} new"
+                             + (f", {_n_err}/{_n_feeds} feeds failed" if _n_err else ""),
+                             _dt.datetime.now().isoformat()),
                         )
                         conn.commit()
                         conn.close()
@@ -173,10 +189,15 @@ async def lifespan(app: FastAPI):
                         pass
             except Exception as exc:
                 log.debug("Startup news scan skipped: %s", exc)
-            # Pre-generate morning brief after scan
+            # Pre-generate morning brief after scan — unless the scheduler's
+            # catch-up is still collecting (its own brief step waits for the scan
+            # and runs after it), or the main computer writes it.
             try:
+                from scheduler import _main_computer_active, job_running
                 from routers.today import _get_or_generate_brief
-                _get_or_generate_brief()
+                if not (job_running("morning_scan") or job_running("brief_synthesis")
+                        or _main_computer_active()):
+                    _get_or_generate_brief()
             except Exception as exc:
                 log.debug("Startup brief generation skipped: %s", exc)
 

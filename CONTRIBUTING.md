@@ -78,9 +78,10 @@ What the user gets back.
 
 Claude Code hooks are JavaScript files that fire at specific lifecycle events. Most wanted:
 
-- **`stop.mjs`** — auto-generate handoff brief at session end (fires when `/exit` is called)
+- **`stop.mjs`** — fires after *every* reply: keeps one session record per session up to date with what was discussed (read from the transcript); the handoff brief and AI summary run at most every 20 minutes. Honours "don't track this" (`METIS_TRACK_SESSIONS=0` turns it off)
 - **`post-tool-use.mjs`** — session pulse logging (count tools called, track which agents active)
-- **`pre-compact.mjs`** — snapshot working state before context compaction
+- **`pre-compact.mjs`** — snapshot working state, with the conversation, before context compaction
+- **`lib/session-capture.mjs`** — shared transcript reader used by the two above
 
 See `.claude/hooks/pre-tool-use.mjs` for the existing pattern. Hooks receive tool call data as stdin JSON and can block execution by exiting non-zero.
 

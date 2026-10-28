@@ -169,7 +169,7 @@ async def automation_log_partial():
         details = clip(r.get("details") or "", 80)
         ran_at  = (r.get("created_at") or "")[:16].replace("T", " ")
         label   = JOB_LABELS.get(job_id, job_id)
-        dot_col = {"ok": "var(--m-ok)", "error": "var(--m-alert)", "skip": "var(--m-muted)"}.get(status, "var(--m-line)")
+        dot_col = {"ok": "var(--m-ok)", "error": "var(--m-alert)", "partial": "var(--m-warn)", "deferred": "var(--m-muted)", "skip": "var(--m-muted)"}.get(status, "var(--m-line)")
         items_html += f"""
 <div style="display:flex;align-items:baseline;gap:8px;padding:5px 0;border-bottom:1px solid var(--m-rule-soft);">
   <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:{dot_col};flex-shrink:0;margin-top:4px;"></span>
@@ -244,7 +244,7 @@ async def automation_status_partial():
         cfg = {**defaults, **saved.get(job_id, {})}
         j = job_map.get(job_id, {})
         status = j.get("last_status") or ""
-        dot_col = {"ok": "var(--m-ok)", "error": "var(--m-alert)", "skip": "var(--m-muted)"}.get(status, "var(--m-line)")
+        dot_col = {"ok": "var(--m-ok)", "error": "var(--m-alert)", "partial": "var(--m-warn)", "deferred": "var(--m-muted)", "skip": "var(--m-muted)"}.get(status, "var(--m-line)")
         next_lbl = _fmt_next(j.get("next_run")) if j else cfg.get("time", "—")
         last_msg = (j.get("last_message") or "")[:55]
         enabled = cfg.get("enabled", True)

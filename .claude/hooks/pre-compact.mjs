@@ -10,18 +10,27 @@
  * Snapshot location:
  *   <RC_ROOT>/journal/sessions/pre-compact-<YYYY-MM-DD>-<HH-MM>.md
  *
- * Hook input (stdin): JSON { summary?: string, turns?: number }
+ * Hook input (stdin): JSON { session_id, transcript_path, trigger, ... }
+ *
+ * Claude Code passes no summary to this hook, so every snapshot used to read
+ * "(no summary available)"; and the database write went, through the sqlite3
+ * CLI, to system/app/data/metis.sqlite — the abandoned OneDrive copy, not the
+ * live database the dashboard reads (resolve_live_db). The snapshot now carries
+ * the conversation from the transcript, and the session's record is written
+ * the same way the stop hook writes it.
  * This hook never blocks.
  */
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync, unlinkSync } from "fs";
 import { join } from "path";
-import { execSync } from "child_process";
+import { spawnSync } from "child_process";
+import { localStamp, readConversation, formatConversation, trackingDisabled } from "./lib/session-capture.mjs";
 
 const RC_ROOT = process.env.METIS_RC_ROOT || process.cwd();
+const DASHBOARD_URL = process.env.METIS_DASHBOARD_URL || "http://127.0.0.1:8080";
 const HOOK_PROFILE = (process.env.METIS_HOOK_PROFILE || "standard").toLowerCase();
 
-if (HOOK_PROFILE === "minimal") process.exit(0);
+if (HOOK_PROFILE === "minimal" || trackingDisabled()) process.exit(0);
 
 let input = {};
 try {
@@ -31,13 +40,51 @@ try {
   // Empty or unparseable stdin — proceed with defaults
 }
 
+const conversation = readConversation(input?.transcript_path);
+if (conversation?.optOut) process.exit(0);  // asked not to be tracked
+const conversationText = formatConversation(conversation);
+
+async function recordSession() {
+  const payload = {
+    session_id: String(input?.session_id || ""),
+    conversation: conversationText,
+    brief_content: "",
+    enrich: true,  // a natural checkpoint: the context is about to be compressed
+  };
+  try {
+    const res = await fetch(`${DASHBOARD_URL}/api/session/consolidate`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(10000),
+    });
+    if (res.ok) return;
+  } catch {
+    // Dashboard not running — write it directly
+  }
+  const dir = join(RC_ROOT, "journal", "sessions");
+  const payloadFile = join(dir, `.consolidate-precompact-${Date.now()}.json`);
+  try {
+    const metisVenv = process.env.METIS_MCP_VENV
+      || join(process.env.HOME || "/home", ".local", "share", "metis-mcp", ".venv");
+    const python = join(metisVenv, "bin", "python3");
+    const script = join(RC_ROOT, "system", "mcp-server", "src", "metis_mcp", "_consolidate_session.py");
+    writeFileSync(payloadFile, JSON.stringify(payload));
+    spawnSync(python, [script, RC_ROOT, "--payload", payloadFile], { timeout: 12000 });
+  } catch {
+    // Python unavailable — the snapshot file is sufficient
+  } finally {
+    try { if (existsSync(payloadFile)) unlinkSync(payloadFile); } catch {}
+  }
+}
+
+(async () => {
 try {
   const now = new Date();
-  const date = now.toISOString().slice(0, 10);
-  const timeSlug = now.toISOString().slice(11, 16).replace(":", "-");
+  const { date, time: timeSlug } = localStamp(now);
 
-  const summary = input?.summary || input?.context_summary || "(no summary available)";
-  const turns = input?.turns || input?.turn_count || "unknown";
+  const summary = input?.summary || input?.context_summary || conversationText || "(no summary available)";
+  const turns = input?.turns || input?.turn_count || conversation?.turns || "unknown";
 
   // Build a thorough snapshot — include raw input JSON so nothing is lost
   const snapshot = [
@@ -63,30 +110,10 @@ try {
   const snapshotPath = join(dir, `pre-compact-${date}-${timeSlug}.md`);
   writeFileSync(snapshotPath, snapshot);
 
-  // Also persist to SQLite session_summaries table if db is reachable
-  const dbPath = join(RC_ROOT, "system", "app", "data", "metis.sqlite");
-  if (existsSync(dbPath)) {
-    try {
-      const escapedSummary = summary.replace(/'/g, "''");
-      const sql = `
-        CREATE TABLE IF NOT EXISTS session_summaries (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          session_id TEXT,
-          summary TEXT NOT NULL,
-          key_topics TEXT,
-          decisions TEXT,
-          created_at TEXT NOT NULL
-        );
-        INSERT INTO session_summaries (session_id, summary, key_topics, decisions, created_at)
-        VALUES ('pre-compact', '${escapedSummary}', '[]', '[]', '${now.toISOString()}');
-      `;
-      execSync(`sqlite3 "${dbPath}" "${sql.replace(/\n/g, ' ')}"`, { timeout: 5000 });
-    } catch {
-      // sqlite3 CLI not available or db locked — snapshot file is sufficient
-    }
-  }
+  // And the session's record in the live database.
+  if (conversationText) await recordSession();
 } catch {
   // Silent — hook must never crash the session
 }
-
 process.exit(0);
+})();

@@ -14,6 +14,7 @@
 
 import { readFileSync, appendFileSync, mkdirSync } from "fs";
 import { join } from "path";
+import { localStamp } from "./lib/session-capture.mjs";
 
 const RC_ROOT = process.env.METIS_RC_ROOT || process.cwd();
 const HOOK_PROFILE = (process.env.METIS_HOOK_PROFILE || "standard").toLowerCase();
@@ -90,25 +91,35 @@ if (HOOK_PROFILE !== "minimal" && (input?.tool_name === "Edit" || input?.tool_na
 }
 
 try {
-  const { tool_name, tool_input, session_id } = input;
+  const { tool_input, session_id } = input;
+  // Claude Code names an MCP tool "mcp__<server>__<tool>". The hint table and
+  // the skip list use bare names, so nothing ever matched: every Metis tool call
+  // was logged with no agent, and the meta tools meant to be skipped were not.
+  const tool_name = String(input.tool_name || "").replace(/^mcp__.+?__/, "");
 
   // Skip noisy read-only meta tools that aren't useful for the pulse
   const SKIP_TOOLS = new Set(["get_user_profile", "session_bootstrap"]);
   if (SKIP_TOOLS.has(tool_name)) process.exit(0);
 
   const now = new Date();
-  const date = now.toISOString().slice(0, 10);
+  // Local date: the dashboard reads session-<today>.jsonl by its LOCAL date, so
+  // a UTC file name put the first hours after midnight under the wrong day.
+  const { date } = localStamp(now);
   const ts = now.toISOString();
 
-  // Infer agent slug from tool name or session context
+  // Which specialist did the work: named outright by the call where it can be
+  // (a log_agent_run, a sub-agent launch), else inferred from the tool.
   const agentHints = {
     search_literature: "librarian", sync_zotero_library: "librarian",
+    search_pdf_knowledge: "librarian",
     capture_idea: "metis", cross_pollinate: "metis",
-    write_reflexion: "metis", log_agent_run: "metis",
+    write_reflexion: "metis", run_metis: "metis",
     scan_news: "news-radar", scan_literature: "librarian",
-    generate_daily_insight: "metis", apply_proposal: "metis",
+    generate_daily_insight: "news-radar", save_daily_brief: "news-radar",
+    apply_proposal: "metis",
   };
-  const agent_hint = agentHints[tool_name] || null;
+  const named = (tool_input && (tool_input.agent_slug || tool_input.subagent_type)) || "";
+  const agent_hint = String(named || agentHints[tool_name] || "") || null;
 
   const entry = {
     ts,

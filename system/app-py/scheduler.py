@@ -13,10 +13,16 @@ Default schedule (all overridable via user-config.yaml → jobs: section):
   brief_synthesis        09:20 daily — pre-generate AI morning brief (runs AFTER scans)
   dataset_monitor        09:30 daily — check data triggers, fire if conditions met
   board_refresh          Mon 09:35   — Events & Funding boards via web search
-  evening_reflexion      09:40 daily — aggregate reflexions for self-improvement
-  memory_consolidation   09:45 daily — distil recent agent runs into memory_entries
   weekly_summary         Mon 09:50   — generate weekly summary
-  nightly_backup         09:55 daily — copy metis.sqlite to backups/
+  retry_missed           hourly :25  — re-run morning work that has not succeeded today
+  evening_reflexion      21:40 daily — aggregate reflexions for self-improvement
+  memory_consolidation   22:00 daily — distil the day's agent runs into memory_entries
+  db_sync                22:15 daily — two-computer sync (also every 3 h)
+  nightly_backup         23:00 daily — copy metis.sqlite to backups/
+  citation_backfill      23:10 daily — resolve DOIs, find retractions
+
+An evening job missed because the computer was off is caught up the next time
+the dashboard starts.
 """
 
 import asyncio
@@ -28,6 +34,7 @@ import os
 import re
 import shutil
 import sys
+import threading
 from pathlib import Path
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -82,6 +89,69 @@ def _ran_today(job_id: str) -> bool:
         # corrupts memory; skipping one day of a job costs nothing that matters.
         log.warning("[scheduler] could not check if '%s' ran today: %s", job_id, exc)
         return True
+
+
+def _done_since(job_id: str, since: datetime.datetime) -> bool:
+    """Has this job completed ('ok' or 'skip') at or after `since`?"""
+    try:
+        from db import db_query
+
+        rows = db_query(
+            "SELECT 1 FROM jobs_log WHERE job_type = ? AND status IN ('ok', 'skip') "
+            "AND created_at >= ? LIMIT 1",
+            (job_id, since.isoformat(timespec="seconds")),
+        )
+        return bool(rows)
+    except Exception as exc:
+        log.warning("[scheduler] could not check if '%s' ran since %s: %s", job_id, since, exc)
+        return True  # fail safe, as in _ran_today
+
+
+# Jobs running right now, in this process. APScheduler stops its own cron from
+# overlapping a job, but the start-up catch-up, the hourly retry and the boot
+# scan call jobs directly — so without this a catch-up scan and a cron scan
+# could run side by side, and the brief could not tell a scan was still going.
+_running: set[str] = set()
+_running_lock = threading.Lock()
+
+
+def job_running(job_id: str) -> bool:
+    with _running_lock:
+        return job_id in _running
+
+
+def _tracked(job_id: str, func):
+    """Run `func` as `job_id`, unless a copy is already running."""
+    def _claim() -> bool:
+        with _running_lock:
+            if job_id in _running:
+                log.info("[scheduler] '%s' is already running — not starting a second copy", job_id)
+                return False
+            _running.add(job_id)
+            return True
+
+    def _release() -> None:
+        with _running_lock:
+            _running.discard(job_id)
+
+    if inspect.iscoroutinefunction(func):
+        async def _wrapped():
+            if not _claim():
+                return
+            try:
+                return await func()
+            finally:
+                _release()
+    else:
+        def _wrapped():
+            if not _claim():
+                return
+            try:
+                return func()
+            finally:
+                _release()
+    _wrapped.__name__ = getattr(func, "__name__", job_id)
+    return _wrapped
 
 
 # ---------------------------------------------------------------------------
@@ -164,25 +234,39 @@ def _parse_time(time_str: str) -> tuple[int, int]:
 # ---------------------------------------------------------------------------
 
 def job_morning_scan() -> None:
-    """News feeds + literature folder scan + PubMed + OpenAlex alerts."""
+    """News feeds + literature folder scan + PubMed + OpenAlex alerts.
+
+    Status is HONEST. This always logged 'ok', even when every source failed (a
+    laptop that woke at 09:00 with no network) — and 'ok' counts as done for the
+    day, so nothing retried and the researcher had no news until tomorrow. Now:
+    every part failed → 'error'; some failed → 'partial'. Neither counts as done,
+    so the hourly retry and the next start-up catch-up try again.
+    """
     log.info("[scheduler] morning_scan starting")
     parts = []
+    failed = 0
 
     # RSS feeds and local literature folder
     try:
         from metis_mcp.tools.content_scan import scan_literature_folder, scan_news_feeds
         news_r = scan_news_feeds(max_per_feed=10)
         lit_r  = scan_literature_folder()
-        parts.append(f"News: {news_r.get('news_added', 0)} signals")
+        n_err = len(news_r.get("errors") or [])
+        n_feeds = news_r.get("feeds_checked", 0)
+        parts.append(f"News: {news_r.get('news_added', 0)} signals"
+                     + (f" ({n_err}/{n_feeds} feeds failed)" if n_err else ""))
         parts.append(f"Lit: {lit_r.get('papers_added', 0)} items")
+        if n_feeds and n_err >= n_feeds:
+            failed += 1  # every feed failed: offline, not a quiet news day
     except Exception as exc:
         log.warning("[scheduler] news/lit scan error: %s", exc)
         parts.append("News/lit: error")
+        failed += 1
 
     # PubMed daily alerts
     try:
         from metis_mcp.tools.literature_monitor import _pubmed_esearch, _pubmed_esummary, _insert_article, _user_pubmed_query
-        import sqlite3 as _sq, asyncio as _a
+        import sqlite3 as _sq
         from metis_mcp.config import paths as _p
         _pubmed_query = _user_pubmed_query()
         pmids = _pubmed_esearch(_pubmed_query, reldate=1, max_results=15)
@@ -190,20 +274,23 @@ def job_morning_scan() -> None:
         pub_added = 0
         if summaries:
             con = _sq.connect(str(_p.db))
-            for item in summaries:
-                pmid = item["pmid"]
-                url = f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/"
-                authors = item.get("authors", "")
-                journal = item.get("source", "PubMed")
-                summary_text = f"{authors} ({item.get('pubdate', '')}). {journal}."
-                if _insert_article(con, item["title"], summary_text, url, "PubMed", "pubmed,article"):
-                    pub_added += 1
-            con.commit()
-            con.close()
+            try:
+                for item in summaries:
+                    pmid = item["pmid"]
+                    url = f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/"
+                    authors = item.get("authors", "")
+                    journal = item.get("source", "PubMed")
+                    summary_text = f"{authors} ({item.get('pubdate', '')}). {journal}."
+                    if _insert_article(con, item["title"], summary_text, url, "PubMed", "pubmed,article"):
+                        pub_added += 1
+                con.commit()
+            finally:
+                con.close()
         parts.append(f"PubMed: {pub_added} papers")
     except Exception as exc:
         log.warning("[scheduler] PubMed scan error: %s", exc)
         parts.append("PubMed: error")
+        failed += 1
 
     # OpenAlex daily alerts
     try:
@@ -217,32 +304,36 @@ def job_morning_scan() -> None:
         alex_added = 0
         if items:
             con = _sq.connect(str(_p.db))
-            for item in items:
-                title = item.get("title") or "Untitled"
-                doi = item.get("doi") or item.get("id") or ""
-                if not doi:
-                    continue
-                author_names = [
-                    (a.get("author") or {}).get("display_name", "")
-                    for a in (item.get("authorships") or [])[:4]
-                ]
-                authors = "; ".join(n for n in author_names if n)
-                abstract = _reconstruct_abstract(item.get("abstract_inverted_index"))
-                pub_date = item.get("publication_date", "")
-                journal = ((item.get("primary_location") or {}).get("source") or {}).get("display_name", "")
-                summary_text = f"{authors} ({pub_date}). {journal}. {abstract[:300]}".strip()
-                if _insert_article(con, title, summary_text, doi, "OpenAlex", "openalex,article"):
-                    alex_added += 1
-            con.commit()
-            con.close()
+            try:
+                for item in items:
+                    title = item.get("title") or "Untitled"
+                    doi = item.get("doi") or item.get("id") or ""
+                    if not doi:
+                        continue
+                    author_names = [
+                        (a.get("author") or {}).get("display_name", "")
+                        for a in (item.get("authorships") or [])[:4]
+                    ]
+                    authors = "; ".join(n for n in author_names if n)
+                    abstract = _reconstruct_abstract(item.get("abstract_inverted_index"))
+                    pub_date = item.get("publication_date", "")
+                    journal = ((item.get("primary_location") or {}).get("source") or {}).get("display_name", "")
+                    summary_text = f"{authors} ({pub_date}). {journal}. {abstract[:300]}".strip()
+                    if _insert_article(con, title, summary_text, doi, "OpenAlex", "openalex,article"):
+                        alex_added += 1
+                con.commit()
+            finally:
+                con.close()
         parts.append(f"OpenAlex: {alex_added} papers")
     except Exception as exc:
         log.warning("[scheduler] OpenAlex scan error: %s", exc)
         parts.append("OpenAlex: error")
+        failed += 1
 
     msg = " · ".join(parts)
-    _log_job("morning_scan", "ok", msg)
-    log.info("[scheduler] morning_scan done: %s", msg)
+    status = "ok" if not failed else ("error" if failed >= 3 else "partial")
+    _log_job("morning_scan", status, msg)
+    log.info("[scheduler] morning_scan %s: %s", status, msg)
 
 
 def job_library_scan() -> None:
@@ -278,6 +369,7 @@ def job_library_scan() -> None:
     """
     log.info("[scheduler] library_scan starting")
     parts: list[str] = []
+    feeds_failed = topics_failed = zotero_failed = False
 
     # ── 1. Journal + preprint feeds ─────────────────────────────────────────
     try:
@@ -292,9 +384,12 @@ def job_library_scan() -> None:
             parts.append(f"{len(errs)} feed error(s)")
             for e in errs[:6]:
                 log.warning("[scheduler] library feed: %s", e)
+        # Every feed failing is offline, not a quiet week in the journals.
+        feeds_failed = bool(r.get("feeds_checked")) and len(errs) >= r.get("feeds_checked", 0)
     except Exception as exc:
         log.warning("[scheduler] library feed scan failed: %s", exc)
         parts.append("Feeds: error")
+        feeds_failed = True
 
     # ── 2. Zotero ───────────────────────────────────────────────────────────
     try:
@@ -306,6 +401,7 @@ def job_library_scan() -> None:
     except Exception as exc:
         log.warning("[scheduler] zotero sync failed: %s", exc)
         parts.append(f"Zotero: error — {str(exc)[:80]}")
+        zotero_failed = True
 
     # ── 3. Targeted topic search ────────────────────────────────────────────
     try:
@@ -314,10 +410,19 @@ def job_library_scan() -> None:
     except Exception as exc:
         log.warning("[scheduler] topic literature search failed: %s", exc)
         parts.append("Topics: error")
+        topics_failed = True
 
+    # Honest status, as in job_morning_scan: 'partial' and 'error' are not
+    # "done", so the hourly retry runs the scan again once the network is back.
     msg = " · ".join(parts)
-    _log_job("library_scan", "ok", msg)
-    log.info("[scheduler] library_scan done: %s", msg)
+    if feeds_failed and (topics_failed or zotero_failed):
+        status = "error"
+    elif feeds_failed or topics_failed or zotero_failed:
+        status = "partial"
+    else:
+        status = "ok"
+    _log_job("library_scan", status, msg)
+    log.info("[scheduler] library_scan %s: %s", status, msg)
 
 
 def _sync_zotero_incremental() -> tuple[int, str]:
@@ -968,8 +1073,15 @@ def job_reminder_due() -> None:
         _log_job("reminder_due", "ok", f"{sent} notified")
 
 
+# How long the brief waits for a morning scan that is still running. The two are
+# scheduled 20 minutes apart and nothing made the brief wait: a slow scan meant a
+# brief written from yesterday's material, or skipped for having none.
+BRIEF_WAITS_FOR_SCAN_S = 20 * 60
+
+
 def job_brief_synthesis() -> None:
     """Pre-generate AI morning brief — respects brief_mode setting."""
+    import time as _time
     log.info("[scheduler] brief_synthesis starting")
     # Honour brief_mode: skip scheduled synthesis when set to 'manual'
     try:
@@ -984,14 +1096,36 @@ def job_brief_synthesis() -> None:
                 return
     except Exception:
         pass
+
+    waited = 0
+    while job_running("morning_scan") and waited < BRIEF_WAITS_FOR_SCAN_S:
+        _time.sleep(15)
+        waited += 15
+    if waited:
+        log.info("[scheduler] brief_synthesis waited %ds for the morning scan", waited)
+
     try:
-        from routers.today import _get_or_generate_brief
+        from routers.today import _get_cached_brief, _get_or_generate_brief, brief_failure_reason
+        if _get_cached_brief("daily"):
+            # Written already — by this dashboard, a Claude Desktop session, or
+            # the other computer through sync. Nothing to do, and it IS done.
+            _log_job("brief_synthesis", "skip", "Today's brief is already written.")
+            return
         result = _get_or_generate_brief()
         if result:
             _log_job("brief_synthesis", "ok", "Morning brief pre-generated.")
             _notify_windows("Metis — Morning Brief Ready", "Your morning brief is ready. Open the dashboard to read it.")
+            return
+        reason = brief_failure_reason("daily") or "generation returned nothing"
+        if reason == "no-api-key":
+            # Not a failure this dashboard can fix by retrying: without a key the
+            # Claude Desktop scheduled task writes the brief (save_daily_brief).
+            _log_job("brief_synthesis", "skip",
+                     "No API key — the Claude Desktop morning task writes the brief.")
         else:
-            _log_job("brief_synthesis", "skip", "Brief already cached or no context available.")
+            # 'error' is not 'done': the hourly retry tries again, so a brief that
+            # failed at 09:20 because the network was down still arrives today.
+            _log_job("brief_synthesis", "error", f"No brief: {reason}")
     except Exception as exc:
         _log_job("brief_synthesis", "error", str(exc)[:300])
         log.error("[scheduler] brief_synthesis failed: %s", exc)
@@ -1522,7 +1656,7 @@ def job_db_sync_periodic() -> None:
             return
     except Exception:
         pass
-    job_db_sync()
+    _tracked("db_sync", job_db_sync)()
 
 
 # Jobs that FETCH or WRITE shared content. On a secondary computer they stand
@@ -1549,25 +1683,97 @@ def _main_computer_active() -> bool:
         return False
 
 
+# For these, "the main computer is active" is not enough to stand down: it only
+# means the main computer SYNCED lately — it syncs every few hours whether or not
+# its own scan or brief worked. So the secondary checks that the result is really
+# here, waits for it while the next sync may still bring it, and does the work
+# itself once that window has passed. Both tables travel by sync.
+_ARRIVED_BY_SYNC = {
+    "morning_scan": "SELECT 1 FROM news_briefs "
+                    "WHERE date(created_at) = date('now', 'localtime') LIMIT 1",
+    "brief_synthesis": "SELECT 1 FROM daily_insights WHERE content IS NOT NULL "
+                       "AND insight_date = date('now', 'localtime') LIMIT 1",
+}
+# A little over one periodic sync (DB_SYNC_EVERY_HOURS): long enough for the
+# main computer's result to arrive, short enough that the day is not lost.
+SECONDARY_TAKES_OVER_AFTER_H = 3.5
+
+
+def _hours_past_slot(job_id: str) -> float:
+    """Hours since today's scheduled time for this job (negative = still ahead)."""
+    cfg = {**JOB_DEFAULTS.get(job_id, {}), **_load_job_settings().get(job_id, {})}
+    h, m = _parse_time(cfg.get("time", "09:00"))
+    now = datetime.datetime.now()
+    return (now - now.replace(hour=h, minute=m, second=0, microsecond=0)).total_seconds() / 3600
+
+
+def _stand_down_reason(job_id: str) -> str | None:
+    """None → run here. Otherwise the job stands down (and has logged why)."""
+    if not _main_computer_active():
+        return None
+    check = _ARRIVED_BY_SYNC.get(job_id)
+    if check is None:
+        _log_job(job_id, "skip", "the main computer is active — runs there, arrives here by sync")
+        return "skip"
+    try:
+        from db import db_query
+        arrived = bool(db_query(check))
+    except Exception:
+        arrived = False
+    if arrived:
+        _log_job(job_id, "skip", "the main computer's result arrived by sync")
+        return "skip"
+    if _hours_past_slot(job_id) >= SECONDARY_TAKES_OVER_AFTER_H:
+        log.info("[scheduler] '%s': nothing from the main computer yet — running it here", job_id)
+        return None
+    # Not 'skip': 'deferred' does not count as done, so the hourly retry looks again.
+    _log_job(job_id, "deferred", "waiting for the main computer's result to arrive by sync")
+    return "deferred"
+
+
 def _shared(job_id: str, func):
-    """Run `func` unless this is a secondary and the main computer is active."""
+    """Run `func` unless this is a secondary and the main computer covers it."""
     if job_id not in SHARED_CONTENT_JOBS:
         return func
-    msg = "the main computer is active — runs there, arrives here by sync"
     if inspect.iscoroutinefunction(func):
         async def _wrapped():
-            if _main_computer_active():
-                _log_job(job_id, "skip", msg)
+            if _stand_down_reason(job_id):
                 return
             return await func()
     else:
         def _wrapped():
-            if _main_computer_active():
-                _log_job(job_id, "skip", msg)
+            if _stand_down_reason(job_id):
                 return
             return func()
     _wrapped.__name__ = getattr(func, "__name__", job_id)
     return _wrapped
+
+
+def _job(job_id: str, func):
+    """The form every caller runs a job in: guarded against a second copy, and
+    standing down on a secondary when the main computer covers it."""
+    return _tracked(job_id, _shared(job_id, func))
+
+
+# Morning work that is retried through the day until it succeeds. A failure at
+# 09:00 — offline, a hung feed, an API error — used to cost the whole day.
+RETRY_THROUGH_THE_DAY = ("morning_scan", "library_scan", "brief_synthesis")
+
+
+def job_retry_missed() -> None:
+    """Hourly: re-run today's morning work that has not succeeded yet."""
+    settings = _load_job_settings()
+    for job_id in RETRY_THROUGH_THE_DAY:
+        cfg = {**JOB_DEFAULTS.get(job_id, {}), **settings.get(job_id, {})}
+        if not cfg.get("enabled", True) or cfg.get("day"):
+            continue
+        if _hours_past_slot(job_id) < 0.5 or _ran_today(job_id) or job_running(job_id):
+            continue
+        log.info("[scheduler] retry: '%s' has not succeeded today — running it again", job_id)
+        try:
+            _job(job_id, JOB_FUNCS[job_id])()
+        except Exception as exc:
+            log.warning("[scheduler] retry of '%s' failed: %s", job_id, exc)
 
 
 def job_promise_harness() -> None:
@@ -1758,6 +1964,7 @@ JOB_LABELS: dict[str, str] = {
     "focus_refresh":        "Focus areas — refresh what came through each lens",
     "evening_reflexion":    "Evening reflexion",
     "promise_harness":      "Promise harness (drift)",
+    "retry_missed":         "Retry morning work that failed",
     "memory_consolidation": "Nightly memory consolidation",
     "weekly_summary":       "Weekly summary",
     "nightly_backup":       "Nightly DB backup",
@@ -1798,14 +2005,17 @@ JOB_DEFAULTS: dict[str, dict] = {
     "dataset_monitor":      {"enabled": True, "time": "09:30"},
     "board_refresh":        {"enabled": True, "time": "09:35", "day": "mon"},
     "literature_discovery": {"enabled": True, "time": "09:15", "day": "mon"},
-    "evening_reflexion":    {"enabled": True, "time": "09:40"},
+    # Evening, after the day's work: run in the morning these consolidated
+    # YESTERDAY, so today's work reached memory only a day later. A night the
+    # computer is off is caught up at the next start (setup_jobs).
+    "evening_reflexion":    {"enabled": True, "time": "21:40"},
     "promise_harness":      {"enabled": True, "time": "10:10", "day": "sun"},
-    "memory_consolidation": {"enabled": True, "time": "09:45"},
+    "memory_consolidation": {"enabled": True, "time": "22:00"},
     "weekly_summary":       {"enabled": True, "time": "09:50", "day": "mon"},
-    "nightly_backup":       {"enabled": True, "time": "09:55"},
+    "nightly_backup":       {"enabled": True, "time": "23:00"},
     # After the backup, so a retraction found tonight is in tomorrow's
     # database and not only in a log line.
-    "citation_backfill":    {"enabled": True, "time": "10:00"},
+    "citation_backfill":    {"enabled": True, "time": "23:10"},
     # After morning_scan (09:00) and library_scan (09:03), so the counts
     # reflect the arrivals from today rather than from yesterday.
     "focus_refresh":        {"enabled": True, "time": "09:12"},
@@ -1837,6 +2047,21 @@ def get_job_status() -> list[dict]:
 # Setup
 # ---------------------------------------------------------------------------
 
+def _catchup_slot(time_str: str, now: datetime.datetime) -> datetime.datetime | None:
+    """The scheduled run a start-up catch-up should check for, or None.
+
+    Today's slot once it has passed. Before it, YESTERDAY's slot — unless today's
+    is under 4 hours away, when the cron will run the job soon anyway.
+    """
+    h, m = _parse_time(time_str)
+    slot = now.replace(hour=h, minute=m, second=0, microsecond=0)
+    if slot <= now:
+        return slot
+    if slot - now < datetime.timedelta(hours=4):
+        return None
+    return slot - datetime.timedelta(days=1)
+
+
 def setup_jobs() -> None:
     """Register all cron jobs from settings. Call once before scheduler.start()."""
     settings = _load_job_settings()
@@ -1864,7 +2089,7 @@ def setup_jobs() -> None:
         # IGNORED — the job still registers, at the default 07:00, and looks
         # scheduled. A job that runs on a schedule nobody asked for is harder to
         # notice than one that fails, so unknown keys must either work or be loud.
-        func = _shared(job_id, func)
+        func = _job(job_id, func)
 
         every_minutes = cfg.get("every_minutes")
         if every_minutes:
@@ -1907,7 +2132,7 @@ def setup_jobs() -> None:
     try:
         from apscheduler.triggers.interval import IntervalTrigger
         scheduler.add_job(
-            _shared("nature_briefings", job_nature_briefings),
+            _job("nature_briefings", job_nature_briefings),
             CronTrigger(hour=7, minute=40),
             id="nature_briefings",
             name="Nature Briefing archive",
@@ -1925,6 +2150,18 @@ def setup_jobs() -> None:
             coalesce=True,
         )
         registered.append("reminder_due@5min")
+        # Minute 25: clear of the :00-:20 morning slots, so a retry never races
+        # the job it is retrying on its first scheduled run.
+        scheduler.add_job(
+            job_retry_missed,
+            CronTrigger(minute=25),
+            id="retry_missed",
+            name="Retry morning work that failed",
+            replace_existing=True,
+            misfire_grace_time=1800,
+            coalesce=True,
+        )
+        registered.append("retry_missed@hourly")
     except Exception as exc:
         log.warning("[scheduler] could not register the reminder check: %s", exc)
 
@@ -1949,28 +2186,33 @@ def setup_jobs() -> None:
 
     log.info("[scheduler] jobs registered: %s", ", ".join(registered))
 
-    # Catch-up: if the dashboard starts after the scheduled time, fire all
-    # missed daily jobs immediately in a background thread (ordered so scans
-    # run before the brief synthesis, which needs their data).
-    import threading as _threading
+    # Catch-up: fire every daily job whose most recent scheduled time has passed
+    # without it completing — today's slot, or YESTERDAY's for a job that is not
+    # due again soon. Looking only at today's slot meant an evening job (sync at
+    # 22:15, backup at 23:00) missed because the laptop was shut was never caught
+    # up at all: by morning its "today" slot was still ahead.
     import datetime as _dt
     now_local = _dt.datetime.now()
     settings_cu = _load_job_settings()
 
-    # Catch-up order: data-collection first, then analysis, then housekeeping.
+    # Order: bring in the other computer's data first, then collect, then
+    # analyse (the brief reads what the scans produced), then housekeeping.
     catchup_sequence = [
+        ("db_sync",             job_db_sync),
         ("morning_scan",        job_morning_scan),
         ("library_scan",        job_library_scan),
         ("download_pickup",     job_download_pickup),
         ("library_index",       job_library_index),
+        ("background_index",    job_background_index),
+        ("focus_refresh",       job_focus_refresh),
         ("inbox_process",       job_inbox_process),
         ("brief_synthesis",     job_brief_synthesis),
         ("dataset_monitor",     job_dataset_monitor),
         ("evening_reflexion",   job_evening_reflexion),
         ("memory_consolidation", job_memory_consolidation),
-        ("db_sync",             job_db_sync),
         ("embedding_backfill",  job_embedding_backfill),
         ("nightly_backup",      job_nightly_backup),
+        ("citation_backfill",   job_citation_backfill),
     ]
     missed = []
     for catch_job_id, catch_func in catchup_sequence:
@@ -1979,25 +2221,24 @@ def setup_jobs() -> None:
             continue
         if cfg.get("day"):
             continue  # Weekly jobs are handled separately below
-        sched_h, sched_m = _parse_time(cfg.get("time", "10:00"))
-        sched_today = now_local.replace(hour=sched_h, minute=sched_m,
-                                        second=0, microsecond=0)
-        if now_local <= sched_today:
-            continue  # not due yet today — the cron will fire it
-        # "Missed" means the scheduled time has passed AND it has not run today.
-        # Without this second half, every restart re-ran every daily job — 7-8×
+        slot = _catchup_slot(cfg.get("time", "10:00"), now_local)
+        if slot is None:
+            continue  # due again soon — the cron will fire it
+        # "Missed" means the slot has passed AND the job has not completed since.
+        # Without the second half, every restart re-ran every daily job — 7-8×
         # a morning once a 5-minute heartbeat started restarting the dashboard.
-        if _ran_today(catch_job_id):
-            log.info("[scheduler] catch-up: '%s' already ran today — skipping", catch_job_id)
+        if _done_since(catch_job_id, slot):
+            log.info("[scheduler] catch-up: '%s' already ran since %s — skipping",
+                     catch_job_id, slot.isoformat(timespec="minutes"))
             continue
-        missed.append((catch_job_id, _shared(catch_job_id, catch_func)))
+        missed.append((catch_job_id, _job(catch_job_id, catch_func)))
 
-    # Weekly catch-up: weekly jobs (summary, board_refresh) only fire on their
-    # scheduled day — easy to miss on a laptop. Run on startup if they haven't
-    # succeeded in the last 6 days.
+    # Weekly catch-up: weekly jobs only fire on their scheduled day — easy to
+    # miss on a laptop. Run on startup if they haven't succeeded in 6 days.
     weekly_jobs = [
-        ("weekly_summary", job_weekly_summary),
-        ("board_refresh",  job_board_refresh),
+        ("weekly_summary",       job_weekly_summary),
+        ("board_refresh",        job_board_refresh),
+        ("literature_discovery", job_literature_discovery),
     ]
     for wk_id, wk_func in weekly_jobs:
         wk_cfg = {**JOB_DEFAULTS.get(wk_id, {}), **settings_cu.get(wk_id, {})}
@@ -2006,15 +2247,16 @@ def setup_jobs() -> None:
         try:
             from db import db_query
             rows = db_query(
-                f"SELECT created_at FROM jobs_log WHERE job_type='{wk_id}' "
-                "AND status='ok' ORDER BY created_at DESC LIMIT 1"
+                "SELECT created_at FROM jobs_log WHERE job_type = ? "
+                "AND status IN ('ok', 'skip') ORDER BY created_at DESC LIMIT 1",
+                (wk_id,),
             )
             due = True
             if rows:
                 last_dt = _dt.datetime.fromisoformat(rows[0]["created_at"])
                 due = (now_local - last_dt).days >= 6
             if due:
-                missed.append((wk_id, _shared(wk_id, wk_func)))
+                missed.append((wk_id, _job(wk_id, wk_func)))
         except Exception as exc:
             log.warning("[scheduler] weekly catch-up check for %s failed: %s", wk_id, exc)
 
@@ -2035,8 +2277,8 @@ def setup_jobs() -> None:
                         jfunc()
                 except Exception as exc:
                     log.warning("[scheduler] catch-up %s failed: %s", jid, exc)
-        _threading.Thread(target=_run_catchup, args=(missed,),
-                          daemon=True, name="catchup-sequence").start()
+        threading.Thread(target=_run_catchup, args=(missed,),
+                         daemon=True, name="catchup-sequence").start()
 
 
 def apply_settings_and_reschedule(new_settings: dict) -> None:

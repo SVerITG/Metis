@@ -134,7 +134,10 @@ app = FastMCP(
         "2. `save_session_summary(...)` — what happened this session\n"
         "3. If it touched a tracked project: `update_project_memory(...)` — "
         "what changed and what's next\n"
-        "Also: `write_reflexion(...)` for continuous improvement.\n\n"
+        "Also: `write_reflexion(...)` for continuous improvement.\n"
+        "Every conversation is recorded this way — not only big tasks — unless the "
+        "researcher explicitly asks not to (\"don't track this\", \"off the record\"); "
+        "then record nothing of it.\n\n"
 
         "## Projects\n"
         "If the work describes new or ongoing research, check `get_project_status()`. "

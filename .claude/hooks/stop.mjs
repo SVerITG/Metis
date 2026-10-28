@@ -1,48 +1,79 @@
 #!/usr/bin/env node
 /**
- * Metis stop hook — auto-generates a handoff brief at session end.
+ * Metis stop hook — records the session in Metis's memory.
  *
- * Fires when Claude Code ends a session (user types /exit, hits Ctrl+C,
- * or the session ends normally). Attempts to:
+ * Claude Code fires Stop at the end of EVERY reply, not once at session end.
+ * This hook used to treat each one as a session ending: a new session_summaries
+ * row per reply (the same day-level text each time), a new handoff marker file
+ * per minute, and — with an API key — a paid summarising call per reply. And it
+ * never read the conversation, so what was actually discussed was not in it.
  *
- *   1. Call the FastAPI handoff endpoint (if the dashboard is running).
- *   2. If that fails, write a "pending handoff" marker so the next
- *      session knows to generate a brief on startup.
+ * Now, per reply:
+ *   · the session's record is UPDATED in place (one row per session, keyed on
+ *     Claude Code's session_id), and carries what was asked and where the last
+ *     answer ended — read from the transcript (lib/session-capture.mjs);
+ *   · the heavier work — handoff brief, PLANNING.md touch, project scan, and the
+ *     AI enrichment of the record — runs on the first reply of a session and
+ *     then at most every FULL_EVERY_MIN minutes.
  *
- * The handoff brief lands at:
- *   <RC_ROOT>/journal/sessions/handoff-<YYYY-MM-DD>-<HH-MM>.md
+ * The researcher's rule: every conversation is tracked unless they explicitly
+ * ask not to. An opted-out session records nothing.
  *
- * Hook input (stdin): JSON { stop_reason: "end_turn"|"max_turns"|"user_interrupt" }
+ * Hook input (stdin): JSON { session_id, transcript_path, stop_hook_active, ... }
  * This hook never blocks — errors are silent.
  */
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync, unlinkSync, readdirSync } from "fs";
 import { join } from "path";
+import { localStamp, readConversation, formatConversation, trackingDisabled } from "./lib/session-capture.mjs";
 
 const RC_ROOT = process.env.METIS_RC_ROOT || process.cwd();
 const DASHBOARD_URL = process.env.METIS_DASHBOARD_URL || "http://127.0.0.1:8080";
 const HOOK_PROFILE = (process.env.METIS_HOOK_PROFILE || "standard").toLowerCase();
+const FULL_EVERY_MIN = 20;
 
-if (HOOK_PROFILE === "minimal") process.exit(0);
+if (HOOK_PROFILE === "minimal" || trackingDisabled()) process.exit(0);
 
-let stopReason = "end_turn";
+let input = {};
 try {
   const raw = readFileSync("/dev/stdin", "utf8");
-  if (raw.trim()) {
-    const input = JSON.parse(raw);
-    stopReason = input?.stop_reason || input?.reason || "end_turn";
-  }
+  if (raw.trim()) input = JSON.parse(raw);
 } catch {
   // stdin may be empty on some stop events — that's fine
 }
+const stopReason = input?.stop_reason || input?.reason || "end_turn";
+const sessionId = String(input?.session_id || "");
+const sid8 = (sessionId || "nosession").replace(/[^A-Za-z0-9-]/g, "").slice(0, 8) || "nosession";
 
 const now = new Date();
-const date = now.toISOString().slice(0, 10);
-const timeSlug = now.toISOString().slice(11, 16).replace(":", "-");
+const { date, time: timeSlug } = localStamp(now);
+const sessionDir = join(RC_ROOT, "journal", "sessions");
+
+const conversation = readConversation(input?.transcript_path);
+if (conversation?.optOut) process.exit(0);  // asked not to be tracked
+const conversationText = formatConversation(conversation);
+
+// ── Throttle: is this a "full" run? ─────────────────────────────────────────
+const STATE_FILE = join(sessionDir, ".stop-state.json");
+function loadState() {
+  try { return JSON.parse(readFileSync(STATE_FILE, "utf8")) || {}; } catch { return {}; }
+}
+const state = loadState();
+const lastFull = state[sid8]?.last_full || 0;
+const fullRun = now.getTime() - lastFull >= FULL_EVERY_MIN * 60 * 1000;
+function saveState() {
+  try {
+    mkdirSync(sessionDir, { recursive: true });
+    if (fullRun) state[sid8] = { last_full: now.getTime() };
+    // Keep the newest 50 sessions; the file must not grow forever.
+    const keys = Object.keys(state).sort((a, b) => (state[b].last_full || 0) - (state[a].last_full || 0));
+    for (const k of keys.slice(50)) delete state[k];
+    writeFileSync(STATE_FILE, JSON.stringify(state));
+  } catch { /* best-effort */ }
+}
 
 async function tryDashboardHandoff() {
   try {
-    // Node 18+ has native fetch
     const res = await fetch(`${DASHBOARD_URL}/api/handoff/generate`, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -60,33 +91,22 @@ async function tryDashboardHandoff() {
 }
 
 function writeMarker(brief_path_or_flag) {
-  if (!RC_ROOT) return;
+  // One marker per SESSION, rewritten — not one per reply.
   try {
-    const dir = join(RC_ROOT, "journal", "sessions");
-    mkdirSync(dir, { recursive: true });
-
-    if (typeof brief_path_or_flag === "string") {
-      // Dashboard succeeded and returned a path — just write a pointer
-      const marker = `# Session ended ${now.toISOString()}\nHandoff brief: ${brief_path_or_flag}\nStop reason: ${stopReason}\n`;
-      writeFileSync(join(dir, `handoff-${date}-${timeSlug}.md`), marker);
-    } else {
-      // Dashboard unavailable — write a "generate on next start" marker
-      const marker = [
-        `# Pending handoff — ${now.toISOString()}`,
-        `Stop reason: ${stopReason}`,
-        `Status: Dashboard was not running when session ended.`,
-        `Action: Run /metis_handoff at the start of your next session to generate the brief.`,
-        "",
-      ].join("\n");
-      writeFileSync(join(dir, `handoff-${date}-${timeSlug}.md`), marker);
-    }
+    mkdirSync(sessionDir, { recursive: true });
+    const head = typeof brief_path_or_flag === "string"
+      ? [`# Session ${sid8} — last reply ${now.toISOString()}`, `Handoff brief: ${brief_path_or_flag}`]
+      : [`# Session ${sid8} — last reply ${now.toISOString()}`,
+         `Status: Dashboard was not running when this was written.`,
+         `Action: Run /metis_handoff at the start of your next session to generate the brief.`];
+    const body = [...head, `Stop reason: ${stopReason}`, "", conversationText, ""].join("\n");
+    writeFileSync(join(sessionDir, `handoff-${date}-${sid8}.md`), body);
   } catch {
     // Silent
   }
 }
 
 async function touchPlanningFiles() {
-  if (!RC_ROOT) return [];
   try {
     const res = await fetch(`${DASHBOARD_URL}/api/session/touch-planning`, {
       signal: AbortSignal.timeout(5000),
@@ -100,19 +120,17 @@ async function touchPlanningFiles() {
   }
 
   // Local fallback: scan known PLANNING.md paths from RC root
-  const today = now.toISOString().slice(0, 10);
-  const marker = `\n\n---\n_Last Metis session: ${today}_\n`;
+  const marker = `\n\n---\n_Last Metis session: ${date}_\n`;
   const updated = [];
   try {
     const projectsActive = join(RC_ROOT, "projects", "active");
     if (existsSync(projectsActive)) {
-      const { readdirSync, statSync } = await import("fs");
       for (const entry of readdirSync(projectsActive, { withFileTypes: true })) {
         if (!entry.isDirectory()) continue;
         const planningPath = join(projectsActive, entry.name, "PLANNING.md");
         if (existsSync(planningPath)) {
           const content = readFileSync(planningPath, "utf8");
-          if (!content.includes(`_Last Metis session: ${today}_`)) {
+          if (!content.includes(`_Last Metis session: ${date}_`)) {
             writeFileSync(planningPath, content + marker);
             updated.push(planningPath);
           }
@@ -126,58 +144,52 @@ async function touchPlanningFiles() {
 }
 
 async function consolidateSession() {
-  // Read the AUTO-GENERATED handoff brief that lives at
-  // journal/YYYY-MM-DD_session_handoff_auto.md — that's the real brief with
-  // Active Projects / Open Tasks / Recent agent runs sections.
-  //
-  // (We used to read the stop-hook MARKER file at journal/sessions/handoff-*.md
-  //  which is just a 3-line pointer and contained nothing extractable.)
+  // The day's auto-generated handoff brief (projects, open tasks, agent runs) —
+  // context for the record. The conversation itself is the record's substance.
   let briefContent = "";
-  let briefTempFile = "";
   try {
-    if (RC_ROOT) {
-      const { existsSync } = await import("fs");
-      const autoBriefPath = join(RC_ROOT, "journal", `${date}_session_handoff_auto.md`);
-      if (existsSync(autoBriefPath)) {
-        briefContent = readFileSync(autoBriefPath, "utf8");
-        const sessionDir = join(RC_ROOT, "journal", "sessions");
-        briefTempFile = join(sessionDir, `.brief-tmp-${date}.txt`);
-        writeFileSync(briefTempFile, briefContent);
-      }
-    }
+    const autoBriefPath = join(RC_ROOT, "journal", `${date}_session_handoff_auto.md`);
+    if (existsSync(autoBriefPath)) briefContent = readFileSync(autoBriefPath, "utf8");
   } catch {
     // Cannot read brief — proceed without
   }
+  if (!conversationText && !briefContent) return null;
+
+  const payload = {
+    session_id: sessionId,
+    conversation: conversationText,
+    brief_content: briefContent,
+    enrich: fullRun,
+  };
 
   // ── Try dashboard API first ────────────────────────────────────────────────
   try {
     const res = await fetch(`${DASHBOARD_URL}/api/session/consolidate`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ brief_content: briefContent }),
+      body: JSON.stringify(payload),
       signal: AbortSignal.timeout(10000),
     });
-    if (res.ok) {
-      try { if (briefTempFile && existsSync(briefTempFile)) { const { unlinkSync } = await import("fs"); unlinkSync(briefTempFile); } } catch {}
-      return await res.json().catch(() => ({}));
-    }
+    if (res.ok) return await res.json().catch(() => ({}));
   } catch {
     // Dashboard not running — fall through to Python fallback
   }
 
   // ── Python fallback: write directly to SQLite without the dashboard ────────
+  const payloadFile = join(sessionDir, `.consolidate-${sid8}.json`);
   try {
     const { spawnSync } = await import("child_process");
     const metisVenv = process.env.METIS_MCP_VENV
       || join(process.env.HOME || "/home", ".local", "share", "metis-mcp", ".venv");
     const python = join(metisVenv, "bin", "python3");
     const script = join(RC_ROOT, "system", "mcp-server", "src", "metis_mcp", "_consolidate_session.py");
-    const args = briefTempFile ? [script, RC_ROOT, briefTempFile] : [script, RC_ROOT];
-    spawnSync(python, args, { timeout: 12000 });
+    mkdirSync(sessionDir, { recursive: true });
+    writeFileSync(payloadFile, JSON.stringify(payload));
+    spawnSync(python, [script, RC_ROOT, "--payload", payloadFile], { timeout: 12000 });
   } catch {
     // Python also unavailable — silent
   } finally {
-    try { if (briefTempFile && existsSync(briefTempFile)) { const { unlinkSync } = await import("fs"); unlinkSync(briefTempFile); } } catch {}
+    try { if (existsSync(payloadFile)) unlinkSync(payloadFile); } catch {}
   }
   return null;
 }
@@ -207,14 +219,18 @@ async function notifyProjectActivity() {
   }
 }
 
-// Run async and wait briefly so the hook doesn't outlive the process
 (async () => {
-  const [result] = await Promise.all([
-    tryDashboardHandoff(),
-    touchPlanningFiles(),
-    consolidateSession(),
-    notifyProjectActivity(),
-  ]);
-  writeMarker(result);
+  if (fullRun) {
+    // The handoff brief FIRST: consolidation reads the file it writes. Run side
+    // by side, consolidation read the previous version of the brief.
+    const [result] = await Promise.all([
+      tryDashboardHandoff(),
+      touchPlanningFiles(),
+      notifyProjectActivity(),
+    ]);
+    writeMarker(result);
+  }
+  await consolidateSession();
+  saveState();
   process.exit(0);
 })();

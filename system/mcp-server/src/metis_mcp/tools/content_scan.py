@@ -316,6 +316,61 @@ FEED_USER_AGENT = (
 )
 _RETRY_STATUSES = (401, 403, 406, 429)
 
+# feedparser.parse(url) has NO network timeout. A server that accepts the
+# connection and never answers held the whole morning scan forever — and because
+# a job runs one copy at a time, every later 09:00 scan was then silently skipped
+# until the dashboard restarted. So the download is done here, with a timeout on
+# every socket read and a cap on the size, and feedparser only parses the bytes.
+# urllib (not httpx) on purpose: it is what feedparser itself used, so the same
+# system certificate store applies and no feed that worked before starts failing.
+FEED_TIMEOUT_S = 20
+_FEED_MAX_BYTES = 5_000_000
+
+
+def _parse_with_timeout(url: str, agent: str | None = None):
+    import gzip
+    import urllib.error
+    import urllib.request
+    import zlib
+
+    req = urllib.request.Request(url, headers={
+        "User-Agent": agent or feedparser.USER_AGENT,
+        "Accept": "application/atom+xml,application/rss+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Encoding": "gzip, deflate",
+    })
+    status, body, headers, href = 0, b"", {}, url
+    try:
+        with urllib.request.urlopen(req, timeout=FEED_TIMEOUT_S) as resp:
+            status = getattr(resp, "status", 200) or 200
+            headers = dict(resp.headers.items())
+            href = resp.geturl()
+            body = resp.read(_FEED_MAX_BYTES)
+    except urllib.error.HTTPError as exc:
+        status = exc.code
+    except Exception as exc:  # timeout, DNS, TLS, refused — reported, never hung on
+        parsed = feedparser.FeedParserDict(entries=[], feed={}, bozo=1, bozo_exception=exc)
+        parsed["status"] = 0
+        parsed["href"] = url
+        # A server that timed out once will not answer a second User-Agent either;
+        # retrying would only double the wait.
+        parsed["timed_out"] = "timed out" in str(exc).lower() or isinstance(exc, TimeoutError)
+        return parsed
+
+    encoding = {k.lower(): v for k, v in headers.items()}.get("content-encoding", "").lower()
+    try:
+        if "gzip" in encoding:
+            body = gzip.decompress(body)
+        elif "deflate" in encoding:
+            body = zlib.decompress(body)
+    except Exception:
+        pass  # hand feedparser what arrived; it reports bozo if it is unreadable
+    # Without the headers feedparser cannot see the declared charset.
+    headers = {k: v for k, v in headers.items() if k.lower() != "content-encoding"}
+    parsed = feedparser.parse(body, response_headers=headers)
+    parsed["status"] = status
+    parsed["href"] = href
+    return parsed
+
 
 def _fetch_feed(url: str):
     """Parse a feed, retrying once with a browser User-Agent on rejection.
@@ -323,12 +378,14 @@ def _fetch_feed(url: str):
     Returns the feedparser result whose entry list is non-empty where possible,
     so the caller sees the best of the two attempts rather than the last one.
     """
-    first = feedparser.parse(url)
+    first = _parse_with_timeout(url)
     if first.entries:
         return first
     status = getattr(first, "status", None) or 0
+    if first.get("timed_out"):
+        return first
     if status in _RETRY_STATUSES or status == 0 or status >= 500:
-        second = feedparser.parse(url, agent=FEED_USER_AGENT)
+        second = _parse_with_timeout(url, agent=FEED_USER_AGENT)
         if second.entries:
             return second
         # Report whichever attempt got further than a bare rejection.

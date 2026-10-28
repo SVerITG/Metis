@@ -16,6 +16,7 @@ from pathlib import Path
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
+from starlette.concurrency import run_in_threadpool
 
 from db import (NEWS_DISPLAY_FLOOR, RELEVANCE_CLOSE, db_execute, db_query,
                 db_scalar, live_task_sql)
@@ -1299,6 +1300,29 @@ _brief_last_attempt: dict = {}   # period -> monotonic ts of the last generation
 _brief_last_error: dict = {}     # period -> error string for display
 
 
+def _weekly_cutoff() -> str:
+    """Oldest generated_at a weekly brief may have and still be shown.
+
+    The weekly and catch-up reads had no date condition at all: they returned the
+    newest weekly ever written, so once one existed the panel showed it — and the
+    generator returned it as "cached" — for weeks. A week in review is current
+    for a week; a catch-up is current on the day it was written (its own key).
+    """
+    return (datetime.datetime.now() - datetime.timedelta(days=7)).isoformat()
+
+
+# period -> why the last generation attempt produced nothing. Read by the
+# scheduler so a failure is logged as an error (and retried), not as a 'skip'.
+_brief_failure_reason: dict = {}
+# One generation per period at a time, whoever asks: the start-up scan, the
+# scheduler and the Today page could each start one at once — three paid calls.
+_brief_period_locks: dict = {p: _threading.Lock() for p in ("daily", "weekly", "catchup")}
+
+
+def brief_failure_reason(period: str = "daily") -> str:
+    return _brief_failure_reason.get(period, "")
+
+
 def _get_cached_brief(period: str = "daily") -> str | None:
     """Cache-only read of the brief — NEVER calls the API, so the Today page can
     render instantly. Background generation fills the cache (see
@@ -1316,8 +1340,9 @@ def _get_cached_brief(period: str = "daily") -> str | None:
             row = conn.execute(
                 "SELECT content, model FROM daily_insights "
                 "WHERE model IN ('claude-haiku-weekly','desktop-weekly') "
-                "AND content IS NOT NULL "
-                "ORDER BY generated_at DESC LIMIT 1"
+                "AND content IS NOT NULL AND generated_at >= ? "
+                "ORDER BY generated_at DESC LIMIT 1",
+                (_weekly_cutoff(),),
             ).fetchone()
             # desktop-*: written by a scheduled Desktop session through
             # save_daily_brief, for machines with no API key of their own.
@@ -1325,9 +1350,10 @@ def _get_cached_brief(period: str = "daily") -> str | None:
         elif period == "catchup":
             row = conn.execute(
                 "SELECT content, model FROM daily_insights "
-                "WHERE model IN ('claude-sonnet-catchup','desktop-catchup') "
-                "AND content IS NOT NULL "
-                "ORDER BY generated_at DESC LIMIT 1"
+                "WHERE insight_date = ? "
+                "AND model IN ('claude-sonnet-catchup','desktop-catchup') "
+                "AND content IS NOT NULL LIMIT 1",
+                (today + "-catchup",),
             ).fetchone()
             accepted = {"claude-sonnet-catchup", "desktop-catchup"}
         else:
@@ -1364,8 +1390,8 @@ def _kick_brief_generation(period: str = "daily") -> None:
                 # surface a diagnostic so the template shows the error instead
                 # of polling forever with "Brewing…".
                 _brief_last_error[period] = (
-                    "Brief generation returned empty — check the server log. "
-                    "Common causes: missing API key, no news data, or import error."
+                    "Brief generation returned empty: "
+                    + (brief_failure_reason(period) or "see the server log") + "."
                 )
                 _log.warning("morning-brief generation returned None for period=%s", period)
         except Exception as e:
@@ -1430,6 +1456,15 @@ def _brief_system_prompt(
 
 
 def _get_or_generate_brief(force: bool = False, period: str = "daily") -> str | None:
+    """Return the brief, generating it if needed — one generation per period at a
+    time. A caller that waited on another's generation finds the result cached."""
+    lock = _brief_period_locks.get(period) or _brief_period_locks["daily"]
+    with lock:
+        _brief_failure_reason.pop(period, None)
+        return _generate_brief_locked(force=force, period=period)
+
+
+def _generate_brief_locked(force: bool = False, period: str = "daily") -> str | None:
     """Return the AI-generated research brief, generating it if needed.
 
     period='daily'   → today's brief (keyed by today's date, Haiku).
@@ -1454,6 +1489,7 @@ def _get_or_generate_brief(force: bool = False, period: str = "daily") -> str | 
             pass
     if not db_path_str:
         _log.warning("morning-brief: no database path found (METIS_DB unset)")
+        _brief_failure_reason[period] = "no database found"
         return None
 
     today = datetime.date.today().isoformat()
@@ -1472,12 +1508,18 @@ def _get_or_generate_brief(force: bool = False, period: str = "daily") -> str | 
     try:
         conn = _sqlite3.connect(db_path_str)
         conn.row_factory = _sqlite3.Row
-        if period in ("weekly", "catchup"):
+        if period == "weekly":
             row = conn.execute(
                 "SELECT content, model FROM daily_insights "
-                "WHERE model IN (?, ?) AND content IS NOT NULL "
+                "WHERE model IN (?, ?) AND content IS NOT NULL AND generated_at >= ? "
                 "ORDER BY generated_at DESC LIMIT 1",
-                (model_tag, "desktop-" + period),
+                (model_tag, "desktop-" + period, _weekly_cutoff()),
+            ).fetchone()
+        elif period == "catchup":
+            row = conn.execute(
+                "SELECT content, model FROM daily_insights "
+                "WHERE insight_date = ? AND model IN (?, ?) AND content IS NOT NULL LIMIT 1",
+                (insight_key, model_tag, "desktop-" + period),
             ).fetchone()
         else:
             row = conn.execute(
@@ -1562,15 +1604,18 @@ def _get_or_generate_brief(force: bool = False, period: str = "daily") -> str | 
             ctx = assemble_daily_context(db_path_str)
     except Exception as _ctx_exc:
         _log.warning("morning-brief: context assembly failed: %s", _ctx_exc, exc_info=False)
+        _brief_failure_reason[period] = f"could not gather the news and papers: {_ctx_exc}"[:300]
         return None
 
     if not ctx.get("context"):
         _log.warning("morning-brief: assembled context is empty (no news/papers in DB?)")
+        _brief_failure_reason[period] = "no recent news or papers to brief from yet"
         return None
 
     api_key = _get_api_key()
     if not api_key:
         _log.warning("morning-brief: no API key available")
+        _brief_failure_reason[period] = "no-api-key"
         return None
 
     # Build period description
@@ -1746,8 +1791,10 @@ def _get_or_generate_brief(force: bool = False, period: str = "daily") -> str | 
         else:
             _log.warning("morning-brief: API returned status %s: %s",
                          resp.status_code, resp.text[:300] if hasattr(resp, 'text') else "")
+            _brief_failure_reason[period] = f"the Claude API answered {resp.status_code}"
     except Exception as _api_exc:
         _log.warning("morning-brief: API call failed: %s", _api_exc, exc_info=True)
+        _brief_failure_reason[period] = f"the Claude API call failed: {type(_api_exc).__name__}"
     # Regeneration failed — return whatever was cached so the brief is never lost
     return cached_content
 
@@ -1902,8 +1949,10 @@ async def today_morning_brief(request: Request):
     brief_date_label = None
     pending = False
     if period in ("weekly", "catchup"):
+        # On a worker thread: generation is a blocking API call of up to 60s, and
+        # made inline it froze EVERY page of the dashboard while it ran.
         try:
-            ai_brief = _get_or_generate_brief(period=period)
+            ai_brief = await run_in_threadpool(_get_or_generate_brief, period=period)
         except Exception:
             pass
     else:
@@ -1921,7 +1970,15 @@ async def today_morning_brief(request: Request):
             # so a transient failure self-heals on the next poll without hammering
             # the API. The card shows "brewing" while there's no cached brief.
             _since = _time.monotonic() - _brief_last_attempt.get("daily", 0)
-            if "daily" not in _brief_gen_inflight and _since > 90:
+            # While the morning scan is still collecting, keep "brewing" rather
+            # than write today's brief from yesterday's news — the scheduler's
+            # brief step runs as soon as the scan is done.
+            try:
+                from scheduler import job_running as _job_running
+                _scanning = _job_running("morning_scan")
+            except Exception:
+                _scanning = False
+            if "daily" not in _brief_gen_inflight and _since > 90 and not _scanning:
                 _kick_brief_generation("daily")
             pending = True
 
@@ -2078,7 +2135,7 @@ async def morning_brief_refresh(request: Request):
 
     ai_brief = None
     try:
-        ai_brief = _get_or_generate_brief(force=True, period=period)
+        ai_brief = await run_in_threadpool(_get_or_generate_brief, force=True, period=period)
     except Exception:
         pass
 
@@ -3277,70 +3334,54 @@ async def api_handoff_generate():
 
 @router.post("/api/session/consolidate")
 async def api_session_consolidate(request: Request):
-    """Read today's JSONL session log and write a structured summary to SQLite.
+    """Record the session in session_summaries — one row per session.
 
-    Called automatically by the stop hook at session end. Accepts optional
-    brief_content (the handoff brief markdown) so that the stored summary
-    contains real session content, not just tool-call counts.
+    Called by the stop hook after every reply. Body: session_id, conversation
+    (what was asked and where the answer ended, read from the transcript),
+    brief_content (the day's handoff brief, as context) and enrich (true on the
+    hook's first reply of a session and then every ~20 minutes — only then is
+    the paid AI summary made).
+
+    It used to INSERT a row on every reply with the day-level brief and nothing
+    of the conversation; the row is now updated in place
+    (metis_mcp._consolidate_session.upsert_session_summary).
     """
-    import collections
     import json
-    import sqlite3
 
     body: dict = {}
     try:
         body = await request.json()
     except Exception:
         pass
-    brief_content: str = body.get("brief_content", "")
+    session_id: str = str(body.get("session_id") or "")
+    conversation: str = body.get("conversation") or ""
+    brief_content: str = body.get("brief_content") or ""
+    # Older hooks send no `enrich` and call once per reply: do not pay for them.
+    enrich: bool = bool(body.get("enrich", False))
 
-    rc_root = os.environ.get("METIS_RC_ROOT", str(Path(__file__).parent.parent.parent))
+    from metis_mcp._consolidate_session import (_tool_call_summary, compose_summary,
+                                                extract_from_brief, upsert_session_summary)
+
+    rc_root = Path(os.environ.get("METIS_RC_ROOT", str(Path(__file__).parent.parent.parent)))
     today = datetime.date.today().isoformat()
-    jsonl_path = Path(rc_root) / "journal" / "sessions" / f"session-{today}.jsonl"
+    tools_summary, agents = _tool_call_summary(rc_root, today)
+    summary = compose_summary(conversation, brief_content, tools_summary)
+    if not summary:
+        return JSONResponse({"status": "skipped", "reason": "nothing to record"})
 
-    tool_calls: list[dict] = []
-    if jsonl_path.exists():
-        for line in jsonl_path.read_text(encoding="utf-8").splitlines():
-            line = line.strip()
-            if line:
-                try:
-                    tool_calls.append(json.loads(line))
-                except json.JSONDecodeError:
-                    pass
-
-    if not tool_calls and not brief_content:
-        return JSONResponse({"status": "skipped", "reason": "no tool calls and no brief"})
-
-    tools_used = [t.get("tool", "") for t in tool_calls]
-    agents = sorted(set(t["agent"] for t in tool_calls if t.get("agent")))
-    top_tools = collections.Counter(tools_used).most_common(5)
-
-    # Build summary: prefer handoff brief content (rich) over tool-count summary (thin)
-    if brief_content and len(brief_content) > 100:
-        # Truncate to first 2000 chars of the brief — captures "What happened" section
-        summary = brief_content[:2000].strip()
-    else:
-        summary_parts = [f"Session on {today}: {len(tool_calls)} tool calls."]
-        if agents:
-            summary_parts.append(f"Agents active: {', '.join(agents)}.")
-        if top_tools:
-            summary_parts.append(
-                "Most used tools: " + ", ".join(f"{t}×{n}" for t, n in top_tools) + "."
-            )
-        summary = " ".join(summary_parts)
+    extracted_topics, extracted_decisions = extract_from_brief(brief_content)
 
     # LLM enrichment — if the API key is set and the SDK is installed, ask
-    # Claude Haiku to extract a 2-sentence prose summary + a structured
-    # topics+decisions list from the brief. Heuristic results below are kept
-    # as a safety net.
+    # Claude Haiku for a 2-sentence prose summary + topics + decisions from the
+    # record. Heuristic results are kept as a safety net.
     llm_summary: str | None = None
     llm_topics: list[str] = []
     llm_decisions: list[str] = []
     try:
-        if brief_content and len(brief_content) > 200 and os.environ.get("ANTHROPIC_API_KEY"):
+        if enrich and len(summary) > 200 and os.environ.get("ANTHROPIC_API_KEY"):
             from anthropic import Anthropic
             client = Anthropic()
-            # ── PII output rail — scan the brief before it leaves the machine ──
+            # ── PII output rail — scan the record before it leaves the machine ──
             # FAIL CLOSED. This used to swallow any failure and "send as-is", so a
             # broken import meant patient-adjacent text went to the API unmasked —
             # the precise thing the rail exists to prevent. If we cannot prove the
@@ -3351,31 +3392,32 @@ async def api_session_consolidate(request: Request):
             try:
                 from metis_mcp.tools.anonymization import mask_pii
 
-                _brief_to_send, _pii_found = mask_pii(brief_content[:6000])
+                _record_to_send, _pii_found = mask_pii(summary[:6000])
                 if _pii_found:
                     _safety_log.warning(
-                        "output rail: masked %s in brief before API call", _pii_found
+                        "output rail: masked %s in session record before API call", _pii_found
                     )
             except Exception as _exc:
                 _safety_log.error(
-                    "output rail UNAVAILABLE (%s: %s) — refusing to send the brief "
-                    "to the API. Nothing left the machine.",
+                    "output rail UNAVAILABLE (%s: %s) — refusing to send the session "
+                    "record to the API. Nothing left the machine.",
                     type(_exc).__name__, _exc,
                 )
                 raise RuntimeError(
-                    "PII output rail unavailable — brief not sent (fail-closed)."
+                    "PII output rail unavailable — record not sent (fail-closed)."
                 ) from _exc
 
             prompt = (
-                "You are summarising a researcher's session handoff brief for their "
-                "long-term memory. Read the brief below and return a JSON object with "
-                "exactly three keys:\n"
-                '  "summary": one-or-two-sentence prose summary of what happened (≤ 250 chars)\n'
+                "You are summarising a researcher's working session for their "
+                "long-term memory. It shows what they asked, where the last answer "
+                "ended, and possibly the day's project context. Return a JSON object "
+                "with exactly three keys:\n"
+                '  "summary": one-or-two-sentence prose summary of what was worked on and concluded (≤ 250 chars)\n'
                 '  "topics":  a JSON array of 3–6 short topic strings (project names, themes)\n'
-                '  "decisions": a JSON array of 3–8 short decision strings (≤ 120 chars each, '
-                'concrete next steps or outcomes)\n\n'
+                '  "decisions": a JSON array of up to 8 short decision strings (≤ 120 chars each, '
+                'concrete outcomes or next steps from THIS session; empty if none)\n\n'
                 "Respond with ONLY the JSON. No commentary.\n\n"
-                "BRIEF:\n" + _brief_to_send
+                "SESSION:\n" + _record_to_send
             )
             msg = client.messages.create(
                 model=model_for("brief"),
@@ -3402,94 +3444,38 @@ async def api_session_consolidate(request: Request):
             llm_topics = [t.strip() for t in parsed.get("topics", []) if t and isinstance(t, str)][:6]
             llm_decisions = [d.strip() for d in parsed.get("decisions", []) if d and isinstance(d, str)][:8]
     except Exception:
-        # Any failure here — silent. Heuristic extraction below still runs.
+        # Any failure here — silent. Heuristic extraction still applies.
         llm_summary = None
         llm_topics = []
         llm_decisions = []
 
     if llm_summary:
-        # Prepend the LLM's prose to the truncated brief
-        summary = llm_summary + ("\n\n" + summary if summary else "")
+        summary = llm_summary + "\n\n" + summary
 
-    # Extract bullet-point content from any handoff-brief section.
-    # Real briefs use headings like "Active projects", "Open tasks",
-    # "Recent agent runs", "What happened", "Decisions". Capture bullets
-    # from any of those — the previous regex only checked three exact
-    # heading phrases that briefs never emit, so the field was always empty.
-    DECISION_HEADINGS = (
-        "what happened", "decision", "key decision",
-        "active project", "open task", "recent agent run",
-        "next step", "follow-up", "follow up", "outcome",
-    )
-    extracted_decisions: list[str] = []
-    extracted_topics: list[str] = []
-    if brief_content:
-        in_decision_section = False
-        in_projects_section = False
-        for line in brief_content.splitlines():
-            stripped = line.strip()
-            low = stripped.lower()
-            if stripped.startswith("##"):
-                # Reset both flags on every new ##
-                in_decision_section = any(h in low for h in DECISION_HEADINGS)
-                in_projects_section = "active project" in low or "project" in low
-                continue
-            if in_decision_section and stripped.startswith("- ") and len(stripped) > 4:
-                item = stripped[2:].strip()
-                # Remove markdown bold/italic syntax markers so the stored text reads naturally
-                item = item.replace("**", "").replace("__", "").lstrip("*_ ").rstrip()
-                if item and item not in extracted_decisions:
-                    extracted_decisions.append(item)
-            if in_projects_section and stripped.startswith("- "):
-                # Project bullets often start with **Name** — extract just the title
-                txt = stripped[2:].strip()
-                # First bold span = project name, fall back to whole line
-                bold_match = txt.split("**")
-                topic = bold_match[1] if len(bold_match) >= 3 else txt.split(" — ")[0]
-                topic = topic.strip().rstrip(":").strip()
-                if topic and topic not in extracted_topics:
-                    extracted_topics.append(topic)
-        extracted_decisions = extracted_decisions[:10]
-        extracted_topics = extracted_topics[:8]
-
-    # Priority order: LLM extraction > heuristic extraction > agent slugs.
-    topics_payload = llm_topics or extracted_topics or agents
-    decisions_payload = llm_decisions or extracted_decisions
+    # On a quick (non-enriched) update, leave the topics and decisions the last
+    # AI pass extracted in place rather than overwrite them with heuristics.
+    if enrich:
+        topics_payload = llm_topics or extracted_topics or agents
+        decisions_payload = llm_decisions or extracted_decisions
+    else:
+        topics_payload = None
+        decisions_payload = None
 
     try:
+        import sqlite3
         db_path = _get_db_path()
         with sqlite3.connect(db_path) as conn:
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS session_summaries (
-                    id         INTEGER PRIMARY KEY AUTOINCREMENT,
-                    session_id TEXT,
-                    summary    TEXT NOT NULL,
-                    key_topics TEXT,
-                    decisions  TEXT,
-                    created_at TEXT NOT NULL
-                )
-            """)
-            conn.execute(
-                """INSERT INTO session_summaries
-                   (session_id, summary, key_topics, decisions, created_at)
-                   VALUES (?, ?, ?, ?, ?)""",
-                (
-                    today,
-                    summary,
-                    json.dumps(topics_payload),
-                    json.dumps(decisions_payload),
-                    datetime.datetime.utcnow().isoformat(),
-                ),
-            )
+            how = upsert_session_summary(conn, session_id, summary,
+                                         topics_payload, decisions_payload)
             conn.commit()
         return JSONResponse({
             "status": "ok",
+            "record": how,
             "summary": summary[:200],
-            "tool_calls": len(tool_calls),
             "agents": agents,
-            "topics_extracted": len(extracted_topics),
-            "decisions_extracted": len(extracted_decisions),
+            "has_conversation": bool(conversation),
             "has_brief": bool(brief_content),
+            "enriched": bool(llm_summary),
         })
     except Exception as e:
         return JSONResponse(

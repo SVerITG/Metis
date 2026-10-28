@@ -145,7 +145,7 @@ if [ "$MODE" = "--end" ]; then
     # Database sync → the other computer. Every session end, not daily: walking
     # away from this computer is exactly when the other one needs our latest.
     # Backgrounded and locked inside the script, so it never stalls the exit and
-    # never runs twice at once with the dashboard's 15-minute sync.
+    # never runs twice at once with the dashboard's own sync (every 3 hours).
     if [ -x "$VENV/bin/python3" ] && [ -f "$ROOT/tools/metis-sync-db.py" ]; then
         log "syncing the database for the other computer (in the background)…"
         nohup "$VENV/bin/python3" "$ROOT/tools/metis-sync-db.py" \

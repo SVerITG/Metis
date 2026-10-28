@@ -20,8 +20,8 @@ If they just want to ask something, answer first and offer setup afterwards.
   you used, and say how much was searched. Never claim to have read everything.
 - If they paste rows about individual people, check the data first
   (`check_data_safety`) and offer a script they run locally instead.
-- Record substantial work so the dashboard shows it (`log_agent_run`,
-  `save_session_summary`).
+- Record every conversation so the dashboard shows it (`log_agent_run`,
+  `save_session_summary`) — unless they explicitly ask not to be tracked.
 
 ## Morning briefing and updates
 
