@@ -4,6 +4,24 @@ All notable changes to Metis are documented here.
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [1.4] — 2026-10-29
+
+### Added
+- **Data Memory — a data-protected analysis mode.** Metis learns your datasets from your analysis code and the notes beside it, never from the data: which files exist and where, the columns your scripts use and the values they test for, how derived variables are built, which scripts read and write each file, the figures and tables already made, and the stories you tell about the data. Ask for an analysis and it writes an R script you run on your own computer, starting from your own closest script. It follows paths set in a setup script and `source()` chains, configuration lists and loader functions; a data file is only ever checked for existence. Five tools (`data_memory`, `data_memory_dataset`, `data_memory_scan`, `data_memory_status`, `record_data_story`); a session switches into this mode by itself when a request is about data.
+- **Setup asks where your scripts are** — a fifth wizard step (web and terminal); the folders are learnt in the background after setup.
+- **Data page** (`/data`) — your files, their columns, values and recipes, your notes about them, and the folders Metis learns from (add, re-read, forget).
+- **Editions** — an institute's copy built from the one codebase, with an institution pack (`/pack`), its templates and actions.
+- **Morning briefing through Claude Desktop** — setup offers a scheduled task (08:30, 07:30 or off) on your own subscription; without an API key the dashboard waits for it instead of failing.
+
+### Fixed
+- The web setup wizard never showed steps 2 and later, nor its buttons: the hidden state had moved into a CSS class the script could not override.
+- Exports read file names raw, so a quoted (non-ASCII) name can no longer slip past the filter.
+- The publish checker can exempt an exact file published by decision, and lists every exemption.
+
+## Earlier changes (released in 1.1–1.3, not separated by version)
+
 ### Added
 - **Plan a run of days, on one row** — `day_plan` gained `kind='task'` + `task_id` (migration `20260906_day_plan_add_task_id`), so a single task can be planned onto a day without inventing a due date, and a multi-day commitment is one row that labels which day of the run today is. A plan is an *intention*, never a deadline: unplanning something therefore cannot edit the work, and the 61 open tasks that carry no date stay that way. Re-planning **extends** an existing run rather than skipping it — the idempotency guard used to return silently, so asking for five days when a one-day pin existed did nothing at all. `/tomorrow` preserves the span's length instead of setting `end_date = NULL`, which had silently collapsed a five-day run to a single day (Sep 6–7).
 - **Today's plan strip** — `/api/partial/today/plan` plus `/api/today/plan/{add,toggle,tomorrow,remove}`. One compact line per intended item, projects and tasks together, with a picker that lists projects by open-task count. Replaces a panel that reported the past (three recently-touched projects and a paragraph each) with one that holds the day's commitments and, crucially, carries the control to add them: the planning store held **one** row while 61 tasks sat open, not because planning was unwanted but because no surface offered it. "Done" is authored by `tasks.status`, never a copy in `day_plan`, so the board and Today cannot disagree (Sep 6).

@@ -1,5 +1,14 @@
 ## Metis for ITM
 
+### New in 1.2
+- **Your data, learnt from your code.** Setup now asks where your R scripts
+  live. Metis learns your datasets from the code alone — never by opening a data
+  file — and, when you ask for an analysis, writes an R script for you to run on
+  your own computer, starting from your own scripts. Already installed? Open the
+  new **Data** page in the dashboard and add a folder there.
+- The morning briefing can be scheduled in Claude Desktop during setup.
+- Fixed: the web setup wizard could not get past its first step.
+
 A research companion for everyone at the Institute of Tropical Medicine: Claude
 with a memory of your work, the institute's own templates and procedures, and a
 research dashboard.
