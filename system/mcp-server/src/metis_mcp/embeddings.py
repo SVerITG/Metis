@@ -66,7 +66,7 @@ def _ensure_ssl_certs() -> None:
 #   · the nightly `embedding_backfill` logged "0 embedded, 2238 failed" while
 #     the same script run by hand from a shell worked perfectly, because a shell
 #     has no HF_HUB_OFFLINE and could re-download into /tmp;
-#   · semantic search over the HAT corpus failed inside the dashboard with
+#   · semantic search over the indexed corpus failed inside the dashboard with
 #     "Could not load any embedding model" while succeeding from the CLI.
 #
 # Both are the same thing: an offline process looking in a cache that a reboot

@@ -1,5 +1,5 @@
-My name is the researcher. Senior Researcher · Neglected Tropical Diseases.
-My work centres on sleeping sickness, HAT, neglected tropical diseases, DHIS2, multilevel models, spatial epidemiology.
+My name is the researcher. Senior Researcher · Global Health.
+My work centres on cohort studies, vaccine trials, health workers, antibiotic use, multilevel models, spatial epidemiology.
 
 How to talk to me: plain English, like a knowledgeable colleague — not a chatbot.
 I am not a career software engineer, so when you explain code or system internals,

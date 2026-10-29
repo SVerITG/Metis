@@ -16,6 +16,8 @@
  * Hook output (stdout): JSON { ...permissionDecision: "allow"|"deny"|"ask" }
  */
 
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
 import { readFileSync, writeFileSync, existsSync, openSync, readSync, closeSync } from "fs";
 
 const RC_ROOT = process.env.METIS_RC_ROOT || "";
@@ -146,17 +148,38 @@ const SENSITIVE_COLUMNS = new Set([
   "patient", "patient_id", "case_id", "diagnosis", "dob", "date_of_birth",
   "test_result", "gps_lat", "gps_lon", "nom", "prenom", "prénom", "surname",
   "firstname", "first_name", "last_name", "mrn", "record_number", "dossier",
-  "passport_number", "nid", "national_id", "hat_case_id", "hat_patient_id",
+  "passport_number", "nid", "national_id",
 ]);
+// A programme-prefixed id column ("<prefix>_case_id", "<prefix>_patient_id").
+const SENSITIVE_COLUMN_SUFFIX = /_(?:case|patient)_id$/;
 
 // Content-level PII patterns (subset of safety.py — the high-signal ones).
 const PII_PATTERNS = [
   /\b(?:patient_?id|case_?id|patient\s*#)\s*[:=]?\s*\d+/i,
   /-?\d{1,3}\.\d{5,},?\s*-?\d{1,3}\.\d{5,}/,                       // high-precision GPS
-  /\bhat[\s_-]?(?:case|id|patient|dossier)\s*[:=]?\s*[\dA-Z\-]{3,20}\b/i,
-  /\b\d{16}\b/,                                                    // DRC national ID
+  /\b(?:case|patient|dossier)[\s_-]?(?:(?:id|no|number)\b|#)\s*[:=]?\s*(?=[\w-]*\d)[\dA-Z\-]{3,20}\b/i,  // alphanumeric case id
+  /\b\d{16}\b/,                                                    // 16-digit national ID
   /\b(?:nom|prenom|prénom|surname|firstname|last[\s_]name)\s*[:=]\s*[A-Za-zÀ-ÿ]{2,}/i,
 ];
+
+// The researcher's own field-specific patterns and columns, from the private
+// overrides file the Python scanner also reads (metis_mcp/local_overrides.py).
+// The lists above are generic on purpose; without this, a hook on a machine
+// that holds programme data would protect it less than the scanner does.
+(function loadLocalOverrides() {
+  try {
+    // fileURLToPath, not URL.pathname: the latter keeps spaces as %20, and
+    // a folder like "OneDrive - Org" then never matches.
+    const root = RC_ROOT || join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+    const p = join(root, "system", "config", "domain-overrides.local.json");
+    if (!existsSync(p)) return;
+    const o = JSON.parse(readFileSync(p, "utf8"));
+    for (const c of o.extra_sensitive_columns || []) SENSITIVE_COLUMNS.add(String(c).toLowerCase());
+    for (const x of o.extra_pii_patterns || []) {
+      try { PII_PATTERNS.push(new RegExp(x.regex, x.flags || "")); } catch { /* a bad pattern is skipped */ }
+    }
+  } catch { /* overrides are optional; the generic lists still apply */ }
+})();
 
 // Read only the first chunk of a file (local I/O — never sent anywhere).
 function readHead(path, maxBytes = 8192) {
@@ -189,7 +212,7 @@ function scanDataFile(filePath) {
     if (firstLine.includes(sep)) {
       for (let h of firstLine.split(sep)) {
         h = h.trim().replace(/^["']|["']$/g, "").toLowerCase();
-        if (SENSITIVE_COLUMNS.has(h)) sensitiveCols.push(h);
+        if (SENSITIVE_COLUMNS.has(h) || SENSITIVE_COLUMN_SUFFIX.test(h)) sensitiveCols.push(h);
       }
       if (sensitiveCols.length) break;
     }

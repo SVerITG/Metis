@@ -31,7 +31,7 @@ You drop; Metis sorts. Nothing leaves your machine.
 | Personal / identifiable | private | `basket/private/` (you move it; never index) |
 
 **Step 3 — One short questionnaire, then confirm.** Don't ask per-file if you can batch. Present the proposed routing as a table and ask **only what you can't infer**, e.g.:
-- *"3 PDFs look like HAT papers — file under `inputs/literature/sleeping-sickness/`? (y / different topic)"*
+- *"3 PDFs look like antibiotic-use papers — file under `inputs/literature/antibiotic-use/`? (y / different topic)"*
 - *"`screening_2024.csv` is a dataset — it scanned as CONFIDENTIAL. Move to `basket/private/` (kept off the AI)? (y/n)"*
 - *"`model.R` → `inputs/code/`? (y/n)"*
 Keep it to 1–3 questions. Default to the inferred destination on "y".
@@ -47,7 +47,7 @@ Keep it to 1–3 questions. Default to the inferred destination on "y".
 ```
 ── BASKET PROCESSED ──────────────────────────────
 Moved 5 of 6 items:
-  → inputs/literature/sleeping-sickness/   3 papers
+  → inputs/literature/antibiotic-use/      3 papers
   → inputs/code/                           model.R
   → basket/private/                        screening_2024.csv  (CONFIDENTIAL — kept off the AI)
 Left in basket: notes.txt  (unclear — tell me what it is)

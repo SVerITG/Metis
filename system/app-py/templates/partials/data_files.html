@@ -1,0 +1,49 @@
+{# One row per data file. The row is the button: clicking it fills the detail panel. #}
+{% if datasets %}
+<ul class="dm-list">
+  {% for d in datasets %}
+  <li>
+    <button type="button" class="dm-row"
+            hx-get="/api/partial/data/file?key={{ d.key|urlencode }}" hx-target="#dm-detail"
+            onclick="document.querySelectorAll('.dm-row.is-on').forEach(function(r){r.classList.remove('is-on')});this.classList.add('is-on');">
+      <span class="dm-row-main">
+        <span class="dm-row-name">{{ d.name }}</span>
+        <span class="dm-row-folder">{{ d.folder }}</span>
+      </span>
+      <span class="dm-row-meta">
+        {% if d.on_disk == 0 %}<span class="stat is-warn">not found</span>{% endif %}
+        <span class="tag">{{ d.format or 'folder' }}</span>
+        {% if d.n_readers %}<span class="tag">{{ d.n_readers }} script{{ '' if d.n_readers == 1 else 's' }}</span>{% endif %}
+        {% if d.n_columns %}<span class="tag">{{ d.n_columns }} col.</span>{% endif %}
+        {% if d.n_aliases %}<span class="tag" title="Also reached by {{ d.n_aliases }} old or relative path(s) that no longer resolve">+{{ d.n_aliases }} old path{{ '' if d.n_aliases == 1 else 's' }}</span>{% endif %}
+      </span>
+    </button>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<div class="dm-empty">
+  {% if q %}
+    Nothing in your scripts matches <strong>{{ q }}</strong>. Metis only knows files that a scanned
+    script reads or writes.
+  {% else %}
+    No scripts learnt yet. Add the folder where your R scripts live, below.
+  {% endif %}
+</div>
+{% endif %}
+
+<style>
+  .dm-list { list-style:none; margin:0; padding:0; border:1px solid var(--m-rule); border-radius:8px;
+             background:var(--m-surface); overflow:hidden; }
+  .dm-list li + li { border-top:1px solid var(--m-rule-soft); }
+  .dm-row { width:100%; display:flex; align-items:center; justify-content:space-between; gap:var(--m-space-3);
+            padding:0.7rem var(--m-space-4); background:none; border:0; text-align:left; cursor:pointer;
+            color:var(--m-ink); font:inherit; border-left:3px solid transparent; }
+  .dm-row:hover { background:var(--m-accent-wash); }
+  .dm-row.is-on { background:var(--m-accent-wash); border-left-color:var(--m-accent); }
+  .dm-row-main { display:flex; flex-direction:column; min-width:0; gap:2px; }
+  .dm-row-name { font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .dm-row-folder { font-family:var(--m-mono); font-size:var(--t-micro); color:var(--m-muted);
+                   overflow:hidden; text-overflow:ellipsis; white-space:nowrap; direction:rtl; text-align:left; }
+  .dm-row-meta { display:flex; align-items:center; gap:var(--m-space-2); flex-shrink:0; }
+</style>

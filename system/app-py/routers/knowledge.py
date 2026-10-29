@@ -24,6 +24,59 @@ templates = Jinja2Templates(
 )
 
 
+# Canonical keywords the knowledge graph links nodes on, when they occur in a
+# project's or paper's domain string. Generic by default; a machine adds its own
+# subject's vocabulary under `graph_domain_keywords` in the local domain settings.
+_GRAPH_DOMAIN_KEYWORDS_BASE = ["surveillance", "epidemiology", "spatial",
+                               "multilevel", "software", "education",
+                               "burden", "elimination"]
+
+
+def _graph_domain_keywords() -> list[str]:
+    try:
+        from metis_mcp.domain import domain
+        extra = [str(k).lower() for k in (domain("graph_domain_keywords", []) or [])]
+    except Exception:
+        extra = []
+    return extra + [k for k in _GRAPH_DOMAIN_KEYWORDS_BASE if k not in extra]
+
+
+def _library_search_chips() -> list:
+    """Extra quick-search chips for the catalogue, from the local domain settings.
+
+    `library_search_chips` is a list of [label, query] pairs. Default: none.
+    """
+    try:
+        from metis_mcp.domain import domain
+        raw = domain("library_search_chips", []) or []
+    except Exception:
+        return []
+    return [(str(c[0]), str(c[1])) for c in raw
+            if isinstance(c, (list, tuple)) and len(c) == 2]
+
+
+def _register_library_globals() -> None:
+    """Make the Library page's configurable parts reachable from its template.
+
+    knowledge.html is rendered by this router AND by the main app's tab route, from
+    two Jinja environments. Seeding Jinja's default namespace reaches every
+    environment created after this import (the main app's is), and the explicit
+    assignment reaches this router's own, which already exists.
+    """
+    from routers.new_literature import library_focus
+    shared = {"library_focus": library_focus,
+              "library_search_chips": _library_search_chips}
+    templates.env.globals.update(shared)
+    try:
+        from jinja2 import defaults as _jinja_defaults
+        _jinja_defaults.DEFAULT_NAMESPACE.update(shared)
+    except Exception:
+        pass
+
+
+_register_library_globals()
+
+
 @router.get("/tab/knowledge", response_class=HTMLResponse)
 async def knowledge_tab(request: Request):
     return templates.TemplateResponse(
@@ -1024,8 +1077,8 @@ def _fetch_library_items(
     return items, total or 0
 
 
-@router.get("/api/partial/knowledge/hat-corpus", response_class=HTMLResponse)
-async def knowledge_hat_corpus(
+@router.get("/api/partial/knowledge/seeded-corpus", response_class=HTMLResponse)
+async def knowledge_seeded_corpus(
     request: Request,
     q: str = "",
     collection: str = "",
@@ -1059,8 +1112,9 @@ async def knowledge_hat_corpus(
     ) or 0
     return templates.TemplateResponse(
         request,
-        "partials/knowledge_hat_corpus.html",
+        "partials/knowledge_seeded_corpus.html",
         {
+            "index_layer": _seeded_index_layer(),
             "items": items,
             "total": total,
             "q": q,
@@ -1076,8 +1130,8 @@ async def knowledge_hat_corpus(
     )
 
 
-@router.get("/api/partial/knowledge/hat-corpus-table", response_class=HTMLResponse)
-async def knowledge_hat_corpus_table(
+@router.get("/api/partial/knowledge/seeded-corpus-table", response_class=HTMLResponse)
+async def knowledge_seeded_corpus_table(
     request: Request,
     q: str = "",
     collection: str = "",
@@ -1091,7 +1145,7 @@ async def knowledge_hat_corpus_table(
         per_page=LIB_PAGE_SIZE, offset=(page - 1) * LIB_PAGE_SIZE)
     return templates.TemplateResponse(
         request,
-        "partials/knowledge_hat_corpus_table.html",
+        "partials/knowledge_seeded_corpus_table.html",
         {"items": items, "total": total, "q": q, "page": page,
          "collection": collection, "sort": sort,
          "total_pages": max(1, (total + LIB_PAGE_SIZE - 1) // LIB_PAGE_SIZE),
@@ -1108,8 +1162,8 @@ def _is_displayable(title: str) -> bool:
     were wrong with it:
 
       · It hid 179 REAL PAPERS — Fèvre 2004 on the 1900–1920 Ugandan epidemic,
-        Büscher 2005 on CSF, Lutumba 2005 on DRC trypanosomiasis control, Merlo
-        on multilevel analysis. Core material, owned, invisible, unannounced.
+        a century-old epidemic history, a classic diagnostic study, a standard
+        multilevel-analysis text. Core material, owned, invisible, unannounced.
       · It ran AFTER pagination, so a page of 25 rendered fewer than 25 rows
         while the count still claimed 25.
 
@@ -1604,6 +1658,8 @@ async def knowledge_graph_data(
                 pass
         return [t.strip() for t in re.split(r"[,;]+", raw) if t.strip()]
 
+    graph_keywords = _graph_domain_keywords()
+
     def _domain_keywords(domain_str):
         """Extract matchable keywords from a domain string."""
         if not domain_str:
@@ -1611,11 +1667,7 @@ async def knowledge_graph_data(
         d = domain_str.lower().replace("-", " ").replace("_", " ")
         # Map common domain terms to canonical keywords
         keywords = set()
-        for kw in ["sleeping sickness", "hat", "trypanosomiasis",
-                    "sleeping-sickness", "ntd", "neglected tropical",
-                    "dhis2", "surveillance", "epidemiology",
-                    "spatial", "multilevel", "software", "education",
-                    "malaria", "burden", "elimination"]:
+        for kw in graph_keywords:
             if kw in d:
                 keywords.add(kw)
         # Also add the raw domain words
@@ -2066,8 +2118,8 @@ async def knowledge_unified_search(request: Request, q: str = ""):
     # same reason: collapsing after a LIMIT 10 shows ten rows that turn out to be
     # three papers. 64% of this table is redundant rows (3,084 rows carry 1,099
     # distinct titles; one paper is stored 26 times, usually differing only in
-    # journal capitalisation — "PLOS Neglected Tropical Diseases" against "PLoS
-    # neglected tropical diseases"). Searching "reservoir hosts" returned the
+    # journal capitalisation — "PLOS Medicine" against "PLoS
+    # medicine"). Searching "reservoir hosts" returned the
     # same paper six times, which is what a reader sees first now that search is
     # the front door.
     #
@@ -2349,13 +2401,33 @@ _TOPIC_DEFINITIONS: list[tuple[str, list[str], str]] = [
     ("Diagnostics",               ["diagnostic", "RDT", "sensitivity", "specificity", "test accuracy"], "Diagnostic tools, accuracy, and deployment"),
     ("Spatial Epidemiology",      ["spatial", "geograph", "mapping", "GIS", "geospatial"], "Disease mapping, spatial modelling, hotspots"),
     ("Multilevel Methods",        ["multilevel", "mixed model", "random effect", "hierarchical"], "Clustered data, nested designs"),
-    ("NTD & Tropical Diseases",   ["NTD", "neglected tropical", "ESPEN", "tropical disease", "parasitic"], "Neglected tropical disease programmes & reporting"),
-    ("Health Information Systems",["DHIS2", "health information system", "HIS", "OpenMRS", "HMIS"], "Health information systems implementation"),
+    ("Health Information Systems",["health information system", "HIS", "OpenMRS", "HMIS"], "Health information systems implementation"),
     ("Mathematical Modelling",    ["model", "mathematical model", "transmission model", "stochastic"], "Transmission dynamics, intervention impact"),
     ("Health Systems",            ["health system", "health financing", "UHC", "coverage", "access"], "Health system strengthening & universal coverage"),
     ("Maternal & Child Health",   ["maternal", "child health", "MCH", "RMNCH", "neonatal", "nutrition"], "Maternal, newborn, and child health outcomes"),
     ("Environmental & One Health",["environment", "climate", "WASH", "water sanitation", "One Health", "zoonotic"], "Environment-health linkages & One Health"),
 ]
+
+
+
+def _topic_definitions() -> list[tuple[str, list[str], str]]:
+    """The landscape's canonical topics.
+
+    `landscape_topics` in the local domain settings, a list of
+    [label, [keywords], description], replaces the generic list when present —
+    a subject's own landscape is not a variation of someone else's.
+    """
+    try:
+        from metis_mcp.domain import domain
+        raw = domain("landscape_topics", None)
+    except Exception:
+        raw = None
+    if not isinstance(raw, list):
+        return list(_TOPIC_DEFINITIONS)
+    out = [(str(t[0]), [str(k) for k in t[1]], str(t[2])) for t in raw
+           if isinstance(t, (list, tuple)) and len(t) == 3 and isinstance(t[1], list)]
+    return out or list(_TOPIC_DEFINITIONS)
+
 
 _GOOD_THRESHOLD    = 12   # ≥12 papers → good
 _PARTIAL_THRESHOLD = 3    # 3–11 → partial; <3 → gap
@@ -2379,8 +2451,9 @@ async def knowledge_topic_coverage(request: Request):
     ) or []
 
     # Merge canonical topics with any user-defined ones not already covered
-    canonical_labels = {label.lower() for label, _, _ in _TOPIC_DEFINITIONS}
-    topic_defs: list[tuple[str, list[str], str]] = list(_TOPIC_DEFINITIONS)
+    base_defs = _topic_definitions()
+    canonical_labels = {label.lower() for label, _, _ in base_defs}
+    topic_defs: list[tuple[str, list[str], str]] = list(base_defs)
     for r in user_topic_rows:
         label = (r.get("topic") or "").strip()
         if label and label.lower() not in canonical_labels:
@@ -2627,8 +2700,21 @@ async def knowledge_gap_check(request: Request):
 # ---------------------------------------------------------------------------
 
 
-@router.post("/api/knowledge/build-hat-index", response_class=HTMLResponse)
-async def knowledge_build_hat_index(request: Request):
+def _seeded_index_layer() -> str:
+    """The knowledge layer the seeded corpus is indexed into, or "" when none.
+
+    Set by `library_index_layer` in the local domain settings; it must name a
+    layer build_knowledge_db.py knows. Without it the index button is not shown.
+    """
+    try:
+        from metis_mcp.domain import domain
+        return str(domain("library_index_layer", "") or "").strip()
+    except Exception:
+        return ""
+
+
+@router.post("/api/knowledge/build-corpus-index", response_class=HTMLResponse)
+async def knowledge_build_corpus_index(request: Request):
     """Trigger domain corpus PDF indexing as a background subprocess."""
     import subprocess
     import sys
@@ -2658,11 +2744,17 @@ async def knowledge_build_hat_index(request: Request):
             '<span style="font-family:var(--m-mono);font-size:11px;color:var(--m-warn);">Library path not found in user-preferences.json → library_path</span>'
         )
 
+    layer = _seeded_index_layer()
+    if not layer:
+        return HTMLResponse(
+            '<span style="font-family:var(--m-mono);font-size:11px;color:var(--m-warn);">No knowledge layer is set up for this corpus.</span>'
+        )
+
     from db import get_db_path
     db_path = get_db_path()
     try:
         subprocess.Popen(
-            [sys.executable, str(script), "--database", "hat-specialist",
+            [sys.executable, str(script), "--database", layer,
              "--library-dir", lib_path, "--db", str(db_path), "--batch-size", "2"],
             env={**os.environ, "METIS_RC_ROOT": rc_root},
             stdout=subprocess.DEVNULL,

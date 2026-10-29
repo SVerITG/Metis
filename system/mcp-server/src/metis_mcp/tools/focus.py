@@ -1079,7 +1079,7 @@ async def focus_brief(slug: str) -> list[TextContent]:
 # ---------------------------------------------------------------------------
 # Lens preview — see what a lens catches BEFORE saving it
 # ---------------------------------------------------------------------------
-# The gap this closes: lens tuning was blind. A test DHIS2 focus returned 0 news
+# The gap this closes: lens tuning was blind. A test REDCap focus returned 0 news
 # and 0 papers, and the only way to discover that was to build the focus, open the
 # surface and notice it was empty. A lens is the entire behaviour of the surface,
 # so guessing at it and finding out later is the wrong loop.
@@ -1245,7 +1245,7 @@ async def preview_focus_lens(keyword_groups: str) -> list[TextContent]:
 
     Args:
         keyword_groups: JSON list of lists — OR within a group, AND across groups.
-            e.g. '[["dhis2","hmis"],["surveillance","district"]]'
+            e.g. '[["malaria","plasmodium"],["elimination","surveillance"]]'
 
     Returns:
         Per-group and combined counts, sample matches, and a plain verdict.
@@ -1256,7 +1256,7 @@ async def preview_focus_lens(keyword_groups: str) -> list[TextContent]:
     except Exception:
         return [TextContent(type="text", text=(
             "keyword_groups must be a JSON list of lists, e.g.\n"
-            '[["dhis2","hmis"],["surveillance","district"]]'))]
+            '[["malaria","plasmodium"],["elimination","surveillance"]]'))]
 
     p = preview_lens(groups)
     out = ["**Lens preview**", "",

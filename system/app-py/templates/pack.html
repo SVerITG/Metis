@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% from "partials/_section.html" import sec_label %}
+{% block title %}{{ pk.short_name or pk.name }}{% endblock %}
+
+{#
+  THE INSTITUTION PACK SURFACE — see routers/pack.py.
+
+  Order on the page is the order of need: the actions first (what a researcher
+  came to do), then the bare templates (for someone who only wants the file),
+  then what the pack does not have yet — stated, because an action that
+  quietly improvises a missing form is worse than one that says it is missing.
+
+  Each action hands over to Claude with a sentence to copy. The sentence ends
+  open ("…my study: ") on purpose: the researcher's own description is the
+  input, and the copy button puts the cursor where it goes.
+#}
+
+{% block content %}
+{% set accent = pk.accent or 'var(--m-accent)' %}
+<div class="page">
+
+  <div class="page-head" style="border-left:4px solid {{ accent }};padding-left:var(--m-space-3);">
+    <div>
+      <div class="page-eyebrow">{{ pk.short_name }}</div>
+      <h1 class="page-title">{{ pk.name }}</h1>
+      <div class="u-ed" style="font-size:var(--t-small);margin-top:var(--m-space-1);">{{ pk.tagline }}</div>
+    </div>
+    <div class="page-meta">{{ actions|length }} ACTIONS · {{ (pk.templates or [])|length }} TEMPLATES</div>
+  </div>
+
+  {{ sec_label("What you can do", "say it in Claude, or pick it from the Metis menu there") }}
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:var(--m-space-3);">
+    {% for a in actions %}
+    <section class="panel" id="{{ a.id }}" style="padding:var(--m-space-3);border-top:3px solid {{ accent }};display:flex;flex-direction:column;gap:var(--m-space-2);">
+      <h3 style="margin:0;font-size:var(--t-h4);">{{ a.title }}</h3>
+      <p style="margin:0;font-size:var(--t-small);color:var(--m-ink-2, inherit);">{{ a.summary }}</p>
+
+      {% if a.ask %}
+      <div>
+        <div class="u-mono u-mb-1" style="font-size:var(--t-micro);letter-spacing:.08em;color:var(--m-muted);text-transform:uppercase;">Say to Claude</div>
+        <div style="display:flex;gap:var(--m-space-2);align-items:stretch;">
+          <code class="u-grow" style="padding:var(--m-space-2) var(--m-space-3);background:var(--m-surface-2, rgba(127,127,127,.08));border:1px solid var(--m-line);font-size:var(--t-small);white-space:normal;">{{ a.ask }}…</code>
+          <button type="button" class="btn" data-ask="{{ a.ask }}"
+                  onclick="navigator.clipboard.writeText(this.dataset.ask).then(()=>{this.textContent='Copied';setTimeout(()=>this.textContent='Copy',1500)})"
+                  style="white-space:nowrap;">Copy</button>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if a.produces %}
+      <div style="font-size:var(--t-meta);color:var(--m-muted);">
+        You get: {{ a.produces|join(" · ") }}
+      </div>
+      {% endif %}
+
+      {% if a.template_rows %}
+      <div style="display:flex;flex-wrap:wrap;gap:var(--m-space-2);">
+        {% for t in a.template_rows %}
+        <a class="btn btn--ghost" href="/pack/template/{{ t.id }}" style="font-size:var(--t-meta);">↓ {{ t.title }}</a>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if a.procedure_text %}
+      <details style="font-size:var(--t-small);">
+        <summary style="cursor:pointer;color:var(--m-muted);">How Metis handles this</summary>
+        <div class="prose" style="margin-top:var(--m-space-2);">{{ a.procedure_text|md }}</div>
+      </details>
+      {% endif %}
+    </section>
+    {% endfor %}
+  </div>
+
+  {{ sec_label("Templates", "the institute's own files, ready to download") }}
+  <div class="panel" style="padding:var(--m-space-1) 0;">
+    {% for t in pk.templates or [] %}
+    <div style="padding:12px 18px;display:flex;gap:14px;align-items:baseline;{% if not loop.last %}border-bottom:1px solid var(--m-line);{% endif %}">
+      <span class="u-fixed u-mono" style="letter-spacing:.08em;text-transform:uppercase;color:var(--m-muted);width:130px;font-size:var(--t-micro);">{{ t.kind }}</span>
+      <div class="u-grow">
+        <a href="/pack/template/{{ t.id }}" style="color:inherit;text-decoration:none;border-bottom:1px solid var(--m-line);">{{ t.title }}</a>
+        {% if t.note %}<div style="font-size:var(--t-meta);color:var(--m-muted);margin-top:var(--m-space-1);">{{ t.note }}</div>{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if pk.missing_templates %}
+  {{ sec_label("Not in the pack yet", "Metis says so instead of improvising one") }}
+  <div class="panel" style="padding:var(--m-space-3);font-size:var(--t-small);">
+    <ul style="margin:0 0 var(--m-space-2) 1.2em;padding:0;">
+      {% for m in pk.missing_templates %}<li>{{ m }}</li>{% endfor %}
+    </ul>
+    <div style="color:var(--m-muted);font-size:var(--t-meta);">
+      Have one of these? Ask Claude to “add this template to Metis”, or put the file in your
+      Metis folder under <code>system/config/local/templates</code>: Metis finds it from then on.
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

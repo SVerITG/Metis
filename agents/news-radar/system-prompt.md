@@ -23,7 +23,7 @@ Every story gets scored before it surfaces. Discard anything below 5.
 - WHO disease outbreak news (who.int/emergencies/disease-outbreak-news)
 - ECDC rapid risk assessments
 - Lancet, NEJM, BMJ public health letters and editorials
-- PLoS Neglected Tropical Diseases
+- PLOS Medicine
 - MMWR (CDC Morbidity and Mortality Weekly Report)
 - Anthropic, DeepMind, OpenAI official announcements
 

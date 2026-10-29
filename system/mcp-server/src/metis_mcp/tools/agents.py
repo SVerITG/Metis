@@ -129,8 +129,8 @@ async def get_agent_context(agent_slug: str) -> list[TextContent]:
     #
     # WHY THIS WAS ADDED (2026-08-17)
     #   Eleven of these files existed — ~44 KB, including the 187-line
-    #   hat-metric-context.md that opens "This file is loaded automatically by
-    #   Methods Coach at the start of any session involving HAT risk mapping".
+    #   risk-metric-context.md that opens "This file is loaded automatically by
+    #   Methods Coach at the start of any session involving malaria risk mapping".
     #   Nothing in the codebase referenced any of them. They were written, never
     #   read: the best methodological record in the system was reachable only by
     #   opening the file by hand, and completely invisible from Claude Desktop.

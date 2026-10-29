@@ -24,6 +24,7 @@ from fastapi.templating import Jinja2Templates
 
 from routers import (
     api_v1,
+    data_page,
     capture,
     connections,
     jobs,
@@ -47,6 +48,7 @@ from routers import (
     work,
     shelves,
     stack,
+    pack,
 )
 
 log = logging.getLogger("metis")
@@ -91,6 +93,14 @@ async def lifespan(app: FastAPI):
             _sys.path.insert(0, _mcp_src)
         del _mcp_src
     del _rc
+    # An edition's institution pack puts its focus on the shelf on first start,
+    # so the navbar shows it before anyone visits /pack. Once only; inert
+    # without a pack.
+    try:
+        from routers.pack import seed_pack_focus
+        seed_pack_focus()
+    except Exception as exc:
+        log.warning("[startup] pack focus skipped: %s", exc)
     # In demo mode the scheduler is NOT started: its catch-up sequence would
     # immediately run the morning news/literature scan, pulling the real user's
     # feeds and library folder into the demo database and overwriting the
@@ -443,7 +453,29 @@ ASSET_V = _asset_version()
 
 import re as _re
 
-_SHARED_GLOBALS = {"focus_shelf": _focus_shelf, "asset_v": ASSET_V}
+def _surface_on(key: str) -> bool:
+    """Whether this edition shows a surface. Every surface is on without an
+    edition file, so a template guarded by this cannot lose a nav item in the
+    full build."""
+    try:
+        from metis_mcp.edition import surface_on
+        return surface_on(key)
+    except Exception:
+        return True
+
+
+def _edition() -> dict:
+    """The edition, its pack and its links, for the navbar and the pack surface."""
+    try:
+        from metis_mcp import edition as E
+        return {"name": E.name(), "pack": E.pack(),
+                "statistics_course": E.link("statistics_course")}
+    except Exception:
+        return {"name": "Metis", "pack": {}, "statistics_course": ""}
+
+
+_SHARED_GLOBALS = {"focus_shelf": _focus_shelf, "asset_v": ASSET_V,
+                   "surface_on": _surface_on, "edition": _edition}
 def _due_delta(due: str):
     """Days from today to `due`, or None if there is no usable date.
 
@@ -679,6 +711,7 @@ app.include_router(transcription.router)
 app.include_router(speakers.router)
 app.include_router(jobs.router)
 app.include_router(setup.router)
+app.include_router(data_page.router)   # the Data Memory surface
 # The citation checker's HTTP surface — the Stop hook calls this rather than
 # shelling out to Python, so a per-turn check costs milliseconds against an
 # already-warm process instead of an interpreter start on every reply.
@@ -691,6 +724,8 @@ app.include_router(stack.router)
 # LIBRARY SHELVES — the reason something was kept, which the stack's `saved`
 # verdict recorded without ever being able to say.
 app.include_router(shelves.router)
+# The institution pack's surface; redirects home when the edition has no pack.
+app.include_router(pack.router)
 
 # Must run AFTER all routers are imported, so every environment exists.
 _n_envs = install_shared_globals()

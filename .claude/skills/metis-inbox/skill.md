@@ -48,7 +48,7 @@ If any items were routed: `log_agent_run([], "metis", "Inbox scan and routing", 
 
 FILES IN inbox/  (n items)
   📄 meeting-notes-2026-04-24.md  → Write up as a meeting?      [y/skip]
-  📄 passive-screening-notes.txt  → Add to your library?        [y/skip]
+  📄 household-survey-notes.txt  → Add to your library?        [y/skip]
   ❓ misc-thoughts.md              → Unclear — what is this for?
 
 INBOX TASKS  (n open)

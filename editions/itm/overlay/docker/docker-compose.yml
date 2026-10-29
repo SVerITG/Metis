@@ -1,0 +1,18 @@
+# Metis for ITM — test environment. From the repository root:
+#   docker compose -f docker/docker-compose.yml up --build dashboard   → http://localhost:8080
+#   docker compose -f docker/docker-compose.yml run --rm test          → smoke test (exit code 0 = pass)
+services:
+  dashboard:
+    build: {context: .., dockerfile: docker/Dockerfile}
+    image: metis-itm-test
+    ports: ["8080:8080"]
+    volumes: ["metis-itm-data:/data"]
+    command: ["dashboard"]
+  test:
+    image: metis-itm-test
+    build: {context: .., dockerfile: docker/Dockerfile}
+    volumes: ["metis-itm-test-data:/data"]
+    command: ["test"]
+volumes:
+  metis-itm-data:
+  metis-itm-test-data:

@@ -23,6 +23,9 @@ This is the generalised, repeatable form of the "send code, not data" pattern (s
 **Usage:** `/safe-analysis [what you want to do]`
 e.g. *"build a dashboard for my screening dataset"*, *"interpret my logistic model"*, *"make Table 1"*, *"profile and clean this CSV"*.
 
+**Step 0 — Ask the Data Memory first.**
+Call `data_memory(question=<the request>)`. If the researcher's scripts have been scanned, it already knows the files, exact paths, columns, values tested in code, derived variables, outputs and the closest existing script — so Step 1's questions are mostly answered, and the script in Step 3 starts from their own code rather than a template. Only ask what the memory does not know.
+
 **Step 1 — Clarify the goal, not the data.**
 Ask only what you need and nothing identifiable: What's the task? What format is the data (CSV / Excel / SPSS / Stata / SQLite)? Roughly what *domains* of variables does it hold (e.g. "demographics, test results, dates") — never the values? R or Python?
 

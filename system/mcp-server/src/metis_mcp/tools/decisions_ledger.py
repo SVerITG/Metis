@@ -46,7 +46,7 @@ _STATES = ("open", "agreed", "rejected", "deferred", "dropped")
 
 # The `decisions` column has been used as a dumping ground for project next-steps
 # and task titles. Promoting it wholesale produced 582 "open decisions" of which 21
-# were decisions — "HAT Dashboard — _next: Review reactive architecture" had been
+# were decisions — "Cohort Dashboard — _next: Review reactive architecture" had been
 # restated 551 times. A restated TASK is not an unmade decision, and mixing them
 # makes the ledger exactly the thing the review is meant to replace: a wall you
 # cannot act on. So the filter runs at promotion, not as a one-off cleanup.
@@ -93,7 +93,7 @@ _CONVENTION = re.compile(
 # An imperative TASK — work to do, not a choice already made.
 #
 # The `decisions` column has been used as a dumping ground for project
-# next-steps: "HAT Dashboard — _next: Review reactive architecture" had been
+# next-steps: "Cohort Dashboard — _next: Review reactive architecture" had been
 # restated 551 times. Loosening the filter above would let every one of those
 # back in, so the task shape is now rejected explicitly rather than relied on
 # to fail the decision test by accident. French included — the RCA/FOCAL

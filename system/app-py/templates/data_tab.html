@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% from "partials/_section.html" import sec_label %}
+{% block title %}Data{% endblock %}
+
+{% block content %}
+<div class="page dm-page">
+
+  <div class="page-head">
+    <div>
+      <div class="page-eyebrow">Data · learnt from your code</div>
+      <h1 class="page-title">Data Memory</h1>
+    </div>
+    <div class="page-meta">
+      {{ "{:,}".format(st.scripts) }} scripts · {{ st.sources|length }} folder{{ '' if st.sources|length == 1 else 's' }}
+    </div>
+  </div>
+
+  {# The promise comes first: it is why this can hold surveillance or patient data. #}
+  <div class="dm-promise">
+    <span class="stat is-good">Data never opened</span>
+    <span class="dm-promise-text">
+      Everything here comes from your R scripts and the notes beside them. A data file is
+      only ever checked for existence. When you ask Claude for an analysis, it starts from
+      this — and writes a script you run on your own computer.
+    </span>
+  </div>
+
+  <div class="dm-kpis">
+    <div class="dm-kpi">
+      <div class="dm-kpi-n">{{ "{:,}".format(st.datasets_read) }}</div>
+      <div class="dm-kpi-l">data files your scripts read</div>
+      {% if st.inputs_missing %}<span class="stat is-warn">{{ "{:,}".format(st.inputs_missing) }} moved or renamed</span>
+      {% else %}<span class="stat is-good">all where the code says</span>{% endif %}
+    </div>
+    <div class="dm-kpi">
+      <div class="dm-kpi-n">{{ "{:,}".format(st.columns) }}</div>
+      <div class="dm-kpi-l">columns seen in code</div>
+      <span class="stat is-info">{{ "{:,}".format(st.derived) }} with their recipe</span>
+    </div>
+    <div class="dm-kpi">
+      <div class="dm-kpi-n">{{ "{:,}".format(st.writes) }}</div>
+      <div class="dm-kpi-l">outputs already produced</div>
+      <span class="stat is-quiet">figures · tables · files</span>
+    </div>
+    <div class="dm-kpi">
+      <div class="dm-kpi-n">{{ st.stories }}</div>
+      <div class="dm-kpi-l">notes &amp; stories</div>
+      <span class="stat is-quiet">{{ st.columns_with_values }} columns with known values</span>
+    </div>
+  </div>
+
+  <div class="dm-grid">
+    <section class="dm-files-col">
+      {{ sec_label("Your data", tail="most-used first") }}
+      <form class="dm-search u-row" onsubmit="return false;">
+        <input class="dm-input u-grow" type="search" name="q" value="{{ q }}" placeholder="Search a file, a column, a value, a project…"
+               aria-label="Search your data"
+               hx-get="/api/partial/data/files" hx-trigger="input changed delay:300ms, search"
+               hx-target="#dm-files" hx-include="closest form">
+        <label class="dm-toggle u-mono">
+          <input type="checkbox" name="outputs" value="1"
+                 hx-get="/api/partial/data/files" hx-trigger="change"
+                 hx-target="#dm-files" hx-include="closest form"> include outputs
+        </label>
+      </form>
+      <div id="dm-files">
+        {% include "partials/data_files.html" %}
+      </div>
+    </section>
+
+    <aside class="dm-detail-col">
+      <div id="dm-detail" class="dm-detail">
+        {% if card %}{% include "partials/data_file.html" %}{% else %}
+        <div class="dm-empty">
+          <div class="dm-empty-t">Pick a file</div>
+          <div>to see where it lives, which scripts use it, its columns and the values your code
+            tests for — and what you have told Metis about it.</div>
+        </div>
+        {% endif %}
+      </div>
+    </aside>
+  </div>
+
+  <section style="margin-top:var(--m-space-6);">
+    {{ sec_label("Folders Metis learns from", tail="re-read automatically when a script changes") }}
+    {% include "partials/data_sources.html" %}
+  </section>
+
+</div>
+
+<style>
+  .dm-promise { display:flex; align-items:center; gap:var(--m-space-3); padding:var(--m-space-3) var(--m-space-4);
+                border:1px solid var(--m-rule-soft); border-left:3px solid var(--m-ok); border-radius:6px;
+                background:var(--m-surface-2); margin-bottom:var(--m-space-5); }
+  .dm-promise-text { font-size:var(--t-small); color:var(--m-muted); line-height:1.5; }
+  .dm-kpis { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:var(--m-space-3); margin-bottom:var(--m-space-6); }
+  .dm-kpi { border:1px solid var(--m-rule); border-radius:8px; padding:var(--m-space-4); background:var(--m-surface);
+            display:flex; flex-direction:column; gap:var(--m-space-1); align-items:flex-start; }
+  .dm-kpi-n { font-family:var(--m-display); font-size:34px; line-height:1; color:var(--m-ink); letter-spacing:-0.02em; }
+  .dm-kpi-l { font-size:var(--t-small); color:var(--m-muted); margin-bottom:var(--m-space-1); }
+  .dm-grid { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); gap:var(--m-space-5); align-items:start; }
+  .dm-detail-col { position:sticky; top:var(--m-space-4); }
+  .dm-detail { border:1px solid var(--m-rule); border-radius:8px; background:var(--m-surface); min-height:240px;
+               max-height:calc(100vh - 120px); overflow-y:auto; }
+  .dm-empty { padding:var(--m-space-6); color:var(--m-muted); font-size:var(--t-small); line-height:1.6; }
+  .dm-empty-t { font-family:var(--m-display); font-size:20px; color:var(--m-ink); margin-bottom:var(--m-space-1); }
+  .dm-search { margin-bottom:var(--m-space-3); }
+  .dm-input { border:1px solid var(--m-rule-strong); border-radius:4px; padding:0.5rem 0.75rem; font:inherit;
+              font-size:var(--t-body); background:var(--m-surface); color:var(--m-ink); }
+  .dm-input:focus { border-color:var(--m-accent); }
+  .dm-toggle { color:var(--m-muted); white-space:nowrap; display:flex; align-items:center; gap:6px; cursor:pointer; }
+  @media (max-width: 1100px) {
+    .dm-kpis { grid-template-columns:repeat(2, minmax(0,1fr)); }
+    .dm-grid { grid-template-columns:1fr; }
+    .dm-detail-col { position:static; }
+  }
+</style>
+{% endblock %}

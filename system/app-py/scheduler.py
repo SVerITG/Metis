@@ -410,7 +410,7 @@ def _topic_literature_search(days: int = 7, per_topic: int = 15) -> int:
     # topic query returns anything the query matches, and 56 rows reached 0.9
     # that way — among them "Using Narrative Medicine to Teach Spiritual Care
     # Competence" and "Cerebrovascular injury following manual strangulation",
-    # both presented to an NTD researcher under "close to my work".
+    # both presented to a malaria researcher under "close to my work".
     #
     # A score identical on every row cannot rank rows, and a score that is
     # WRONG is worse than none: it puts unrelated papers at the top of the one
@@ -971,19 +971,21 @@ def job_reminder_due() -> None:
 def job_brief_synthesis() -> None:
     """Pre-generate AI morning brief — respects brief_mode setting."""
     log.info("[scheduler] brief_synthesis starting")
-    # Honour brief_mode: skip scheduled synthesis when set to 'manual'
+    # Honour brief_mode. Only 'auto' modes write here; the standard ('desktop')
+    # leaves the brief to the Claude Desktop scheduled task.
     try:
-        import json as _json
-        _rc = os.environ.get("METIS_RC_ROOT", "")
-        _prefs_path = Path(_rc) / "system" / "config" / "user-preferences.json" if _rc else None
-        if _prefs_path and _prefs_path.exists():
-            _mode = _json.loads(_prefs_path.read_text()).get("brief_mode", "auto")
-            if _mode == "manual":
-                _log_job("brief_synthesis", "skip", "Manual mode — generate from the Today tab when ready")
-                log.info("[scheduler] brief_synthesis skipped (manual mode)")
-                return
+        from routers.today import _get_brief_mode
+        _mode = _get_brief_mode()
     except Exception:
-        pass
+        _mode = "desktop"
+    if _mode == "desktop":
+        _log_job("brief_synthesis", "skip", "Claude Desktop writes the brief on its schedule")
+        log.info("[scheduler] brief_synthesis skipped (desktop mode)")
+        return
+    if _mode == "manual":
+        _log_job("brief_synthesis", "skip", "Manual mode — generate from the Today tab when ready")
+        log.info("[scheduler] brief_synthesis skipped (manual mode)")
+        return
     try:
         from routers.today import _get_or_generate_brief
         result = _get_or_generate_brief()

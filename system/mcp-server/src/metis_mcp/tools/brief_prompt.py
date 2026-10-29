@@ -16,6 +16,7 @@ import json
 import sqlite3
 from pathlib import Path
 
+from metis_mcp.domain import domain
 from metis_mcp.tools.news_threads import COVERAGE_FOOTER_INSTRUCTION
 
 # Storage contract: what each writer files a brief under, per period.
@@ -122,14 +123,32 @@ def load_profile(root: str | Path, db_path: str = "") -> dict:
 
     interests = prefs.get("interests", []) or []
     topics = prefs.get("news_topics", []) or []
+    fallback = brief_fallbacks()
     return {
         "name": name or "Researcher",
-        "field": prefs.get("role", "") or "public health and epidemiology",
-        "interests": ", ".join(interests[:8]) if interests else
-            "global health, infectious diseases, epidemiology, public health surveillance, health systems",
-        "topics": ", ".join(topics[:6]) if topics else
-            "WHO surveillance, global health emergencies, disease control, AI in research",
+        "field": prefs.get("role", "") or fallback["field"],
+        "interests": ", ".join(interests[:8]) if interests else fallback["interests"],
+        "topics": ", ".join(topics[:6]) if topics else fallback["topics"],
     }
+
+
+# What a brief says about the reader when they have told Metis nothing. Neutral
+# on purpose: a person with no declared interests must not be addressed as a
+# member of somebody else's field. A machine-local domain file may replace these.
+_BRIEF_FALLBACKS = {
+    "field": "research",
+    "interests": "research developments in the reader's field, methods, science policy",
+    "topics": "major science and research news, research funding and policy, AI in research",
+}
+
+
+def brief_fallbacks() -> dict:
+    """{field, interests, topics} used when the profile leaves one empty."""
+    out = dict(_BRIEF_FALLBACKS)
+    local = domain("brief_fallbacks", {})
+    if isinstance(local, dict):
+        out.update({k: str(v) for k, v in local.items() if k in out and v})
+    return out
 
 
 def source_items(conn: sqlite3.Connection, days: int) -> list[dict]:
@@ -205,7 +224,8 @@ def brief_system_prompt(
         return preamble + (
             "Write exactly four paragraphs, 400–500 words total:\n\n"
             "Paragraph 1 — THE WEEK: The two or three most significant developments "
-            "in global health, science, or AI this week. State what happened and why "
+            f"in {domain('brief_week_scope', 'research, science, or AI')} this week. "
+            "State what happened and why "
             "it matters. Be specific — name papers, organisations, numbers.\n\n"
             "Paragraph 2 — PATTERNS: Step back from individual items and identify "
             "one or two emerging patterns, policy shifts, or methodological trends "

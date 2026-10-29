@@ -95,7 +95,8 @@ BUILTIN_DATABASES = [
         "description": (
             "Foundation layer: general MPH knowledge. Health systems, global health, "
             "governance, social determinants, environmental health, NCDs, nutrition, "
-            "mental health, maternal & child health, health economics, Africa, DHIS2. "
+            "mental health, maternal & child health, health economics, regional health, "
+            "health information systems. "
             "The baseline every public health researcher needs."
         ),
         "layer": 1,
@@ -138,25 +139,33 @@ BUILTIN_DATABASES = [
             "concepts",
         ],
     },
-    {
-        # Public-Health-edition layer (Metis). NTD program knowledge + general
-        # HAT awareness — roadmaps, global reports, malaria, disease factsheets.
-        # The DEEP, personal HAT corpus lives in the separate local 'hat-specialist'
-        # custom database (never shipped). See project_knowledge_layer_architecture.
-        "slug": "ntd",
-        "name": "Neglected Tropical Diseases",
-        "description": (
-            "Specialist PH layer: neglected tropical disease program knowledge — WHO NTD "
-            "roadmaps and targets, the global NTD report, malaria, and general HAT/sleeping-"
-            "sickness awareness. The baseline NTD reference frame for the public-health edition."
-        ),
-        "layer": 3,
-        "color": "#dc3545",
-        "folders": [
-            "open-access-books/NTDs",
-        ],
-    },
 ]
+
+
+
+def _domain_builtin_databases() -> list:
+    """Layers a machine adds to the built-ins, from its local domain settings.
+
+    A subject-specific layer (a disease programme's reference shelf, say) is not
+    something every installation should be offered. It is declared under
+    `knowledge_layers_builtin` in system/config/local/domain.d/*.json, with the
+    same shape as the entries above, and is then treated exactly like a built-in:
+    seeded when its folders exist, indexed from its folder list. Default: none.
+    """
+    try:
+        from metis_mcp.domain import domain
+        extra = domain("knowledge_layers_builtin", []) or []
+    except Exception:
+        return []
+    out = []
+    for d in extra:
+        if isinstance(d, dict) and d.get("slug") and d.get("folders"):
+            out.append({"name": d["slug"], "description": "", "layer": 4,
+                        "color": "#6c757d", **d})
+    return out
+
+
+BUILTIN_DATABASES = BUILTIN_DATABASES + _domain_builtin_databases()
 
 # ── Schema ─────────────────────────────────────────────────────────────────────
 
@@ -211,8 +220,8 @@ def _builtin_has_content(db: dict) -> bool:
 def _seed_builtin_databases(conn) -> None:
     """Insert built-in database definitions — but only ones with content here.
 
-    These three built-ins are public-health flavoured (PH Background, Epidemiology
-    & Methods, NTDs). Seeding them unconditionally meant the published BASE edition,
+    The built-ins are public-health flavoured (PH Background, Epidemiology
+    & Methods, plus any a machine adds locally). Seeding them unconditionally meant the published BASE edition,
     which is meant to be domain-agnostic and to ship empty, greeted every new user
     with three empty specialist layers they never chose — and it contradicted the
     Phase-4 story that backgrounds are things you install.
@@ -300,14 +309,27 @@ def _chunk_text(text: str) -> List[str]:
     return chunks
 
 
-_ACRONYMS = {"WHO","CDC","NTD","HAT","HIV","AMR","NCD","UHC","SDH","DHIS2",
+_ACRONYMS = {"WHO","CDC","HIV","AMR","NCD","UHC","SDH",
              "AFRO","PAHO","ECDC","GBD","DALY","TB","ANC","AI","ML","API"}
+
+
+def _acronyms() -> set:
+    """Generic acronyms plus any a machine adds under `title_acronyms`."""
+    try:
+        from metis_mcp.domain import domain
+        extra = domain("title_acronyms", []) or []
+    except Exception:
+        extra = []
+    return _ACRONYMS | {str(a).upper() for a in extra}
+
+
 
 def _infer_title(path: Path) -> str:
     stem = re.sub(r"^\d+_", "", path.stem)
     stem = stem.replace("-", " ").replace("_", " ")
     words = stem.split()
-    return " ".join(w.upper() if w.upper() in _ACRONYMS else w.capitalize() for w in words)
+    acronyms = _acronyms()
+    return " ".join(w.upper() if w.upper() in acronyms else w.capitalize() for w in words)
 
 
 def _encode_vec(v: List[float]) -> bytes:
@@ -407,8 +429,8 @@ def _collect_pdfs_for_db(db_slug: str) -> List[Path]:
         #
         # Without the second attempt, a collection can only be indexed if it lives
         # under knowledge/library, and nothing tells you when one doesn't. That is
-        # how 211 sleeping-sickness papers in inputs/literature/ stayed invisible to
-        # content search while the dashboard happily reported the hat-specialist
+        # how 211 subject papers in inputs/literature/ stayed invisible to
+        # content search while the dashboard happily reported the specialist
         # layer as present (it had 10 books from a different folder). Library-root
         # first keeps every existing folder mapping resolving exactly as before.
         # Absolute path → use as given. The researcher's reference-manager library
@@ -494,7 +516,7 @@ def set_knowledge_layer_enabled(database: str, enabled: bool = True) -> str:
     reaches it.
 
     Args:
-        database: The layer's slug (e.g. 'ph-background', 'hat-specialist').
+        database: The layer's slug (e.g. 'ph-background', 'epi-methods').
         enabled: True to include it in searches, False to exclude it.
     """
     try:
@@ -690,7 +712,7 @@ def _index_one_pdf(conn, pdf_path: Path, lib_root: Path, db_id: int,
 async def list_knowledge_databases() -> list[TextContent]:
     """List all knowledge databases (layers) registered in Metis.
 
-    Shows built-in databases (PH background, HAT specialist, Epi methods) and any
+    Shows built-in databases (PH background, Epi methods) and any
     custom databases the user has created. Reports layer, document count, chunk count,
     and last build date.
     """
@@ -728,7 +750,7 @@ async def list_knowledge_databases() -> list[TextContent]:
         lines.append("")
 
     lines.append("  To index a layer: build_pdf_knowledge_db(database='<slug>')")
-    lines.append("  To search layers: search_pdf_knowledge(query, databases=['ph-background','hat-specialist'])")
+    lines.append("  To search layers: search_pdf_knowledge(query, databases=['ph-background','epi-methods'])")
 
     return [TextContent(type="text", text="\n".join(lines))]
 
@@ -741,7 +763,7 @@ async def build_pdf_knowledge_db(
     """Index a knowledge database layer from PDFs into the semantic knowledge base.
 
     Uses local nomic-embed-text-v1.5-Q (fastembed, ONNX) — no API key required.
-    Each database is a named layer: 'ph-background', 'hat-specialist', 'epi-methods',
+    Each database is a named layer: 'ph-background', 'epi-methods',
     or any custom database slug created via create_knowledge_database().
 
     Args:
@@ -855,7 +877,7 @@ async def build_pdf_knowledge_db(
         lines += ["", f"  Failed ({len(failed)}):", *[f"    - {f}" for f in failed[:10]]]
     lines += [
         "",
-        f"  Next: build_pdf_knowledge_db(database='hat-specialist') or",
+        f"  Next: build_pdf_knowledge_db(database='{database}') or",
         f"        search_pdf_knowledge('your query', databases=['{database}'])",
     ]
     return [TextContent(type="text", text="\n".join(lines))]
@@ -875,13 +897,13 @@ async def search_pdf_knowledge(
     notes/memory (not documents) use semantic_search.
 
     Searches indexed PDF chunks using 768-dim nomic-embed vector similarity.
-    You can search a single layer or combine layers (e.g. PH background + HAT specialist).
+    You can search a single layer or combine layers (e.g. PH background + Epi methods).
 
     Args:
         query: Natural language question or keyword phrase to embed and match.
         databases: List of database slugs to search; pass None (the default) to
             search all indexed databases. Examples: ['ph-background'],
-            ['hat-specialist', 'epi-methods'].
+            ['ph-background', 'epi-methods'].
         top_k: Number of results to return (default 8).
 
     Returns:
@@ -950,14 +972,14 @@ async def search_pdf_knowledge(
     #
     # The pool was a flat min(top_k*4, 80) taken globally. With the layer filter
     # applied afterwards, a layer holding 4% of the corpus keeps roughly 4% of those
-    # 80 candidates — about three. Measured before this fix: asking the ntd layer
+    # 80 candidates — about three. Measured before this fix: asking a small layer
     # (970 of 24,015 chunks) for 8 results on "mass drug administration coverage"
     # returned 3, not because the layer lacked passages but because they never
     # entered the pool.
     #
     # It is a scaling landmine rather than a static bug: every background added
-    # dilutes every other one, so the day the HAT layer grew from 10 documents to
-    # 221 it silently degraded retrieval for NTD, epi-methods and PH background.
+    # dilutes every other one, so the day one specialist layer grew from 10
+    # documents to 221 it silently degraded retrieval for every other layer.
     #
     # Over-fetch by the inverse of the filtered layers' share of the corpus, capped
     # so a very narrow layer cannot ask for an unbounded scan.
@@ -1132,17 +1154,17 @@ async def create_knowledge_database(
     build_pdf_knowledge_db(database='<slug>') to index them.
 
     Args:
-        slug:        URL-safe identifier (e.g. 'dhis2-specialist', 'malaria-research').
-        name:        Human-readable name (e.g. 'DHIS2 Specialist Knowledge').
+        slug:        URL-safe identifier (e.g. 'cardiology-specialist', 'soil-ecology').
+        name:        Human-readable name (e.g. 'Cardiology Specialist Knowledge').
         description: What this database covers.
         layer:       Layer number (4+ for custom; built-ins use 1–3).
         folders:     List of library subfolder paths to include
-                     (e.g. ['open-access-books/Health Informatics & DHIS2']).
+                     (e.g. ['open-access-books/Health Economics']).
     """
     if not re.match(r'^[a-z0-9][a-z0-9-]*$', slug):
         return [TextContent(type="text", text=(
             f"Invalid slug '{slug}'. Use lowercase letters, numbers, and hyphens only. "
-            f"Example: 'dhis2-specialist'"
+            f"Example: 'cardiology-specialist'"
         ))]
 
     conn = _connect()

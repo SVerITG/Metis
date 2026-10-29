@@ -734,7 +734,7 @@ _STOP = {
     # because they are longer than four letters, and `_terms` sorts by LENGTH —
     # so a verb doing no work in the sentence can outrank the subject.
     #
-    # Measured: the idea "STARD-AI could be the checklist we hold NTD
+    # Measured: the idea "STARD-AI could be the checklist we hold malaria
     # diagnostic-AI papers to" reduced to
     #     ['diagnostic-ai', 'checklist', 'stard-ai', 'papers', 'hold']
     # and "hold" then selected three of its five news nodes — "Africa's rocks

@@ -2,10 +2,10 @@
 """Remove a duplicate document from the PDF corpus — both halves of it.
 
 WHY THIS EXISTS
-    The DHIS2 Implementation Guide was indexed twice under two filenames, 322
+    A software implementation guide was indexed twice under two filenames, 322
     chunks each, byte-identical. Every semantic search that matched it therefore
     spent TWO of its six result slots on the same passage. The symptom looks
-    like "Metis is obsessed with DHIS2"; the cause is that half the retrieval
+    like "Metis is obsessed with that software"; the cause is that half the retrieval
     budget was being handed to one duplicated document.
 
 WHY IT IS A SCRIPT AND NOT A DELETE STATEMENT
@@ -27,7 +27,7 @@ SAFETY
 USAGE
     python3 tools/dedupe_corpus.py                       # list duplicate groups
     python3 tools/dedupe_corpus.py --apply               # remove the redundant copies
-    python3 tools/dedupe_corpus.py --title "DHIS2 Implementation Guide 2023 Dl29gy3" --apply
+    python3 tools/dedupe_corpus.py --title "Platform Implementation Guide 2023 Ab12cd3" --apply
 """
 from __future__ import annotations
 

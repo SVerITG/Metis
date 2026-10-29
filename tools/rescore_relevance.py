@@ -64,7 +64,7 @@ def main() -> int:
     # overwrite thousands of stored scores. A check that cannot fail is
     # decoration; this one is given a case built to fail.
     near, far = score_batch_profile([
-        "Spatial risk mapping of sleeping sickness transmission",
+        "Spatial risk mapping of malaria transmission",
         "Cerebrovascular injury following manual strangulation",
     ], profile)
     print(f"control: near={near:.3f}  far={far:.3f}  separation={near - far:.3f}")

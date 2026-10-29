@@ -44,6 +44,9 @@ TOOL_MODULES = [
     "paperqa_search", "voice_capture", "knowledge_db", "background_packs", "decisions_ledger", "office", "session_memory",
     "memory_curator", "memory_gateway", "research", "research_timeline", "project_tracker", "dhis2",
     "discovery", "code_repository", "script_analyzer", "tool_search", "prompts",
+    # DATA MEMORY — the data-protected analysis mode: files, columns, values and
+    # stories learnt from the researcher's code, never from the data itself.
+    "data_memory",
     # ACCOUNTS — which account (work/personal) each project pushes and publishes to.
     "accounts",
     # MCP RESOURCES — the third protocol primitive, unused until 2026-08-21.
@@ -102,12 +105,21 @@ TOOL_MODULES = [
     # that kept method and look fused so neither could be reused without the
     # other. `outputs/visualizations/` held one file after three months.
     "viz_library",
+    # INSTITUTION PACK — an edition's institute templates, procedures and
+    # actions (packs/<id>/pack.json). Inert without an edition that names one.
+    "pack",
 ]
 
 LOADED_MODULES: list[str] = []
 FAILED_MODULES: dict[str, str] = {}
+# An edition (system/config/edition.json) can switch modules off. Skipped, not
+# failed: a module an edition leaves out is a decision, not a fault.
+from metis_mcp.edition import module_on as _module_on  # noqa: E402
+EDITION_SKIPPED: list[str] = [m for m in TOOL_MODULES if not _module_on(m)]
 
 for _name in TOOL_MODULES:
+    if _name in EDITION_SKIPPED:
+        continue
     try:
         _importlib.import_module(f"metis_mcp.tools.{_name}")
         LOADED_MODULES.append(_name)

@@ -40,7 +40,7 @@
            Why it matters: `read_at` is what the whole anti-repetition ladder
            joins on. On 20 August the brief went unmarked, so cooldown, the
            mention-block and angle rotation were all inert, and
-           `tuberculosis-drc` led two days running with the identical
+           `tuberculosis-outbreak` led two days running with the identical
            'operational' angle. An unclicked button is not a cosmetic problem
            here; it is the input the rotation runs on. #}
         <button class="btn btn--primary btn--sm u-mono" type="button"
@@ -102,6 +102,12 @@
       Caught in review 2026-09-15. -#}
   <div class="brief-cols{{ ' has-rail' if (show_rail and not collapsed) else '' }}">
     <div class="brief-main">
+  {% if desktop_waiting|default(false) %}
+    <div class="u-label u-mb-3 brief-desktop-note">
+      Today's brief comes from Claude Desktop's morning task and hasn't arrived yet{% if brief %} — below is the last one{% endif %}.
+      To get it now: Claude Desktop &rarr; <strong>Scheduled</strong> &rarr; your Metis task &rarr; <strong>Run now</strong>. No task yet? Ask Claude Desktop to “set up my morning briefing”.
+    </div>
+  {% endif %}
   {% if brief %}
   <p class="brief-lede ed{% if collapsed %} is-folded{% endif %}" id="brief-lede">{{ brief.split("\n\n")[0] }}</p>
   <button type="button" class="brief-more" id="brief-more" onclick="toggleBrief()"

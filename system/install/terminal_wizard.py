@@ -39,7 +39,7 @@ def _ask(prompt: str, default: str = "", required: bool = False, min_len: int = 
         if not val and default:
             return default
         # Reject obvious placeholder input (e.g. a single letter) for identity
-        # fields — this is what produced the "jon is a k working in ntd" persona.
+        # fields — single-letter answers once produced a nonsense persona.
         if val and min_len and len(val) < min_len:
             print(f"  (please enter at least {min_len} characters — that looks like a placeholder)")
             continue
@@ -121,7 +121,7 @@ def run_wizard(metis_root: Path, api_key: str | None) -> dict:
     print("  Takes about 3 minutes. Press Ctrl+C any time to cancel.")
 
     # ── Section 1: Who are you ────────────────────────────────────────────────
-    _banner("1 / 4  About you")
+    _banner("1 / 5  About you")
     detected_name = _detect_name()
     name         = _ask("Your name", default=detected_name, required=True, min_len=2)
     institution  = _ask("Institution or organisation")
@@ -130,7 +130,7 @@ def run_wizard(metis_root: Path, api_key: str | None) -> dict:
     language     = _ask("Preferred language for Metis responses", default="English")
 
     # ── Section 2: Research ───────────────────────────────────────────────────
-    _banner("2 / 4  Your research")
+    _banner("2 / 5  Your research")
     field   = _ask("Primary research field", required=True, min_len=3)
     topics  = _ask(
         "Key research topics (comma-separated)",
@@ -148,7 +148,7 @@ def run_wizard(metis_root: Path, api_key: str | None) -> dict:
     )
 
     # ── Section 3: Working style ──────────────────────────────────────────────
-    _banner("3 / 4  How you like to work")
+    _banner("3 / 5  How you like to work")
     feedback_style = _ask_choice(
         "How direct should Metis be with feedback?",
         [
@@ -178,7 +178,7 @@ def run_wizard(metis_root: Path, api_key: str | None) -> dict:
     )
 
     # ── Section 4: Projects ───────────────────────────────────────────────────
-    _banner("4 / 4  Your active projects")
+    _banner("4 / 5  Your active projects")
     print("  Add your active projects one by one. Press Enter with an empty name to finish.")
     print("  For each project you can optionally give a folder path — Metis will")
     print("  create a CLAUDE.md there and register it in Claude Desktop.\n")
@@ -246,6 +246,21 @@ def run_wizard(metis_root: Path, api_key: str | None) -> dict:
         "What are your main challenges right now?"
     )
 
+    # ── Section 5: Your scripts (Data Memory) ─────────────────────────────────
+    _banner("5 / 5  Your analysis scripts")
+    print("  Metis can learn your data from your R scripts — the CODE only, never the")
+    print("  data files: which datasets you have, where they live, the columns and")
+    print("  values your scripts use, and the figures you already make. It then writes")
+    print("  new R scripts for you to run on your own computer.")
+    print("  Give the folders that hold your scripts, one per line (empty line to finish;")
+    print("  just Enter to skip). A top folder is fine; old copies are skipped.")
+    script_folders = []
+    while True:
+        f = _ask("  Script folder" if not script_folders else "  Another folder")
+        if not f:
+            break
+        script_folders.append(f)
+
     return {
         "name": name,
         "institution": institution,
@@ -264,6 +279,7 @@ def run_wizard(metis_root: Path, api_key: str | None) -> dict:
         "scan_type": scan_type,
         "short_term_goals": short_term_goals,
         "challenges": challenges,
+        "script_folders": script_folders,
     }
 
 
@@ -319,6 +335,21 @@ def main():
         for p in result["projects"]:
             name = Path(p).stem.replace("-", " ").title()
             print(f"  ✓  Project: {name}")
+
+        dmem = result.get("data_memory") or {}
+        for f in dmem.get("missing", []):
+            print(f"  ⚠  Script folder not found: {f}")
+        if dmem.get("registered"):
+            # A terminal can show progress, so the scripts are learnt here and now.
+            from process_wizard_answers import _data_memory_module, live_db_path
+            dm = _data_memory_module(metis_root)
+            print(f"  …  Learning {dmem['scripts']} scripts (code only, no data is opened)")
+            for run in dm.refresh(db=live_db_path(metis_root)):
+                if "error" in run:
+                    print(f"  ⚠  {run['root']}: {run['error']}")
+                else:
+                    print(f"  ✓  {run['root']}: {run['scripts']} scripts, "
+                          f"{run['reads']} data files read, {run['writes']} outputs")
 
         print()
         print("━" * 66)

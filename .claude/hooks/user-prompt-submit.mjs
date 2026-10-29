@@ -28,7 +28,7 @@
  *     makes irrelevant papers look like evidence.
  *   · PORTABILITY. Trigger terms are DERIVED from the user's profile, topics and
  *     the domains present in their own corpus — fetched from the dashboard, not
- *     hard-coded. A list naming trypanosomes would be useless to anyone else.
+ *     hard-coded. A list naming one disease's vocabulary would be useless to anyone else.
  *
  * Hook input  (stdin) : JSON { prompt, session_id, ... }
  * Hook output (stdout): JSON { hookSpecificOutput: { additionalContext } }
@@ -161,29 +161,29 @@ function looksLikeDomainQuestion(prompt, terms) {
   if (OPERATIONAL.test(p)) return false;
 
   // Skip work ON Metis itself. The corpus is research literature; grounding a
-  // question about the dashboard, the MCP server or this repo in NTD papers
+  // question about the dashboard, the MCP server or this repo in field papers
   // helps nobody. Added 2026-08-25 after "what are the decisions to take now?"
   // — a question about this session's open items — was grounded in Bayesian
   // decision analysis, because "decision" is a corpus trigger term.
   //
   // Deliberately NOT in this list: "agent", "session", "endpoint", "database",
   // "control". Each is system vocabulary here but ALSO field vocabulary for
-  // this researcher — a trypanocidal agent, a screening session, a primary
-  // endpoint, a DHIS2 database, vector control. Blocking them would suppress
+  // a researcher — an antimalarial agent, a screening session, a primary
+  // endpoint, a REDCap database, vector control. Blocking them would suppress
   // grounding on real research questions, which is the costlier error.
   // PLURALS. This list was singular-only, and `\bdashboard\b` does not match
   // "dashboards" — the trailing "s" is a word character, so the closing \b
   // never lands. On 2026-08-28 the question "which are the dashboards you are
-  // comparing yourself with" was therefore grounded in a DHIS2 manual. It is
+  // comparing yourself with" was therefore grounded in a software manual. It is
   // the same defect as the news-thread alias matcher, where a one-sided \b let
   // "mali" match "malignant": a boundary written without testing the inflected
   // forms. Every term that can take an -s now says so.
   if (IS_SYSTEM_WORK.test(p)) return false;
 
   // "agent" is Metis vocabulary (one of the 33 specialists) AND field vocabulary
-  // (a trypanocidal agent, the causative agent). The word alone settles nothing,
+  // (an antimalarial agent, the causative agent). The word alone settles nothing,
   // so gate on the companions that only ever accompany the Metis sense — leaving
-  // "what agents are effective against gambiense HAT?" free to ground.
+  // "what agents are effective against resistant malaria?" free to ground.
   const METIS_AGENT = /\bagents?\b[^.?!]*\b(registered|dispatch\w*|routing|route|slug|subagent|specialist|system prompt)\b|\b(registered|dispatch\w*|routing|slug|subagent|specialist)\b[^.?!]*\bagents?\b/;
   if (METIS_AGENT.test(p)) return false;
 
@@ -277,7 +277,7 @@ function looksLikeDomainQuestion(prompt, terms) {
 /**
  * Does this prompt ask for a QUANTITY?
  *
- * A question like "what is the specificity of CATT" needs something the passage
+ * A question like "what is the specificity of the rapid test" needs something the passage
  * injection below cannot give: the SPREAD across sources. This corpus holds
  * specificity estimates from 59% to 100%, so six top-k passages are six samples
  * from a distribution, and an answer built from them reads as one settled number.

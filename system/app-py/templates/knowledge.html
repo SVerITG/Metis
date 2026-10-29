@@ -87,10 +87,16 @@
               aria-selected="true"
               title="What has appeared since you last looked"
               onclick="libTab('new')">New</button>
-      <button class="news-tab" role="tab" type="button" data-libtab="hat"
+      {#- FOCUS. A tab for the one subject a researcher's library is built around.
+          Only present when that subject is configured on this machine; a fresh
+          install has no such tab. -#}
+      {% set focus = library_focus() if library_focus is defined else none %}
+      {% if focus %}
+      <button class="news-tab" role="tab" type="button" data-libtab="{{ focus.tab }}"
               aria-selected="false"
-              title="Your sleeping-sickness corpus: what you hold, what Metis can read, and what your own citations say is missing"
-              onclick="libTab('hat')">HAT</button>
+              title="{{ focus.tooltip }}"
+              onclick="libTab('{{ focus.tab }}')">{{ focus.label }}</button>
+      {% endif %}
       {#- READING. The Stack used to be a top-level surface holding ZERO items,
           ranked alongside a 3,083-item Library. The researcher, 2026-08-29: "The reading
           stack needs to live somewhere else, not as one of the surfaces but it
@@ -147,14 +153,16 @@
     </div>
   </div>
 
-  <!-- ── panel: hat ──────────────────────────────────────────────────── -->
-  <div class="lib-panel" id="libpanel-hat" role="tabpanel" hidden>
-    <div hx-get="/api/partial/library/hat"
+  <!-- ── panel: focus subject (only when configured) ─────────────────── -->
+  {% if focus %}
+  <div class="lib-panel" id="libpanel-{{ focus.tab }}" role="tabpanel" hidden>
+    <div hx-get="/api/partial/library/focus"
          hx-trigger="loadtab"
          hx-swap="outerHTML">
       <div class="panel skeleton skeleton-box" style="height:300px;"></div>
     </div>
   </div>
+  {% endif %}
 
   <!-- ── panel: catalogue ──────────────────────────────────────────────────── -->
   <div class="lib-panel" id="libpanel-reading" role="tabpanel" hidden>
@@ -194,9 +202,8 @@
             ('Recent papers', 'recent'),
             ('My unread', 'unread'),
             ('Multilevel models', 'multilevel'),
-            ('Surveillance methods', 'surveillance'),
-            ('DRC', 'DRC')
-          ] %}
+            ('Surveillance methods', 'surveillance')
+          ] + (library_search_chips() if library_search_chips is defined else []) %}
           {% for label, q in quick_queries %}
           <button class="u-label" type="button"
                   onclick="(function(){var el=document.getElementById('unified-search-input');if(!el)return;el.value='{{ q }}';el.dispatchEvent(new Event('keyup'));el.focus();})()"
@@ -299,7 +306,7 @@
 
   <!-- ===== Knowledge Corpus ===== -->
   <div style="margin-top:var(--m-space-6);">
-    <div hx-get="/api/partial/knowledge/hat-corpus"
+    <div hx-get="/api/partial/knowledge/seeded-corpus"
          hx-trigger="loadtab"
          hx-swap="outerHTML">
       <div>

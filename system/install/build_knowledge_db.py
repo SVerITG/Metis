@@ -8,8 +8,11 @@ Built-in databases (base Metis):
   ph-background   Layer 1: General MPH, global health, health systems
   epi-methods     Layer 2: Epidemiology methods, biostatistics, spatial, multilevel
 
-Domain-specific layers (added by variant installs, e.g. the public-health pack):
-  hat-specialist  Public-health specialist literature — seeded by seed_ph_database.py
+Domain-specific layers are not defined here. A machine can add its own under
+`knowledge_layers_installer` in system/config/local/domain.d/*.json (never
+shipped); each entry has the same shape as one below, plus an optional
+`library_dir_pref` naming a user-preferences.json key whose path replaces the
+library directory for that layer.
 
 Usage:
     python3 build_knowledge_db.py                              # index all layers
@@ -47,44 +50,15 @@ from typing import Generator, List, Optional, Tuple
 
 # ── Layer definitions ─────────────────────────────────────────────────────────
 
-DATABASES = [
-    {
-        "slug": "hat-specialist",
-        "name": "Specialist Literature",
-        "description": (
-            "Public-health specialist layer: domain research corpus — diagnostics, screening & surveillance, "
-            "statistics & modelling, methodology, epidemiology, elimination, WHO Atlas, clinical."
-        ),
-        "layer": 3,
-        "color": "#dc3545",
-        "folders": [
-            "Diagnostics",
-            "Screening & Surveillance",
-            "Statistics & Mathematical Modelling",
-            "Methodology",
-            "Epidemiology",
-            "WHO Atlas",
-            "Elimination",
-            "Integration",
-            "Clinical & Treatment",
-            "History",
-            "Overview",
-            "Burden",
-            "Vector & Vector Control",
-            "Determinants and risks",
-            "Community",
-            "Health Economics",
-            "PNLTHA",
-            "Multi-NTD",
-        ],
-    },
+_GENERIC_DATABASES = [
     {
         "slug": "ph-background",
         "name": "Public Health Background",
         "description": (
             "Foundation layer: general MPH knowledge — health systems, global health, "
             "governance, social determinants, environmental health, NCDs, nutrition, "
-            "mental health, maternal & child health, health economics, DHIS2."
+            "mental health, maternal & child health, health economics, health "
+            "information systems."
         ),
         "layer": 1,
         "color": "#0d6efd",
@@ -128,12 +102,53 @@ DATABASES = [
     },
 ]
 
+
+def _domain_setting(key: str, default):
+    """A machine-local domain setting (system/config/local/domain.d/*.json).
+
+    Read directly rather than through metis_mcp.domain, because this script runs
+    standalone, without the MCP package on its path. Same merge rule: files in
+    name order, later wins.
+    """
+    import json as _json
+    rc = os.environ.get("METIS_RC_ROOT", "")
+    root = Path(rc) if rc else Path(__file__).resolve().parent.parent.parent
+    merged: dict = {}
+    try:
+        files = sorted((root / "system" / "config" / "local" / "domain.d").glob("*.json"))
+    except OSError:
+        files = []
+    for f in files:
+        try:
+            data = _json.loads(f.read_text(encoding="utf-8-sig"))
+        except (OSError, ValueError):
+            continue
+        if isinstance(data, dict):
+            merged.update(data)
+    return merged.get(key, default)
+
+
+def _domain_databases() -> list:
+    """Layers this machine adds on top of the generic ones. Default: none."""
+    out = []
+    for d in _domain_setting("knowledge_layers_installer", []) or []:
+        if isinstance(d, dict) and d.get("slug") and d.get("folders"):
+            out.append({"name": d["slug"], "description": "", "layer": 4,
+                        "color": "#6c757d", **d})
+    return out
+
+
+# Machine-specific layers first, so their position in `--list` and in a full
+# build is the same as when they were defined inline.
+DATABASES = _domain_databases() + _GENERIC_DATABASES
+
 CHUNK_CHARS   = 3200
 OVERLAP_CHARS = 400
 EMBEDDING_DIM = 768
 
-_ACRONYMS = {"WHO","CDC","NTD","HAT","HIV","AMR","NCD","UHC","SDH","DHIS2",
-             "AFRO","PAHO","ECDC","GBD","DALY","TB","ANC","AI","ML","API"}
+_ACRONYMS = {"WHO","CDC","HIV","AMR","NCD","UHC","SDH",
+             "AFRO","PAHO","ECDC","GBD","DALY","TB","ANC","AI","ML","API"} | {
+    str(a).upper() for a in (_domain_setting("title_acronyms", []) or [])}
 
 # How many PDFs to process before closing and reopening the SQLite connection
 # (releases WAL file memory that accumulates over a long run)
@@ -497,7 +512,7 @@ def index_database(
     slug = db_def["slug"]
     name = db_def["name"]
 
-    # Support per-database library_dir override (e.g. HAT corpus at a different path)
+    # Support per-database library_dir override (e.g. a subject corpus kept elsewhere)
     effective_dir = Path(db_def["library_dir_override"]) if db_def.get("library_dir_override") else library_dir
 
     pdfs: List[Path] = []
@@ -783,23 +798,24 @@ def main() -> None:
               + ", ".join(d["slug"] for d in DATABASES), file=sys.stderr)
         sys.exit(1)
 
-    # For hat-specialist: if --library-dir was not explicitly set, read from user-preferences.json
-    for db_def in to_build:
-        if db_def["slug"] == "hat-specialist" and args.library_dir is None:
-            prefs_path = Path(rc_root) / "system" / "config" / "user-preferences.json" if rc_root else None
-            if prefs_path and prefs_path.exists():
-                try:
-                    import json as _json_prefs
-                    prefs = _json_prefs.loads(prefs_path.read_text(encoding="utf-8"))
-                    hat_lib = prefs.get("library_path", "")
-                    if hat_lib and Path(hat_lib).exists():
-                        db_def = dict(db_def)
-                        db_def["library_dir_override"] = hat_lib
-                        to_build[to_build.index(next(d for d in to_build if d["slug"] == "hat-specialist"))] = db_def
-                        if verbose:
-                            print(f"  Domain library path: {hat_lib}")
-                except Exception as e:
-                    print(f"  Warning: could not read user-preferences.json: {e}", file=sys.stderr)
+    # A layer may name a user-preferences.json key holding its own library folder
+    # (`library_dir_pref`); used when --library-dir was not given explicitly.
+    for i, db_def in enumerate(to_build):
+        pref_key = db_def.get("library_dir_pref")
+        if not pref_key or args.library_dir is not None:
+            continue
+        prefs_path = Path(rc_root) / "system" / "config" / "user-preferences.json" if rc_root else None
+        if prefs_path and prefs_path.exists():
+            try:
+                import json as _json_prefs
+                prefs = _json_prefs.loads(prefs_path.read_text(encoding="utf-8"))
+                own_lib = prefs.get(pref_key, "")
+                if own_lib and Path(own_lib).exists():
+                    to_build[i] = {**db_def, "library_dir_override": own_lib}
+                    if verbose:
+                        print(f"  Domain library path: {own_lib}")
+            except Exception as e:
+                print(f"  Warning: could not read user-preferences.json: {e}", file=sys.stderr)
 
     if verbose:
         print(f"\n══════════════════════════════════════════════════")

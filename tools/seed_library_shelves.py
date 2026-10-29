@@ -41,7 +41,7 @@ SEED = [
     ("diagnostics",   "Diagnostics",        "tracking",
      "New tests, accuracy evidence and how case detection is changing."),
     ("elimination",   "Elimination & policy", "tracking",
-     "Targets, verification, post-elimination surveillance and the policy around them."),
+     "Targets, verification, surveillance after elimination and the policy around them."),
     ("outbreaks",     "Outbreaks",          "tracking",
      "Event-based reporting and outbreak investigations as they happen."),
 ]

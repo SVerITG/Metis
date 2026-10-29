@@ -33,10 +33,10 @@ For each section:
 Writing Partner must preserve domain-consistent language for:
 
 - the user's configured research domain terminology (loaded from user profile)
-- active screening and passive screening (where applicable to the domain)
+- routine versus campaign-based data collection (where applicable to the domain)
 - detection coverage
 - quality assurance
-- elimination of transmission and post-elimination surveillance (where applicable)
+- control, elimination and eradication targets (where applicable)
 - any domain-specific diagnostic or case-finding pathways
 
 ## 4. Methods-writing workflow

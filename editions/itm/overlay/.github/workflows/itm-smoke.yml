@@ -1,0 +1,20 @@
+name: Smoke test (Docker)
+
+# Builds the test image (docker/Dockerfile) and runs docker/smoke_test.py: a new
+# colleague's install, every surface, the ITM pack, and a real fill of the IRB
+# letter. The Windows installer itself is tested by windows-install.yml.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the test image
+        run: docker build -f docker/Dockerfile -t metis-itm-test .
+      - name: Smoke test
+        run: docker run --rm metis-itm-test test

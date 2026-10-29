@@ -13,7 +13,7 @@
 - use the user's configured disease or topic terminology consistently (loaded from user profile)
 - avoid switching terms casually between disease labels or topic labels without purpose
 - preserve distinctions between active and passive surveillance
-- preserve distinctions between elimination, elimination of transmission, and post-elimination surveillance
+- preserve distinctions between control, elimination, and eradication
 - be explicit when discussing diagnostic specificity, sensitivity, or quality assurance
 
 ## Writing rules

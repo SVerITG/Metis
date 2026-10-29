@@ -6,7 +6,7 @@ WHAT WAS WRONG
     which inserts a PDF's filename stem as the title and literally the string
     'unknown' as the authors, with a NULL year:
 
-        title   = '2004_Fèvre_Reanalyzing-the-19001920-Sleeping-Sickness'
+        title   = '2004_Smith_Reanalyzing-the-19001920-Influenza-Epidemic'
         authors = 'unknown'
         year    = NULL
 
@@ -57,7 +57,7 @@ _NOT_AUTHORS = {"who", "unknown", "anon", "various", "et", "al", "report"}
 
 
 def clean_title(raw: str) -> str:
-    """Turn 'Reanalyzing-the-19001920-Sleeping-Sickness' into readable prose."""
+    """Turn 'Reanalyzing-the-19001920-Influenza-Epidemic' into readable prose."""
     t = raw.replace("-", " ").replace("_", " ")
     t = re.sub(r"\s+", " ", t).strip()
     # A run of 8 digits is a mangled year range: 19001920 → 1900-1920.

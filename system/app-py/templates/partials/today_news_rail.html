@@ -75,7 +75,7 @@
         </div>
         <!-- Update dispatch -->
         {%- set claude_news_prompt -%}
-Update my Metis news dispatch. Using the metis-rc tools, scan the latest global-health, neglected-tropical-disease, sleeping-sickness/HAT and epidemiology news, write fresh topic summaries, save them, then show me the highlights most relevant to my work.
+Update my Metis news dispatch. Using the metis-rc tools, scan the latest {{ news_prompt_scope or 'research and science' }} news, write fresh topic summaries, save them, then show me the highlights most relevant to my work.
         {%- endset -%}
         {% set news_update_opts = [
           {'icon': '✦', 'label': 'With Claude Desktop', 'sub': 'free · runs on your subscription, no API tokens',

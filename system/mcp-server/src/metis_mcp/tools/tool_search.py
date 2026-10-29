@@ -43,7 +43,7 @@ _HARD_CORE = {"tool_search"}
 
 # name -> Tool, for every parked (hidden) tool. Populated by partition_tools().
 _PARKED: dict[str, object] = {}
-# name -> short module name (e.g. "dhis2"), for search + group resolution.
+# name -> short module name (e.g. "zotero"), for search + group resolution.
 _TOOL_MODULE: dict[str, str] = {}
 # group name -> list of module short-names (from tool-subsets.json "groups").
 _GROUPS: dict[str, list[str]] = {}
@@ -145,7 +145,7 @@ async def find_tools(query: str, limit: int = 8, ctx: Context = None) -> list[Te
     """Search Metis's full tool catalogue and load the matching tools on demand.
 
     Most Metis tools are kept out of the active set to save context; this finds the
-    ones you need by keyword (e.g. "dhis2 tracker", "clean dataset", "backup",
+    ones you need by keyword (e.g. "zotero sync", "clean dataset", "backup",
     "knowledge graph", "transcribe"), makes them callable, and returns their names.
     After calling this, call the returned tools directly as normal.
 
@@ -201,7 +201,7 @@ async def load_tool_group(group: str, ctx: Context = None) -> list[TextContent]:
     """Load every tool in a named group at once (see list_tool_groups for names).
 
     Use this when you know you'll do several related operations — e.g. group
-    "data" for a full dataset-cleaning session, "specialist" for DHIS2 work.
+    "data" for a full dataset-cleaning session, "specialist" for platform-specific work.
     """
     if not _ACTIVE:
         return [TextContent(type="text", text="Tool search is off — all tools already loaded.")]

@@ -3,7 +3,7 @@
   Goal: type-aware, visually scannable, status at a glance.
 -#}
 {% set zotero_items = items | selectattr("silo", "equalto", "zotero") | list %}
-{% set hat_items    = items | selectattr("silo", "equalto", "hat") | list %}
+{% set corpus_items    = items | selectattr("silo", "equalto", "corpus") | list %}
 {% set card_items   = items | selectattr("silo", "equalto", "card") | list %}
 {% set unread_count = zotero_items | rejectattr("is_read") | list | length %}
 
@@ -62,8 +62,8 @@
     <span>Literature</span>
     <span class="sec-label-tail">
       {% if zotero_items %}{{ zotero_items|length }} ZOTERO{% if unread_count %} · {{ unread_count }} UNREAD{% endif %}{% endif %}
-      {% if zotero_items and hat_items %} · {% endif %}
-      {% if hat_items %}{{ hat_items|length }} DOMAIN CORPUS{% endif %}
+      {% if zotero_items and corpus_items %} · {% endif %}
+      {% if corpus_items %}{{ corpus_items|length }} DOMAIN CORPUS{% endif %}
     </span>
     <a class="u-label" href="/knowledge" style="margin-left:auto;text-decoration:none;">
       OPEN LIBRARY →
@@ -129,14 +129,14 @@
     {% endif %}
 
     {# ---------- DOMAIN CORPUS column ---------- #}
-    {% if hat_items %}
+    {% if corpus_items %}
     <div class="lib-group">
       <div class="lib-group-head">
-        <span class="lib-group-dot lib-group-dot--hat"></span>
+        <span class="lib-group-dot lib-group-dot--corpus"></span>
         <span class="lib-group-label">Domain corpus · recently added</span>
-        <span class="lib-group-count">{{ hat_items|length }}</span>
+        <span class="lib-group-count">{{ corpus_items|length }}</span>
       </div>
-      {% for item in hat_items %}
+      {% for item in corpus_items %}
       <div class="lib-row">
         <div class="lib-row-main">
           {# PDF icon for domain corpus #}
@@ -216,7 +216,7 @@
   flex-shrink: 0;
 }
 .lib-group-dot--zotero { background: var(--m-accent); }
-.lib-group-dot--hat    { background: var(--m-warn); }
+.lib-group-dot--corpus    { background: var(--m-warn); }
 .lib-group-dot--card   { background: var(--m-muted); }
 .lib-group-label {
   font-family: var(--m-mono);

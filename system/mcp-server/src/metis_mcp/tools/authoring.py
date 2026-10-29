@@ -337,6 +337,15 @@ def _template_dirs() -> list[Path]:
         dirs.append(Path(os.environ["METIS_TEMPLATES_DIR"]).expanduser())
     dirs += [paths.root / "system" / "config" / "local" / "templates",
              paths.root / "knowledge" / "templates"]
+    # An edition's institution pack ships its own templates (letterhead, poster,
+    # slides). Searched last, so a researcher's own copy of the same name wins.
+    try:
+        from metis_mcp.edition import pack_dir
+        pd = pack_dir()
+        if pd is not None:
+            dirs.append(pd / "templates")
+    except Exception:  # noqa: BLE001 — a missing pack must not hide local templates
+        pass
     return dirs
 
 

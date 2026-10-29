@@ -97,7 +97,7 @@
 <text x="86" y="287" font-family="'Courier New',monospace" font-size="7.5" fill="#8aa89a" text-anchor="middle">Course Builder</text>
 
 <rect x="134" y="275" width="82" height="17" rx="2" fill="#1a2820" stroke="#2d4a3a" stroke-width="0.6"/>
-<text x="175" y="287" font-family="'Courier New',monospace" font-size="7.5" fill="#8aa89a" text-anchor="middle">DHIS2 Expert</text>
+<text x="175" y="287" font-family="'Courier New',monospace" font-size="7.5" fill="#8aa89a" text-anchor="middle">Platform Expert</text>
 
 <rect x="222" y="275" width="86" height="17" rx="2" fill="#1a2820" stroke="#2d4a3a" stroke-width="0.6"/>
 <text x="265" y="287" font-family="'Courier New',monospace" font-size="7.5" fill="#8aa89a" text-anchor="middle">Data Guardian</text>

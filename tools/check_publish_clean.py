@@ -219,7 +219,14 @@ def check_paths(repo: Path, rules: dict) -> list[Finding]:
         findings.append(Finding(BLOCK, "forbidden-path",
                                 f"{len(hits)} object(s) under a forbidden path",
                                 n, sorted(set(hits))[:6]))
-    hits = [p for p in paths if p.endswith(suffixes)]
+    allowed = set(rules.get("allow_files") or [])
+    granted = sorted({p for p in paths if p.endswith(suffixes) and p in allowed})
+    if granted:
+        # Stated, not silent: an exception nobody can see is how a rule erodes.
+        findings.append(Finding("OK", "allowed-file",
+                                f"{len(granted)} file(s) published by explicit decision",
+                                n, granted[:6]))
+    hits = [p for p in paths if p.endswith(suffixes) and p not in allowed]
     if hits:
         findings.append(Finding(BLOCK, "forbidden-suffix",
                                 f"{len(hits)} object(s) with a forbidden extension",
@@ -620,6 +627,10 @@ def main() -> int:
     ap.add_argument("--since", help="commit the public repository is already at: "
                                     "attribution trailers and tags it contains are "
                                     "published and not re-judged")
+    ap.add_argument("--allow-file", action="append", default=[], metavar="PATH",
+                    help="an exact path exempt from the forbidden-extension rule, "
+                         "because publishing it was decided (e.g. an institution's "
+                         "letter template). Repeatable; listed in the report")
     ap.add_argument("--self-test", action="store_true",
                     help="plant every defect and confirm the checker catches it")
     args = ap.parse_args()
@@ -636,6 +647,7 @@ def main() -> int:
         return 4
 
     rules, notes = load_rules()
+    rules["allow_files"] = list(args.allow_file)
     if args.since:
         rules["since"] = git(repo, "rev-parse", "--verify", args.since + "^{commit}").strip()
     print(f"\ncheck_publish_clean — {repo}\n")

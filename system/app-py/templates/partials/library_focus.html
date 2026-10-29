@@ -1,30 +1,31 @@
 {# ══════════════════════════════════════════════════════════════════════════════
-   library_hat.html — the HAT Library.
+   library_focus.html — the focus library: one subject, three sources.
 
-   One surface for the disease the researcher actually works on. Until 2026-08-21 the
-   material was split across three places that did not know about each other:
+   For a researcher with one dominant subject, the material is split across three
+   places that do not know about each other:
 
-     · the CATALOGUE   (literature_metadata)  — what he holds
+     · the CATALOGUE   (literature_metadata)  — what they hold
      · the CORPUS      (pdf_chunks)           — what Metis can read
-     · the QUEUE       (new_publications)     — what he might add
+     · the QUEUE       (new_publications)     — what they might add
 
-   Each answered a different question and none answered "how complete is my HAT
-   library?". This puts the three side by side and adds the thing none of them
-   had: search across the FULL TEXT of his own papers.
+   Each answers a different question and none answers "how complete is my
+   library on this subject?". This puts the three side by side and adds the thing
+   none of them had: search across the FULL TEXT of their own papers.
 
    Deliberately NO completeness score. Any single percentage would be invented —
-   there is no denominator for "all HAT literature that exists". Counts per theme
+   there is no denominator for "all the literature that exists". Counts per theme
    are honest; a score would not be.
+
+   Only rendered when the subject is configured (see library_focus()).
    ══════════════════════════════════════════════════════════════════════════════ #}
 {% from "partials/_section.html" import sec_label %}
 
-<div id="hat-library">
+<div id="focus-library">
 
   <div class="u-mb-4">
-    {{ sec_label("HAT Library", tail="SLEEPING SICKNESS · YOUR OWN CORPUS") }}
+    {{ sec_label(focus.title, tail=focus.tail) }}
     <div class="u-ed" style="font-size:var(--t-body);max-width:70ch;">
-      Everything Metis holds on human African trypanosomiasis — catalogued, indexed,
-      and searchable by what the papers say rather than what they are called.
+      {{ focus.intro }}
     </div>
   </div>
 
@@ -39,7 +40,7 @@
         {{ catalogue }}
       </div>
       <div class="ed" style="font-size:var(--t-meta);margin:var(--m-space-2) 0 0;">
-        References mentioning a trypanosome, tsetse or sleeping sickness.
+        {{ focus.catalogue_note }}
       </div>
     </div>
 
@@ -73,15 +74,15 @@
   <!-- ── Search the corpus itself ──────────────────────────────────────── -->
   <div class="panel u-mb-5 panel--md">
     {{ sec_label("Ask your own papers", tail="FULL TEXT · NOT TITLES") }}
-    <input class="u-tile" type="search" id="hat-corpus-q" name="q"
-           placeholder="e.g. sensitivity of CATT in low-prevalence settings, or the role of animal reservoirs…"
+    <input class="u-tile" type="search" id="focus-corpus-q" name="q"
+           placeholder="{{ focus.placeholder }}"
            autocomplete="off"
-           hx-get="/api/partial/library/hat/search"
+           hx-get="/api/partial/library/focus/search"
            hx-trigger="keyup changed delay:500ms"
-           hx-target="#hat-corpus-results" hx-swap="innerHTML"
+           hx-target="#focus-corpus-results" hx-swap="innerHTML"
            hx-include="this"
-           style="width:100%;font-family:var(--m-ui);font-size:var(--t-body);padding:var(--m-space-3) var(--m-space-4);color:var(--m-ink);" aria-label="e.g. sensitivity of CATT in low-prevalence settings, or the role of animal reservoirs">
-    <div id="hat-corpus-results" style="margin-top:var(--m-space-3);">
+           style="width:100%;font-family:var(--m-ui);font-size:var(--t-body);padding:var(--m-space-3) var(--m-space-4);color:var(--m-ink);" aria-label="{{ focus.placeholder }}">
+    <div id="focus-corpus-results" style="margin-top:var(--m-space-3);">
       <div class="u-ed" style="font-size:var(--t-small);padding:var(--m-space-2) 0;">
         This searches inside the {{ indexed_files }} PDFs themselves — the passages, not the titles.
       </div>
@@ -89,6 +90,7 @@
   </div>
 
   <!-- ── Coverage by theme ─────────────────────────────────────────────── -->
+  {% if themes %}
   <div class="u-mb-5">
     {{ sec_label("Coverage by theme", tail="COUNTS · NOT A SCORE") }}
     <div class="panel panel--md">
@@ -106,11 +108,12 @@
       {% endfor %}
       <div class="ed u-rule-t" style="font-size:var(--t-meta);margin:var(--m-space-4) 0 0;padding-top:12px;">
         Bars are relative to your strongest theme, not to the literature as a whole —
-        there is no honest denominator for “all HAT research that exists”, so this
+        there is no honest denominator for “all {{ focus.subject }} research that exists”, so this
         shows where <em>your</em> library is thin rather than pretending to score it.
       </div>
     </div>
   </div>
+  {% endif %}
 
   <!-- ── The gaps ──────────────────────────────────────────────────────── -->
   {% if gaps %}
@@ -145,7 +148,7 @@
     <div class="ed" style="font-size:var(--t-meta);margin-top:var(--m-space-3);">
       The multiplier is how many papers in <em>your</em> library cite it — a relevance
       signal no keyword search can produce, because it comes from your own corpus.
-      {% if gaps_total > gaps|length %}Showing {{ gaps|length }} of {{ gaps_total }}; the rest are in the HAT tab above.{% endif %}
+      {% if gaps_total > gaps|length %}Showing {{ gaps|length }} of {{ gaps_total }}; the rest are in the {{ focus.label }} tab above.{% endif %}
     </div>
   </div>
   {% endif %}

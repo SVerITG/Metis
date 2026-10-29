@@ -568,7 +568,7 @@ pre code { background: transparent; padding: 0; color: inherit; }
        A pill is a STATE — something that is true right now and will
        stop being true later ("overdue", "changed", "new today").
        Plain small text is a CATEGORY — a permanent fact about the
-       item ("software", "preprint", "sleeping-sickness"). Categories
+       item ("software", "preprint", "climate-adaptation"). Categories
        are the majority of labels on screen, so they get the quietest
        possible form: no background, no border, no box.
 
@@ -616,7 +616,7 @@ pre code { background: transparent; padding: 0; color: inherit; }
   border-radius: 50%; background: var(--m-rule-strong); margin-right: 10px; }
 
 /* Truncation is a DISPLAY problem and belongs here, not in the template.
-   `p.category[:16]` in Jinja produced "SLEEPING-SICKNES" — a word cut mid-
+   `p.category[:16]` in Jinja produced "CLIMATE-ADAPTATI" — a word cut mid-
    syllable with no ellipsis, so the reader cannot tell whether the label is
    clipped or simply spelled that way. CSS clips at the available width and
    always draws the ellipsis, and the full text stays in the DOM for the
@@ -624,7 +624,7 @@ pre code { background: transparent; padding: 0; color: inherit; }
 .tag--clip { max-width: 24ch; overflow: hidden; text-overflow: ellipsis; display: inline-block; vertical-align: bottom; }
 
 /* The one category allowed a colour, because it does not describe the subject
-   matter (like "software" or "sleeping-sickness") but what the card OPENS.
+   matter (like "software" or "climate-adaptation") but what the card OPENS.
    Still a category, so still no box — the rule holds. */
 .tag--accent { color: var(--m-ochre-deep); }
 [data-theme="observatory"] .tag--accent,
@@ -1386,6 +1386,8 @@ a.board-item-title:hover { color: var(--m-accent); }
 }
 .brief-words { color: var(--m-muted); margin-left: auto; }
 .brief-more:hover { text-decoration: underline; }
+/* Desktop mode: today's brief is written by a Claude Desktop scheduled task. */
+.brief-desktop-note { max-width: 720px; line-height: 1.6; }
 .brief-more:focus-visible { outline: 2px solid var(--m-accent); outline-offset: 3px; }
 .brief-body { line-height: 1.7; color: var(--m-ink); white-space: pre-wrap; }
 

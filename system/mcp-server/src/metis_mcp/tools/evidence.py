@@ -8,7 +8,7 @@ WHY THIS EXISTS, AND WHY IT IS NOT `verification.py`
     to land on one of them.
 
     Measured in this corpus on 2026-08-24: **438 quantified sensitivity /
-    specificity statements**, with specificity for serological HAT tests ranging
+    specificity statements**, with specificity for one family of serological tests ranging
     from **72% to 99.7%**. Ask "what is the specificity?" and a model returns one
     confident number. Which one is close to arbitrary, and the answer looks
     perfectly sourced either way. Citation checking cannot see this failure at
@@ -88,6 +88,22 @@ METRIC_FAMILIES: dict[str, list[str]] = {
     ],
 }
 
+# Subject-specific vocabulary for two of the qualifiers below. A field's own
+# reference tests and the places its studies are run are not generic, so they come
+# from the machine-local domain settings (lists of regex alternatives); the generic
+# patterns stand on their own without them.
+def _domain_alternatives(key: str) -> str:
+    try:
+        from metis_mcp.domain import domain
+        extra = domain(key, []) or []
+    except Exception:
+        extra = []
+    return "".join("|" + str(x) for x in extra if str(x).strip())
+
+
+_EXTRA_REFERENCE_STANDARDS = _domain_alternatives("evidence_reference_standards")
+_EXTRA_SETTINGS = _domain_alternatives("evidence_settings")
+
 # The qualifiers. Each one, when ABSENT, is a reason not to trust a figure — the
 # "evaluation debt" framing from the AI in Public Health course, applied to the
 # researcher's own literature.
@@ -109,17 +125,17 @@ _QUALIFIER_PATTERNS: dict[str, re.Pattern] = {
         r"(?:\b\d{2}\s?%\s?)?(?:CI|confidence interval|credible interval)"
         r"[^\d\n]{0,18}\d[\d.]*\s?%?\s?(?:[-–—]|to|;|,)\s?\d[\d.]*", re.I),
     "reference standard": re.compile(
-        r"reference standard|gold standard|trypanolysis|\bTL\b|parasitolog\w+|"
-        r"confirmed by (?:PCR|microscopy|culture)|composite reference", re.I),
+        r"reference standard|gold standard|parasitolog\w+|"
+        r"confirmed by (?:PCR|microscopy|culture)|composite reference"
+        + _EXTRA_REFERENCE_STANDARDS, re.I),
     "population": re.compile(
         r"passive (?:case )?(?:detection|screening)|active screening|"
         r"community[- ]based|hospital[- ]based|health[- ]facility|blood donors|"
         r"pregnant|children|adults|clinic attendees|febrile patients|"
         r"suspected cases|endemic (?:area|village|focus)", re.I),
     "setting": re.compile(
-        r"\b(?:DRC|Democratic Republic|Congo|Guinea|Angola|Chad|Uganda|"
-        r"C[oô]te d.Ivoire|Ivory Coast|Cameroon|Sudan|Malawi|Tanzania|"
-        r"Central African Republic|field conditions|laboratory conditions)\b"),
+        r"\b(?:field conditions|laboratory conditions"
+        + _EXTRA_SETTINGS + r")\b"),
     "threshold": re.compile(
         r"cut[- ]?off|threshold|titre|titer|dilution|1\s?:\s?\d+|\bOD\b", re.I),
 }
@@ -192,7 +208,7 @@ def _metrics_in(text: str) -> list[str]:
 def _topic_terms(question: str, metric_terms: set[str]) -> list[str]:
     """The subject of the question, with metric words and stopwords removed.
 
-    "what is the specificity of CATT in passive screening" -> ["catt","passive",
+    "what is the specificity of the RDT in community screening" -> ["rdt","community",
     "screening"]. These narrow retrieval to the thing being asked about; without
     them a question about one test returns every accuracy figure in the corpus.
     """
@@ -260,7 +276,7 @@ def gather_quantities(
             # one test returns the whole corpus.
             #
             # But matched against the DOCUMENT, not just the chunk. A paper about
-            # CATT does not repeat "CATT" in every paragraph: the sentence
+            # one assay does not repeat its name in every paragraph: the sentence
             # "equivalent to a specificity of 99.5% (95% CI 99.0-99.8)" names no
             # test at all, and a chunk-only filter therefore dropped a perfectly
             # good, fully-qualified estimate. Topic is a property of the source,
@@ -357,7 +373,7 @@ def gather_quantities(
                 if not (0.0 <= value <= 100.0):
                     continue
                 # Reject a match whose metric→value span crosses ANOTHER metric.
-                # "RDT2 had the highest accuracy (69.3%), followed by CATT
+                # "RDT2 had the highest accuracy (69.3%), followed by ELISA
                 # (61.7%)" must not attach 61.7 to `accuracy`. The regex is
                 # non-greedy so it takes the nearest percentage, but "nearest"
                 # is not the same as "belonging to", and in a list of metrics it
@@ -369,7 +385,7 @@ def gather_quantities(
                 if _NOT_THE_METRIC.search(inner):
                     continue
                 # A comparative just AFTER the number means the same thing —
-                # "the specificity of the RDT was 4.3% lower than CATT" is a gap,
+                # "the specificity of the RDT was 4.3% lower than ELISA" is a gap,
                 # not a specificity, and the modifier sits on the far side of the
                 # figure where `inner` cannot see it.
                 if _COMPARATIVE.match(text[m.end():m.end() + 22]):
@@ -439,7 +455,7 @@ async def weigh_evidence(
 
     Fact-checking a number is not the same as checking a citation. A figure can be
     correctly cited and still be one of many the literature reports — this corpus
-    holds specificity estimates for HAT serology ranging from 72% to 99.7%, and a
+    can hold specificity estimates for one test family ranging from 72% to 99.7%, and a
     single confident answer hides that entirely.
 
     So this reports the SPREAD, never one value: every quantified statement found,
@@ -453,7 +469,7 @@ async def weigh_evidence(
     `check_for_newer_evidence` to find out whether the corpus is current.
 
     Args:
-        question: The question as asked, e.g. "specificity of CATT in passive screening".
+        question: The question as asked, e.g. "specificity of the RDT in community screening".
         layers: Comma-separated layer slugs to restrict to; omit to search all.
         show: How many individual findings to list (default 14).
 
@@ -656,7 +672,7 @@ def _search_newer(question: str, since_year: int, limit: int = 8) -> dict:
         frm = f"{(since_year or this_year - 5)}-01-01"
         # OpenAlex `search` is relevance-ranked, NOT boolean AND — passing
         # "a AND b AND c" returned papers on Taenia vaccines for a question about
-        # HAT diagnostics. So ask broadly and filter LOCALLY on the title, which
+        # a diagnostics question. So ask broadly and filter LOCALLY on the title, which
         # is deterministic and inspectable.
         need = [w for w in terms[:5] if len(w) > 3]
         seen_doi: set[str] = set()
@@ -710,7 +726,7 @@ async def check_for_newer_evidence(
     were the same kind of evidence, and use `verify_doi` before citing one.
 
     Args:
-        question: The question, e.g. "specificity of CATT in passive screening".
+        question: The question, e.g. "specificity of the RDT in community screening".
         search_online: Query PubMed + OpenAlex for newer work. Ask first.
         limit: Maximum results per source (default 8).
 

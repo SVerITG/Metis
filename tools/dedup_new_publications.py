@@ -8,11 +8,11 @@ WHY THIS EXISTS
     omits the DOI (a limitation noted in the scheduler's own code). So the same
     paper lands three times under three URLs with no shared key:
 
-        2026-07-17  Glycerol metabolism triggers trypanosome differentiation…
-        2026 Jul 1  Glycerol metabolism triggers trypanosome differentiation…
-        2025-05-26  Glycerol metabolism triggers trypanosome differentiation…
+        2026-07-17  Glycerol metabolism triggers parasite differentiation…
+        2026 Jul 1  Glycerol metabolism triggers parasite differentiation…
+        2025-05-26  Glycerol metabolism triggers parasite differentiation…
 
-    Observed immediately after the first retrospective HAT sweep. Triplicates are
+    Observed immediately after the first retrospective topic sweep. Triplicates are
     not a cosmetic problem on a review surface: a reviewer who has to decide
     "have I already seen this?" three times per paper stops trusting the list, and
     a list you do not trust is one you stop opening.
@@ -53,7 +53,7 @@ _NONWORD_RE  = re.compile(r"[^a-z0-9]+")
 def title_key(title: str) -> str:
     """Normalise a title into a dedup key. Empty string if unusable."""
     t = html.unescape(title or "")
-    t = _TAG_RE.sub(" ", t)          # journals ship <i>Trypanosoma</i> in titles
+    t = _TAG_RE.sub(" ", t)          # journals ship <i>Plasmodium</i> in titles
     t = _PREFIX_RE.sub("", t)
     t = _NONWORD_RE.sub(" ", t.lower()).strip()
     # Very short titles are not distinctive enough to merge on safely.

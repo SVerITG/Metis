@@ -790,7 +790,7 @@ async def record_viz_use(
         recipe: viz_recipes.slug.
         style: viz_styles.slug.
         dataset: What it was rendered against, in plain words.
-        project_id: e.g. "angola-hat-analysis".
+        project_id: e.g. "cohort-analysis".
         output_path: Local file written.
         artifact_url: If it was published as an Artifact.
         verdict: loved | fine | wrong. Leave blank until he has actually said —

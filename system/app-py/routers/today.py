@@ -24,6 +24,44 @@ from ui import (clip, count_since, delta_count, last_seen, mark_seen,  # noqa: E
 from models import model_for  # Resolves Claude model IDs from system/config/models.yaml
 
 router = APIRouter()
+
+
+def _domain(key: str, default):
+    """A machine-local domain setting (see metis_mcp.domain), else `default`.
+
+    `default` is always the generic behaviour; the owner of one installation can
+    add subject-specific extras in system/config/local/domain.d without editing
+    this file. Guarded so a missing MCP package degrades to the default.
+    """
+    try:
+        from metis_mcp.domain import domain as _d
+        return _d(key, default)
+    except Exception:
+        return default
+
+
+def _declared_interest_terms() -> list[str]:
+    """Lower-cased terms the user declared (news first, then library), deduped."""
+    try:
+        from metis_mcp.tools.user_profile import read_interest_lists
+        lists = read_interest_lists()
+        raw = list(lists.get("news") or []) + list(lists.get("library") or [])
+    except Exception:
+        raw = []
+    out: list[str] = []
+    for t in raw:
+        t = str(t).strip().lower()
+        if len(t) >= 3 and t not in out:
+            out.append(t)
+    return out
+
+
+def _interest_scope(default: str, limit: int = 6) -> str:
+    """The user's declared interests as prose for a prompt, else `default`."""
+    terms = _declared_interest_terms()[:limit]
+    return ", ".join(terms) if terms else default
+
+
 templates = Jinja2Templates(
     directory=str(Path(__file__).parent.parent / "templates")
 )
@@ -578,9 +616,10 @@ async def today_focus_thread(request: Request):
 
     # Recent field-relevant articles alert
     field_articles: list[dict] = []
-    _field_terms = ("neglected tropical", "ntd", "epidemiology", "surveillance",
-                    "global health", "public health", "outbreak")
-    # extend with user-configured interests at runtime via get_user_profile()
+    # The user's own declared interests decide what counts as "field-relevant";
+    # a machine-local list may replace them outright.
+    _field_terms = tuple(t.lower() for t in
+                         (_domain("news_field_terms", None) or _declared_interest_terms()))
     since_48h = (datetime.datetime.now() - datetime.timedelta(hours=48)).isoformat()
     try:
         rows = db_query(
@@ -921,6 +960,8 @@ async def today_news_rail(request: Request, period: str = "week", folded: int = 
             "items": items,
             "period": period,
             "folded": bool(folded),
+            "news_prompt_scope": _domain(
+                "news_prompt_scope", _interest_scope("research and science")),
         },
     )
 
@@ -1249,18 +1290,23 @@ async def api_news_summarize(request: Request):
 
 
 def _get_brief_mode() -> str:
-    """Return brief generation mode: 'auto' | 'auto+manual' | 'manual'."""
+    """Return brief generation mode: 'auto' | 'auto+manual' | 'manual' | 'desktop'.
+
+    'desktop': a Claude Desktop scheduled task writes the brief through
+    save_daily_brief; the dashboard only shows it and never calls the API."""
     try:
         import json as _json
         rc = os.environ.get("METIS_RC_ROOT", "")
         prefs_path = Path(rc) / "system" / "config" / "user-preferences.json" if rc else None
         if prefs_path and prefs_path.exists():
-            mode = _json.loads(prefs_path.read_text()).get("brief_mode", "auto")
-            if mode in ("auto", "auto+manual", "manual"):
+            mode = _json.loads(prefs_path.read_text()).get("brief_mode", "")
+            if mode in ("auto", "auto+manual", "manual", "desktop"):
                 return mode
     except Exception:
         pass
-    return "auto"
+    # Unset: the standard is the Claude Desktop morning task, which setup
+    # creates. Writing it here with an API key is an option chosen in Settings.
+    return "desktop"
 
 
 def _get_api_key() -> str:
@@ -1297,6 +1343,32 @@ _brief_gen_inflight: set = set()
 _brief_gen_lock = _threading.Lock()
 _brief_last_attempt: dict = {}   # period -> monotonic ts of the last generation attempt
 _brief_last_error: dict = {}     # period -> error string for display
+_brief_fail_reason: dict = {}    # period -> why _get_or_generate_brief gave up, in plain words
+
+_NO_KEY_ADVICE = (
+    "No Anthropic API key is set, so the dashboard cannot write the brief itself. "
+    "Claude Desktop can write it each morning instead, with no key: ask it to "
+    "\"set up my morning briefing\"."
+)
+
+
+def _api_failure_reason(status: int, body: str) -> str:
+    """Turn a refused Claude API call into a sentence the researcher can act on.
+
+    The API answers an exhausted balance with a 400, the same status as a
+    malformed request, so the message text is what tells them apart.
+    """
+    low = body.lower()
+    if "credit balance" in low:
+        return ("The Anthropic API account has run out of credit. Top it up under "
+                "Plans & Billing at console.anthropic.com, or let Claude Desktop write "
+                "the brief each morning instead (no credit needed): ask it to "
+                "\"set up my morning briefing\".")
+    if status == 401:
+        return "The Anthropic API key was refused. It may have been revoked; set a new one in Settings."
+    if status == 429 or status >= 500:
+        return f"Claude is busy right now (status {status}). It will retry by itself in a few minutes."
+    return f"Claude refused the request (status {status}). The detail is in the server log."
 
 
 def _get_cached_brief(period: str = "daily") -> str | None:
@@ -1362,8 +1434,10 @@ def _kick_brief_generation(period: str = "daily") -> None:
             else:
                 # _get_or_generate_brief swallows exceptions and returns None;
                 # surface a diagnostic so the template shows the error instead
-                # of polling forever with "Brewing…".
-                _brief_last_error[period] = (
+                # of polling forever with "Brewing…". The specific reason, when
+                # one was recorded, beats the generic list: an exhausted API
+                # balance used to be reported as "check the server log".
+                _brief_last_error[period] = _brief_fail_reason.pop(period, None) or (
                     "Brief generation returned empty — check the server log. "
                     "Common causes: missing API key, no news data, or import error."
                 )
@@ -1562,15 +1636,19 @@ def _get_or_generate_brief(force: bool = False, period: str = "daily") -> str | 
             ctx = assemble_daily_context(db_path_str)
     except Exception as _ctx_exc:
         _log.warning("morning-brief: context assembly failed: %s", _ctx_exc, exc_info=False)
+        _brief_fail_reason[period] = f"Could not gather today's news and papers ({type(_ctx_exc).__name__})."
         return None
 
     if not ctx.get("context"):
         _log.warning("morning-brief: assembled context is empty (no news/papers in DB?)")
+        _brief_fail_reason[period] = ("Nothing to brief on yet: no news or papers have been "
+                                      "collected. The scans run in the background; try again later.")
         return None
 
     api_key = _get_api_key()
     if not api_key:
         _log.warning("morning-brief: no API key available")
+        _brief_fail_reason[period] = _NO_KEY_ADVICE
         return None
 
     # Build period description
@@ -1586,9 +1664,16 @@ def _get_or_generate_brief(force: bool = False, period: str = "daily") -> str | 
     else:
         period_desc = f"the last {days_since_last // 7} week{'s' if days_since_last >= 14 else ''}"
 
-    field_str = research_field or "public health and epidemiology"
-    interests_str = ", ".join(interests[:8]) if interests else "global health, infectious diseases, epidemiology, public health surveillance, health systems"
-    topics_str = ", ".join(news_topics[:6]) if news_topics else "WHO surveillance, global health emergencies, disease control, AI in research"
+    try:
+        from metis_mcp.tools.brief_prompt import brief_fallbacks
+        _fallback = brief_fallbacks()
+    except Exception:
+        # An installed MCP copy older than this source: stay neutral.
+        _fallback = {"field": "research", "interests": "research developments",
+                     "topics": "major science and research news"}
+    field_str = research_field or _fallback["field"]
+    interests_str = ", ".join(interests[:8]) if interests else _fallback["interests"]
+    topics_str = ", ".join(news_topics[:6]) if news_topics else _fallback["topics"]
 
     system_preamble = _brief_system_prompt(
         period=period,
@@ -1746,8 +1831,11 @@ def _get_or_generate_brief(force: bool = False, period: str = "daily") -> str | 
         else:
             _log.warning("morning-brief: API returned status %s: %s",
                          resp.status_code, resp.text[:300] if hasattr(resp, 'text') else "")
+            _brief_fail_reason[period] = _api_failure_reason(resp.status_code, resp.text or "")
     except Exception as _api_exc:
         _log.warning("morning-brief: API call failed: %s", _api_exc, exc_info=True)
+        _brief_fail_reason[period] = (f"Could not reach Claude ({type(_api_exc).__name__}). "
+                                      "Check the internet connection; it will retry by itself.")
     # Regeneration failed — return whatever was cached so the brief is never lost
     return cached_content
 
@@ -1901,9 +1989,15 @@ async def today_morning_brief(request: Request):
     ai_brief = None
     brief_date_label = None
     pending = False
+    brief_mode = _get_brief_mode()
+    # The dashboard writes briefs itself only when it is meant to. In 'manual'
+    # and 'desktop' mode a missing brief is waited for, never generated: an
+    # exhausted API balance used to turn every page load into a failure.
+    self_writes = brief_mode not in ("manual", "desktop")
     if period in ("weekly", "catchup"):
         try:
-            ai_brief = _get_or_generate_brief(period=period)
+            ai_brief = (_get_or_generate_brief(period=period) if self_writes
+                        else _get_cached_brief(period))
         except Exception:
             pass
     else:
@@ -1915,7 +2009,7 @@ async def today_morning_brief(request: Request):
             ai_brief = _get_cached_brief("daily")
         except Exception:
             ai_brief = None
-        if (not ai_brief and _get_brief_mode() != "manual"
+        if (not ai_brief and self_writes
                 and os.environ.get("METIS_DEMO") != "1"):
             # Kick generation in the background, but no more than once every ~90s,
             # so a transient failure self-heals on the next poll without hammering
@@ -1933,7 +2027,7 @@ async def today_morning_brief(request: Request):
     if ai_brief:
         _brief_last_error.pop(period, None)
     brief_error = ""
-    if pending and not _get_api_key() and _get_brief_mode() != "manual":
+    if pending and not _get_api_key():
         brief_error = "no-api-key"  # sentinel — template shows setup guidance
         pending = False  # stop the polling spinner — it won't resolve without a key
     elif _brief_last_error.get(period):
@@ -2001,7 +2095,10 @@ async def today_morning_brief(request: Request):
             "fallback_headlines": fallback_headlines,
             "open_threads": open_threads,
             "time_of_day": time_of_day,
-            "brief_mode": _get_brief_mode(),
+            "brief_mode": brief_mode,
+            # Desktop mode, and today's brief has not arrived: say so, and how
+            # to fetch it, above whatever earlier brief is shown meanwhile.
+            "desktop_waiting": brief_mode == "desktop" and bool(brief_date_label or not ai_brief),
             "period": period,
             "brief_id": _bid,
             "brief_date": _bdate,
@@ -2746,7 +2843,7 @@ async def today_library_archive(request: Request):
                 "created_at": "",
                 "age_label": "",
                 "is_read": status not in ("to_triage",),
-                "silo": "hat",
+                "silo": "corpus",
             })
     except Exception:
         pass
@@ -2798,7 +2895,7 @@ def _salient_terms() -> list[str]:
     terms: dict[str, int] = {}
 
     def _add(text: str, weight: int = 1):
-        # 3+ chars so domain acronyms (hat, ntd, drc) survive; stopwords filter noise.
+        # 3+ chars so three-letter domain acronyms survive; stopwords filter noise.
         for w in re.findall(r"[a-zA-Z][a-zA-Z\-]{2,}", (text or "").lower()):
             if w in _SURFACE_STOPWORDS:
                 continue
@@ -2850,8 +2947,8 @@ async def today_relevant_papers(request: Request):
                 "COALESCE(is_read,0) AS is_read FROM literature_metadata "
                 "WHERE COALESCE(title,'') != '' LIMIT 1500"
             ) or []
-            # Word-boundary patterns so short acronyms (hat, ntd) don't match
-            # "what"/"into" etc.
+            # Word-boundary patterns so short acronyms don't match inside
+            # longer words ("what", "into" etc.).
             term_pats = [(t, re.compile(r"\b" + re.escape(t) + r"\b")) for t in terms]
             scored = []
             for r in rows:
@@ -4070,6 +4167,15 @@ def _board_context(board: str, show_all: bool = False) -> dict:
         "shown": len(folded),
         "n_folded": n_folded,
         "show_all": show_all,
+        # The subject half of the "Update with Claude Desktop" prompt. Generic
+        # (the user's own interests); a domain file may replace either string.
+        "board_prompt_field": _domain(
+            "board_prompt_field", _interest_scope("my research field")),
+        "board_prompt_outbreak_pref": _domain(
+            "board_prompt_outbreak_pref",
+            "Where two outbreaks compete for a slot, prefer the ones closest to "
+            + _interest_scope("my own work", limit=4)
+            + ", then the largest and fastest-moving"),
     }
 
 
@@ -4301,29 +4407,35 @@ def _extract_json_array(text: str) -> list | None:
     return None
 
 
+# What each board searches for. Field-neutral: the researcher's own topics
+# (passed in as `topics`) do the narrowing. A machine-local domain file may
+# replace any of these strings ("board_search_what", "board_search_sources",
+# "board_topics_default") to sharpen the search for one installation.
+_BOARD_SEARCH_WHAT = {
+    "outbreaks": ("current, active disease outbreaks and public-health emergencies "
+                  "(each with the location and a recent date) — prioritise those most "
+                  "relevant to the researcher's topics, then the largest and fastest-moving"),
+    "events": ("upcoming scientific congresses, conferences, symposia and short courses "
+               "(each with a future or recently-announced date) in the researcher's field"),
+    "funding": ("open or upcoming research funding calls, grant opportunities and fellowships "
+                "(each with an application deadline) relevant to the researcher's field"),
+}
+_BOARD_SEARCH_SOURCES = {
+    "outbreaks": ("Prefer authoritative sources — WHO Disease Outbreak News, WHO regional "
+                  "offices, ECDC, US CDC, Africa CDC, ProMED, ReliefWeb and national "
+                  "ministries of health."),
+    "other": ("Prefer authoritative sources — learned-society and congress sites, funder "
+              "portals (e.g. Horizon Europe, ERC, Wellcome, NIH, national research "
+              "councils) and university or research-institute pages."),
+}
+
+
 def _board_search_prompt(board: str, topics: str) -> str:
-    who = topics or "tropical medicine, neglected tropical diseases, global health, epidemiology"
-    if board == "outbreaks":
-        what = ("current, active disease outbreaks and public-health emergencies "
-                "(each with the location and a recent date) — prioritise neglected "
-                "tropical diseases, sleeping sickness / HAT, malaria, and other "
-                "epidemic-prone diseases, especially in West and Central Africa")
-    elif board == "events":
-        what = ("upcoming scientific congresses, conferences, symposia and short courses "
-                "(each with a future or recently-announced date) in tropical medicine, "
-                "neglected tropical diseases, global health and epidemiology")
-    else:
-        what = ("open or upcoming research funding calls, grant opportunities and fellowships "
-                "(each with an application deadline) relevant to tropical medicine, neglected "
-                "tropical diseases, global health and epidemiology")
-    if board == "outbreaks":
-        sources = ("Prefer authoritative sources — WHO Disease Outbreak News, WHO AFRO, "
-                   "Africa CDC, ProMED, ReliefWeb and national ministries of health.")
-    else:
-        sources = ("Prefer authoritative sources — society/congress sites "
-                   "(ASTMH, FESTMIH/ECTMIH), funder portals (EDCTP / Global Health EDCTP3, "
-                   "Horizon Europe, Wellcome, NIH, WHO/TDR) and the Institute of Tropical "
-                   "Medicine Antwerp (ITM).")
+    who = topics or _domain("board_topics_default", "their own research field")
+    what_map = {**_BOARD_SEARCH_WHAT, **(_domain("board_search_what", {}) or {})}
+    src_map = {**_BOARD_SEARCH_SOURCES, **(_domain("board_search_sources", {}) or {})}
+    what = what_map.get(board) or what_map["funding"]
+    sources = src_map["outbreaks"] if board == "outbreaks" else src_map["other"]
     return (
         f"Use web search to find current, real {what}, especially anything relevant to a "
         f"researcher working on: {who}. {sources} "
@@ -4712,8 +4824,8 @@ async def today_focus_with_memory(request: Request, bare: int = 0):
         items.append(item)
 
     # DATED TASKS ARE NOT HERE ANY MORE. They were, and the due strip mounted
-    # beside this one on Today showed them too, so "Draft Angola risk-mapping
-    # parameters" appeared twice on the same screen — once as a focus card and
+    # beside this one on Today showed them too, so a dated task like "Draft the
+    # model parameters" appeared twice on the same screen — once as a focus card and
     # once as an overdue row. Two panels answering one question is what the
     # merge was supposed to remove, not create.
     #
@@ -4817,11 +4929,9 @@ async def today_brief_bridges(request: Request):
     # Extract key phrases (simple approach: sentences with research-relevant terms)
     import re as _re
     sentences = _re.split(r'[.!?\n]+', brief_text)
-    research_terms = [
-        "hat", "sleeping sickness", "surveillance", "elimination",
-        "dhis2", "diagnostic", "multilevel", "spatial", "ntd",
-        "burden", "outbreak", "resistance", "who",
-    ]
+    # Terms that make a sentence worth bridging to memory: the user's declared
+    # interests, unless a machine-local list replaces them.
+    research_terms = list(_domain("brief_key_terms", None) or _declared_interest_terms())
 
     key_phrases = []
     for s in sentences:
@@ -4843,7 +4953,7 @@ async def today_brief_bridges(request: Request):
     # Search on the TERM, not the sentence. This previously built its query as
     # `%{phrase[:40]}%` — the first 40 characters of a whole sentence, matched as a
     # literal substring — so it looked for things like
-    #   %The humanitarian crisis in Central African%
+    #   %The humanitarian crisis in the northern region%
     # in episodic memory. Nothing there contains verbatim sentences from today's
     # brief, so the panel could never produce a single bridge, however much memory
     # existed. It identified the term that made the sentence relevant and then threw
@@ -5679,7 +5789,7 @@ def _field_week_data(days: int = FIELD_WEEK_DAYS) -> dict:
     daily items ever clear 0.70 and some days none do. A fixed cutoff sitting in
     the extreme tail of a distribution does not select the best few; it selects
     whatever happens to exceed a constant, which is empty by luck. The week's top
-    stories that day scored 0.690-0.698 — an Ebola outbreak in the DRC among them —
+    stories that day scored 0.690-0.698 — an outbreak situation report among them —
     and were hidden by four thousandths.
 
     Worse, the scale MOVES. Shipping the decline-feedback band on 2026-09-10 shifted
@@ -6237,7 +6347,7 @@ async def today_system_health(request: Request):
 # THE IMAGE PROBLEM (measured 2026-07-14, and it drives the whole layout):
 #     policy / world-news ......... 100% have thumbnails
 #     surveillance ................  15%
-#     tropical-medicine ...........  13%
+#     field journals ..............  13%
 #     epidemiology ................   0%
 # The domains he actually cares about have NO pictures; generic wire news has all
 # of them. So a thumbnail-led grid would systematically bury his own field beneath
@@ -6291,10 +6401,10 @@ def _news_card(r: dict) -> dict:
         # idea / note, not a centroid of everything), the top of the news file
         # sorted like this:
         #
-        #   0.808  Measuring elimination of gambiense HAT
-        #   0.800  Modelling the role of animals in gambiense HAT
-        #   0.787  Health economic evaluation of gambiense HAT elimination
-        #   0.758  DR Congo: Ebola outbreak situation report
+        #   0.808  <a paper title squarely in the user's own subject>
+        #   0.800  <a second paper in the same subject>
+        #   0.787  <a third, an economic evaluation in that subject>
+        #   0.758  <an outbreak situation report in a country of interest>
         #   0.750  World: Start Fund Monthly Risk Bulletin      <- quality falls off
         #   0.694  COVID rates low but increasing across the US
         #   0.687  Albania: UNHCR Western Balkans factsheet
@@ -6304,7 +6414,7 @@ def _news_card(r: dict) -> dict:
         # tight: the highest scorers overall are PAPERS, and News excludes those
         # (source_type='article'), so within the news stream alone 0.72 left one
         # item in a month. Calibrated again on news only, where the top reads
-        # DRC / Ebola / avian influenza / zoonotic-AI and holds to ~0.743:
+        # outbreak reports / avian influenza / zoonotic-AI and holds to ~0.743:
         #
         #   >= 0.70   258 items   COVID-US (0.694), Albania (0.687) and
         #                         dog-longevity (0.681) all fall below
@@ -6314,9 +6424,8 @@ def _news_card(r: dict) -> dict:
         # and caps at 60, so the floor's only job is to keep obvious noise out
         # while leaving enough for the sort to be worth doing.
         #
-        # 0.68 after the anchor set was broadened on 2026-08-31. Reported: "It can be
-        # sleeping sickness, NTDs, elimination of diseases, epidemiology,
-        # digitalisation of health care. There are many topics close to my work."
+        # 0.68 after the anchor set was broadened on 2026-08-31, when the closeness
+        # of work was reported to span several topics rather than one subject.
         # Ten specific prose anchors were added for those, and the floor came
         # down to let them through: 675 of 2,939 news items, against 358 at 0.70.
         #
@@ -6348,7 +6457,7 @@ def _news_card(r: dict) -> dict:
 # declares interests (see news_threads.user_subjects), so it is checked first.
 #
 # `domains` are lowercased on both sides at match time: the stored values are
-# inconsistent ('NTD' 52 rows vs 'ntd' 48; 'SURVEILLANCE' vs 'surveillance'),
+# inconsistent ('SURVEILLANCE' vs 'surveillance', upper- and lower-case acronyms),
 # and a case-sensitive tab would silently show half a category.
 _NEWS_TABS: list[dict] = [
     {"key": "overview", "label": "Overview", "kind": "overview",
@@ -6356,12 +6465,15 @@ _NEWS_TABS: list[dict] = [
     {"key": "work", "label": "Related to my work", "kind": "work",
      "blurb": "Ranked by closeness to your library, with your own subjects first."},
     {"key": "outbreaks", "label": "Outbreaks", "kind": "filter",
+     # Generic outbreak vocabulary; an installation adds its own subjects and
+     # feed domains through "news_outbreak_subjects" / "news_outbreak_domains".
      "subjects": {"ebola", "marburg", "mpox", "cholera", "measles", "polio", "dengue",
                   "yellow-fever", "lassa", "diphtheria", "meningitis", "influenza",
-                  "covid", "outbreak-response", "sleeping-sickness", "malaria",
-                  "tuberculosis", "hiv", "ntd", "vaccination"},
-     "domains": {"surveillance", "outbreaks", "infectious-disease", "hat", "ntd",
-                 "tropical-medicine", "drc", "malaria", "vectors"},
+                  "covid", "outbreak-response", "malaria",
+                  "tuberculosis", "hiv", "vaccination"}
+                 | set(_domain("news_outbreak_subjects", []) or []),
+     "domains": {"surveillance", "outbreaks", "infectious-disease", "malaria"}
+                | {str(d).lower() for d in (_domain("news_outbreak_domains", []) or [])},
      "blurb": "Surveillance, alerts and disease events."},
     {"key": "world", "label": "World news", "kind": "filter",
      "subjects": {"conflict-health", "climate-health"},
@@ -6603,11 +6715,11 @@ def _news_tab_response(request: Request, tab: str, period: str, view: str):
         singles = [t for t in threads if len(t.get("items") or []) < 2]
         threads = [t for t in threads if len(t.get("items") or []) >= 2]
 
-        # A SERIES IS NOT THREE STORIES. Inside the Ebola · DR Congo thread the
-        # first three headlines were "…Uganda Weekly External Situation Report
+        # A SERIES IS NOT THREE STORIES. Inside one outbreak thread the
+        # first three headlines were "…Weekly External Situation Report
         # 13", "…Report 14" and "…Report 15" — one weekly bulletin, three
         # instalments, filling the whole thread with the same sentence. This is
-        # what the researcher meant by seeing Ebola over and over: not a bug in the
+        # what "seeing the same outbreak over and over" meant: not a bug in the
         # clustering, which correctly put them together, but a bug in showing
         # every instalment as though it were new information.
         #
@@ -6686,7 +6798,7 @@ def _news_tab_response(request: Request, tab: str, period: str, view: str):
                             # it is not so close actually."
                             #
                             # This split every interest into its words, so
-                            # "neglected tropical diseases" contributed
+                            # "rare inherited diseases" contributed
                             # "diseases" and "AI in global health" contributed
                             # "health". A domain of `health` or `global-health`
                             # then counted as related to his work — which, in a
@@ -6696,8 +6808,8 @@ def _news_tab_response(request: Request, tab: str, period: str, view: str):
                             #
                             # Multi-word fragments are still useful, because a
                             # subject slug may carry only part of an interest:
-                            # "sleeping sickness elimination" should still reach
-                            # a 'sleeping-sickness' subject.
+                            # "river blindness elimination" should still reach
+                            # a 'river-blindness' subject.
                             _parts = [w for w in re.split(r"[^a-z0-9]+", s) if len(w) > 3]
                             for _i in range(len(_parts) - 1):
                                 interest_slugs.add("-".join(_parts[_i:_i + 2]))

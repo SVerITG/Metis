@@ -337,7 +337,7 @@ async def load_project_context(project_id: str) -> list[TextContent]:
     on a specific project so Claude has full background.
 
     Args:
-        project_id: The project slug (e.g. "hat-dashboard", "article-1").
+        project_id: The project slug (e.g. "cohort-analysis", "article-1").
     """
     with connect(paths.db) as conn:
         _ensure_context_columns(conn)

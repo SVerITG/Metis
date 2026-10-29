@@ -17,7 +17,7 @@ THE LADDER
     1. OPEN ACCESS. Unpaywall (a DOI → legal-OA-copy index), then PubMed Central,
        then the source URL itself when it is a known fully-OA publisher (PLOS,
        BMC, medRxiv, bioRxiv, eLife, Wellcome Open Research). No credentials, no
-       licence question, and for NTD and global-health literature this alone
+       licence question, and for tropical-medicine and global-health literature this alone
        succeeds a large share of the time — those fields publish OA heavily.
 
     2. INSTITUTIONAL RESOLVER. Only if configured, and only if step 1 found
@@ -100,9 +100,9 @@ _OA_PATTERNS: list[tuple[str, str]] = [
 # URL is fully derivable from the DOI, so falling back to a third-party index for
 # it was both slower and wrong.
 #
-# This matters disproportionately here: PLOS NTDs, PLOS Medicine, PLOS Global
+# This matters disproportionately here: PLOS Medicine, PLOS ONE, PLOS Global
 # Public Health and PLOS Pathogens are four of the most important journals in
-# this researcher's field, and every one of them is a 10.1371 DOI.
+# global-health research, and every one of them is a 10.1371 DOI.
 _PLOS_JOURNALS = {
     "pntd": "plosntds",          "ppat": "plospathogens",
     "pmed": "plosmedicine",      "pone": "plosone",

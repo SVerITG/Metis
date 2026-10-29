@@ -20,7 +20,11 @@ import tempfile
 import urllib.request
 from pathlib import Path
 
-REPO = "SVerITG/Metis"
+from metis_mcp.edition import update_repo as _update_repo
+
+# An edition updates from its own repository: an institute's copy must never
+# be "updated" to the full build, which would bring back what it left out.
+REPO = _update_repo("SVerITG/Metis")
 API = f"https://api.github.com/repos/{REPO}/releases/latest"
 
 

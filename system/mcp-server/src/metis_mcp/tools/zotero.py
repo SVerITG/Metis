@@ -1305,7 +1305,7 @@ def _layer_folder(database: str) -> "tuple[Path | None, str]":
         return None, f"no knowledge layer called '{database}'"
     folders = [f.strip("/") for f in str(row[1] or "").splitlines() if f.strip()]
     if not folders:
-        # The built-in layers (ph-background, epi-methods, hat-specialist, ntd)
+        # The built-in layers (ph-background, epi-methods and the topic specialists)
         # carry an EMPTY folders column — the indexer resolves them from a
         # hardcoded table instead. Reading only the column made this tool refuse
         # every layer that shipped with Metis, which is most of them. Ask the same

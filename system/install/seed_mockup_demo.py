@@ -5,7 +5,7 @@ Researcher persona (fictional): Dr. Amélie Fontaine
   Role: Senior Health Economist · Global Health Policy
   Focus: economic evaluation · health financing / UHC · global health policy
   Activities: builds R Shiny dashboards, writes policy briefs, teaches health economics
-  Topics span public health broadly — NTDs, NCDs, immunization, pandemic
+  Topics span public health broadly — malaria, NCDs, immunization, pandemic
   preparedness, universal health coverage — so any researcher recognises their
   own work in the demo.
 
@@ -70,12 +70,12 @@ def seed(conn: sqlite3.Connection):
         "role": "Senior Health Economist · Global Health Policy",
         "interests": ["health economics", "cost-effectiveness analysis",
                       "universal health coverage", "health financing",
-                      "neglected tropical diseases", "non-communicable diseases",
+                      "malaria control", "non-communicable diseases",
                       "immunization", "global health policy", "health systems",
                       "data dashboards"],
         "news_topics": ["WHO", "Global Fund", "Gavi", "universal health coverage",
                         "health financing", "pandemic preparedness", "NCDs",
-                        "neglected tropical diseases", "global health policy"],
+                        "malaria", "global health policy"],
         "pubmed_query": "health economics[Title/Abstract] OR cost-effectiveness[Title] OR universal health coverage[Title/Abstract]",
         "active_model": "sonnet",
         "theme": "light",
@@ -92,7 +92,7 @@ def seed(conn: sqlite3.Connection):
                 "cost-effectiveness analysis, health financing and universal health "
                 "coverage. Builds interactive R Shiny data dashboards, writes policy "
                 "briefs for ministries and WHO, and teaches health economics to MPH "
-                "students. Topics span NTDs, NCDs, immunization and pandemic preparedness."
+                "students. Topics span malaria, NCDs, immunization and pandemic preparedness."
             ),
             "active_contexts": ["general", "health economics", "global health policy"],
             "specialist_contexts": [
@@ -104,7 +104,7 @@ def seed(conn: sqlite3.Connection):
         "research": {
             "field": "Public health · Health economics · Global health policy",
             "interests": ["health economics", "cost-effectiveness analysis", "universal health coverage", "global health policy", "health financing"],
-            "specific_focus": "Economic evaluation of global-health interventions, UHC financing in LMICs, NCD and NTD burden",
+            "specific_focus": "Economic evaluation of global-health interventions, UHC financing in LMICs, NCD and malaria burden",
         },
         "data_sensitivity": {"patient_data": True, "embargoed_results": True, "compliance": ["GDPR"]},
     }
@@ -132,19 +132,19 @@ def seed(conn: sqlite3.Connection):
     projects = [
         {
             "project_id": "proj-CEA-001",
-            "title": "Cost-Effectiveness of Integrated NTD Mass Drug Administration",
-            "description": "Economic evaluation of integrated mass drug administration for five neglected tropical diseases across three countries. Markov model, DALYs averted, ICERs benchmarked against WHO-CHOICE and opportunity-cost thresholds. Manuscript under review at Value in Health.",
+            "title": "Cost-Effectiveness of Seasonal Malaria Mass Drug Administration",
+            "description": "Economic evaluation of seasonal mass drug administration for malaria across three countries. Markov model, DALYs averted, ICERs benchmarked against WHO-CHOICE and opportunity-cost thresholds. Manuscript under review at Value in Health.",
             "domain": "Health Economics",
             "status": "active",
             "priority": "high",
             "next_step": "Respond to reviewer comments on the discount-rate sensitivity analysis",
-            "external_path": "C:/Users/Amelie/Documents/research/ntd-mda-cea",
-            "github_url": "https://example.org/metis-demo/code/ntd-mda-cea",
+            "external_path": "C:/Users/Amelie/Documents/research/malaria-mda-cea",
+            "github_url": "https://example.org/metis-demo/code/malaria-mda-cea",
             "launcher_type": "rstudio",
             "launchers": json.dumps([
-                {"label": "Open in RStudio", "type": "rstudio", "path": "C:/Users/Amelie/Documents/research/ntd-mda-cea/analysis.Rproj"},
-                {"label": "Open Folder", "type": "folder", "path": "C:/Users/Amelie/Documents/research/ntd-mda-cea"},
-                {"label": "GitHub", "type": "github", "url": "https://example.org/metis-demo/code/ntd-mda-cea"},
+                {"label": "Open in RStudio", "type": "rstudio", "path": "C:/Users/Amelie/Documents/research/malaria-mda-cea/analysis.Rproj"},
+                {"label": "Open Folder", "type": "folder", "path": "C:/Users/Amelie/Documents/research/malaria-mda-cea"},
+                {"label": "GitHub", "type": "github", "url": "https://example.org/metis-demo/code/malaria-mda-cea"},
             ]),
             "created_at": DT(150),
         },
@@ -264,7 +264,7 @@ def seed(conn: sqlite3.Connection):
 
     # ── Tasks ─────────────────────────────────────────────────────────────────
     tasks = [
-        # NTD MDA cost-effectiveness
+        # Malaria MDA cost-effectiveness
         {"task_id": "task-001", "project_id": "proj-CEA-001", "title": "Respond to reviewer comments on discount-rate sensitivity", "status": "open", "due_date": D(0), "category": "writing", "notes": "Reviewer 2 wants 0% and 5% discount-rate scenarios alongside the 3% base case."},
         {"task_id": "task-002", "project_id": "proj-CEA-001", "title": "Re-run ICER analysis with 2024 unit costs", "status": "open", "due_date": D(2), "category": "analysis", "notes": ""},
         {"task_id": "task-003", "project_id": "proj-CEA-001", "title": "Update probabilistic sensitivity analysis (10,000 draws)", "status": "done", "due_date": D(6), "category": "analysis"},
@@ -324,7 +324,7 @@ Discussion on donor transition: several countries are losing Global Fund and Gav
         },
         {
             "meeting_id": "meet-002",
-            "title": "Co-author Call — NTD MDA Cost-Effectiveness Revision",
+            "title": "Co-author Call — Malaria MDA Cost-Effectiveness Revision",
             "meeting_date": D(5),
             "domain": "Health Economics",
             "project": "proj-CEA-001",
@@ -393,13 +393,13 @@ Two countries' 2023 survey microdata are still under data-use review; expected w
 
     # ── Library Cards ──────────────────────────────────────────────────────────
     library_cards = [
-        {"title": "Reference case for economic evaluation in global health (iDSI)", "domain": "Health Economics", "tags": "economic-evaluation,reference-case,iDSI,methods", "summary": "Defines an 11-principle reference case for cost-effectiveness analysis of global-health interventions — perspective, discount rate, threshold, equity. Now the de-facto standard reviewers expect. Directly relevant to the NTD MDA paper's threshold framing."},
+        {"title": "Reference case for economic evaluation in global health (iDSI)", "domain": "Health Economics", "tags": "economic-evaluation,reference-case,iDSI,methods", "summary": "Defines an 11-principle reference case for cost-effectiveness analysis of global-health interventions — perspective, discount rate, threshold, equity. Now the de-facto standard reviewers expect. Directly relevant to the malaria MDA paper's threshold framing."},
         {"title": "Disease Control Priorities, 3rd Edition — cost-effective interventions", "domain": "Global Health", "tags": "DCP3,cost-effectiveness,priority-setting", "summary": "Synthesis of cost-effectiveness evidence across 21 volumes. Defines an essential UHC package of 218 interventions. Key reference for priority-setting in low-income settings."},
         {"title": "WHO guide to cost-effectiveness analysis (WHO-CHOICE)", "domain": "Health Economics", "tags": "WHO-CHOICE,thresholds,CEA,methods", "summary": "Generalised CEA methodology and the original GDP-multiple threshold guidance. Useful but increasingly superseded by opportunity-cost thresholds — note the critique when citing."},
         {"title": "The Lancet Commission on Investing in Health — Global Health 2035", "domain": "Health Policy", "tags": "investing,convergence,Lancet-Commission,financing", "summary": "Argues a 'grand convergence' in health is achievable within a generation with the right investment. The economic case for health spending as investment, not cost. Foundational for the pandemic-financing grant framing."},
         {"title": "Global Burden of Disease 2021 — the rising NCD share", "domain": "Public Health", "tags": "GBD,DALYs,NCD,burden", "summary": "Latest GBD estimates: NCDs now account for ~74% of global deaths, with the fastest rises in low-income settings. DALY methodology and the epidemiological transition. Core comparator for the NCD burden project."},
         {"title": "Health financing for universal coverage — WHO World Health Report", "domain": "Health Financing", "tags": "UHC,financing,domestic-revenue,efficiency", "summary": "The three financing challenges for UHC: raising funds, reducing reliance on out-of-pocket payments, and improving efficiency. a commonly cited estimate puts 20–40% of health spending lost to waste. Headline evidence for the UHC brief."},
-        {"title": "Cost-effectiveness of mass drug administration for NTDs", "domain": "Health Economics", "tags": "NTD,MDA,cost-effectiveness,DALYs", "summary": "Review of economic evaluations of preventive chemotherapy for NTDs. Integrated MDA highly cost-effective per DALY averted; cost per person treated very low at scale. Direct benchmark for the CEA paper."},
+        {"title": "Cost-effectiveness of mass drug administration for malaria", "domain": "Health Economics", "tags": "malaria,MDA,cost-effectiveness,DALYs", "summary": "Review of economic evaluations of malaria mass drug administration. Cost per person treated low at scale; cost per DALY averted depends strongly on transmission intensity and coverage. Direct benchmark for the CEA paper."},
         {"title": "The global economic burden of non-communicable diseases", "domain": "Non-Communicable Diseases", "tags": "NCD,economic-burden,macroeconomic", "summary": "Projects the cumulative macroeconomic loss from NCDs at tens of trillions of dollars over 2011–2030. Human-capital and value-of-lost-output approaches compared. Framing reference for the NCD burden project."},
         {"title": "Return on investment from childhood immunization in LMICs", "domain": "Immunization", "tags": "immunization,ROI,investment-case,Gavi", "summary": "Estimates a 16:1 return on immunization investment using a cost-of-illness approach, rising to 44:1 including broader economic and social value. Methodological backbone for the Gavi transition investment case."},
         {"title": "Financing pandemic preparedness — G20 High-Level Panel", "domain": "Health Policy", "tags": "pandemic,financing,preparedness,global-public-good", "summary": "Estimates an annual financing need of ~US$15bn for pandemic preparedness as a global public good, and proposes financing mechanisms. Core source for the Wellcome grant value-for-money framework."},
@@ -413,14 +413,14 @@ Two countries' 2023 survey microdata are still under data-use review; expected w
 
     # ── Ideas ──────────────────────────────────────────────────────────────────
     ideas = [
-        {"text": "i: An extended cost-effectiveness analysis (ECEA) would strengthen the NTD MDA paper — it shows financial-risk-protection gains, not just DALYs averted. Reviewers in this space respond to the equity framing.", "project_id": "proj-CEA-001", "idea_type": "research", "tags": "ECEA,equity,CEA,NTD", "domain": "Health Economics", "phd_relevance": 4},
+        {"text": "i: An extended cost-effectiveness analysis (ECEA) would strengthen the malaria MDA paper — it shows financial-risk-protection gains, not just DALYs averted. Reviewers in this space respond to the equity framing.", "project_id": "proj-CEA-001", "idea_type": "research", "tags": "ECEA,equity,CEA,malaria", "domain": "Health Economics", "phd_relevance": 4},
         {"text": "i: The financing dashboard's data-feed module is indicator-agnostic — I could drive an immunization-coverage dashboard with the same golem skeleton, just a new data contract.", "project_id": "proj-DASH-002", "idea_type": "method", "tags": "dashboard,reuse,immunization,golem", "domain": "Software", "phd_relevance": 2},
         {"text": "i: The UHC financing brief could become a teaching case study for Module 5 — students rebuild the financing-gap calculation themselves, then argue for one of the three options.", "project_id": "proj-POL-003", "idea_type": "teaching", "tags": "teaching,UHC,case-study,financing", "domain": "Health Policy", "phd_relevance": 2},
         {"text": "q: How sensitive is the NCD burden estimate to the discount rate and the productivity-loss method (human-capital vs friction-cost)? Could be a methods box on its own.", "project_id": "proj-NCD-005", "idea_type": "question", "tags": "discount-rate,cost-of-illness,methods", "domain": "Health Economics", "phd_relevance": 3},
-        {"text": "i: Pandemic-preparedness financing needs a value-for-money framework — I can borrow the ICER logic from the NTD MDA model, just with a different time horizon and a global-public-good lens.", "project_id": "proj-GRANT-006", "idea_type": "research", "tags": "pandemic,value-for-money,financing", "domain": "Health Policy", "phd_relevance": 2},
+        {"text": "i: Pandemic-preparedness financing needs a value-for-money framework — I can borrow the ICER logic from the malaria MDA model, just with a different time horizon and a global-public-good lens.", "project_id": "proj-GRANT-006", "idea_type": "research", "tags": "pandemic,value-for-money,financing", "domain": "Health Policy", "phd_relevance": 2},
         {"text": "n: Reviewer 2 on the MDA paper is almost certainly from the iDSI network — the threshold question matches their reference-case language exactly. Address it head-on with the reference case.", "project_id": "proj-CEA-001", "idea_type": "note", "tags": "peer-review,reference-case,thresholds", "domain": "Health Economics", "phd_relevance": 1},
         {"text": "i: The new World Bank health-expenditure data is out — useful comparator for the UHC brief's domestic-financing argument, and it plugs straight into the dashboard.", "project_id": "proj-POL-003", "idea_type": "literature", "tags": "World-Bank,financing,UHC,GHED", "domain": "Health Policy", "phd_relevance": 1},
-        {"text": "i: An NCD-vs-NTD burden comparison could frame the NCD paper's introduction — the 'double burden' narrative resonates with funders and ministries alike.", "project_id": "proj-NCD-005", "idea_type": "research", "tags": "NCD,NTD,double-burden,framing", "domain": "Public Health", "phd_relevance": 2},
+        {"text": "i: An NCD-vs-infectious-disease burden comparison could frame the NCD paper's introduction — the 'double burden' narrative resonates with funders and ministries alike.", "project_id": "proj-NCD-005", "idea_type": "research", "tags": "NCD,infectious-disease,double-burden,framing", "domain": "Public Health", "phd_relevance": 2},
     ]
 
     for i, idea in enumerate(ideas, start=1):
@@ -483,7 +483,7 @@ Two countries' 2023 survey microdata are still under data-use review; expected w
     journal = [
         {"entry_id": "jrnl-001", "mood": "focused", "energy_score": 4,
          "summary": "CEA revision momentum",
-         "content": "Good day. Re-ran the probabilistic sensitivity analysis for the MDA paper and the conclusions held — integrated MDA stays cost-effective across the threshold range. Reviewer 2 will push on the discount rate but the new scenarios cover it. The ECEA appendix is going to make the equity story much stronger.",
+         "content": "Good day. Re-ran the probabilistic sensitivity analysis for the MDA paper and the conclusions held — seasonal MDA stays cost-effective across the threshold range. Reviewer 2 will push on the discount rate but the new scenarios cover it. The ECEA appendix is going to make the equity story much stronger.",
          "tags": "CEA,MDA,progress"},
         {"entry_id": "jrnl-002", "mood": "scattered", "energy_score": 2,
          "summary": "Too many threads — brief + grant + teaching",
@@ -513,7 +513,7 @@ Two countries' 2023 survey microdata are still under data-use review; expected w
     # ── Contacts (collaborators who appear in the meetings) ───────────────────────
     contacts = [
         {"contact_id": "c-001", "name": "Dr. Naledi Okonkwo", "role": "Health Financing Lead", "affiliation": "WHO AFRO", "notes": "Commissioned the UHC financing brief; co-chairs the financing working group.", "last_seen": D(2)},
-        {"contact_id": "c-002", "name": "Prof. Helena Ross", "role": "Professor of Health Economics", "affiliation": "LSHTM", "notes": "Senior author on the NTD MDA paper; advises on ICER thresholds and the ECEA appendix.", "last_seen": D(5)},
+        {"contact_id": "c-002", "name": "Prof. Helena Ross", "role": "Professor of Health Economics", "affiliation": "LSHTM", "notes": "Senior author on the malaria MDA paper; advises on ICER thresholds and the ECEA appendix.", "last_seen": D(5)},
         {"contact_id": "c-003", "name": "Mr. David Mensah", "role": "Senior Health Economist", "affiliation": "World Bank", "notes": "Shares GHED / health-expenditure data for the dashboard and the brief.", "last_seen": D(2)},
         {"contact_id": "c-004", "name": "Dr. Priya Nair", "role": "Immunization Financing Specialist", "affiliation": "Gavi", "notes": "Gavi transition investment-case contact; co-financing scenarios.", "last_seen": D(1)},
         {"contact_id": "c-005", "name": "Dr. Tomás Herrera", "role": "Modelling co-author", "affiliation": "Institute of Global Health", "notes": "NCD burden + decision modelling; suggested the friction-cost sensitivity analysis.", "last_seen": D(1)},
@@ -536,7 +536,7 @@ Two countries' 2023 survey microdata are still under data-use review; expected w
         ("Financing transformative health systems towards achievement of the SDGs", "Stenberg K, Hanssen O, Edejer TT, et al.", "2017", "The Lancet Global Health", "UHC,financing,SDG", "10.1016/S2214-109X(17)30263-2"),
         ("Return on investment from childhood immunization in low- and middle-income countries", "Ozawa S, Clark S, Portnoy A, et al.", "2016", "Health Affairs", "immunization,ROI,investment-case", "10.1377/hlthaff.2015.1086"),
         ("The global economic burden of non-communicable diseases", "Bloom DE, Cafiero ET, Jané-Llopis E, et al.", "2011", "World Economic Forum", "NCD,economic-burden,macroeconomic", ""),
-        ("Cost-effectiveness of mass drug administration for the control of neglected tropical diseases", "Fitzpatrick C, Engels D", "2016", "International Health", "NTD,MDA,cost-effectiveness", "10.1093/inthealth/ihw002"),
+        ("Consolidated Health Economic Evaluation Reporting Standards 2022 (CHEERS 2022) statement", "Husereau D, Drummond M, Augustovski F, et al.", "2022", "BMJ", "CHEERS,reporting,cost-effectiveness", "10.1136/bmj-2021-067975"),
         ("Decision Modelling for Health Economic Evaluation", "Briggs A, Claxton K, Sculpher M", "2006", "Oxford University Press", "decision-modelling,Markov,methods", ""),
         ("Progress on catastrophic health spending in 133 countries", "Wagstaff A, Flores G, Hsu J, et al.", "2018", "The Lancet Global Health", "catastrophic-expenditure,UHC,equity", "10.1016/S2214-109X(17)30429-1"),
         ("Financing Global Health: development assistance and the pandemic", "Institute for Health Metrics and Evaluation", "2023", "IHME", "health-financing,DAH,global", ""),
@@ -559,7 +559,7 @@ Two countries' 2023 survey microdata are still under data-use review; expected w
 • **The idea you captured** about turning the brief into a Module 5 teaching case study: the same financing-gap calculation works for students.
 • **Your note + the working-group decision** — you wrote that the brief should pair the gap with efficiency-gains evidence ("mobilise revenue AND capture efficiency, not just spend more"), and the financing working group agreed exactly that framing two days ago. Your note, that meeting, and this report are one coherent argument now.
 
-**This week's signals:** The Global Fund's US$18bn 8th-Replenishment target tightens co-financing for transitioning countries — relevant to the Gavi investment case. WHO's updated cost-effectiveness-threshold guidance (opportunity-cost, not GDP multiples) is directly useful for the NTD MDA paper's threshold paragraph. The 2024 GHED data is out — it plugs straight into the financing dashboard.
+**This week's signals:** The Global Fund's US$18bn 8th-Replenishment target tightens co-financing for transitioning countries — relevant to the Gavi investment case. WHO's updated cost-effectiveness-threshold guidance (opportunity-cost, not GDP multiples) is directly useful for the malaria MDA paper's threshold paragraph. The 2024 GHED data is out — it plugs straight into the financing dashboard.
 
 **Where to start this morning:** Two items are due today — the financing-gap figure (brief) and the reviewer response on the MDA paper. The figure unblocks the whole brief and the working group is waiting on it, so do it first. Your highest-leverage 20 minutes: build the figure around the US$370bn number while it's fresh — it anchors the brief *and* you can lift it straight into the Module 5 case study."""
 
@@ -575,7 +575,7 @@ Two countries' 2023 survey microdata are still under data-use review; expected w
     # "Weekly". Stored under a distinct insight_date so it coexists with the daily.
     weekly_text = """**This week in review — the throughline was financing.** The new global monitoring report (a sample news item) putting the LMIC universal-health-coverage gap at ~US$370bn/year set the agenda, and it converged with three of your own threads: the UHC policy brief (where it's now the headline figure), the Global Fund's US$18bn replenishment target, and the Gavi co-financing work — all circling the same uncomfortable question of how countries sustain coverage as donor money tightens.
 
-**Your work moved.** The NTD MDA cost-effectiveness paper took shape: the discount-rate sensitivity and the iDSI reference-case framing for the threshold debate are now the plan, and the consortium agreed an ECEA appendix on financial-risk protection. On the NCD burden study, the consortium settled the catastrophic-expenditure thresholds (10% and 25%, WHO primary) and the productivity-loss methods (human-capital base case, friction-cost sensitivity). The financing working group asked you to lead the financing-gap figure for the brief.
+**Your work moved.** The malaria MDA cost-effectiveness paper took shape: the discount-rate sensitivity and the iDSI reference-case framing for the threshold debate are now the plan, and the consortium agreed an ECEA appendix on financial-risk protection. On the NCD burden study, the consortium settled the catastrophic-expenditure thresholds (10% and 25%, WHO primary) and the productivity-loss methods (human-capital base case, friction-cost sensitivity). The financing working group asked you to lead the financing-gap figure for the brief.
 
 **The thread for next week.** The strongest cross-cutting move is the one your own note already flagged: pair the US$370bn gap with the efficiency-gains evidence in the brief, then reuse that exact calculation as the Module 5 teaching case. Three of your projects — the brief, the course, and the dashboard — are converging on the same financing story. Worth consolidating before it scatters."""
     conn.execute("""
@@ -586,7 +586,7 @@ Two countries' 2023 survey microdata are still under data-use review; expected w
     # ── Agent Runs ─────────────────────────────────────────────────────────────
     agent_runs = [
         {"agent_slug": "librarian", "task_summary": "Literature search: cost-effectiveness thresholds in global health 2016–2025", "input_path": "inputs/searches/ce-thresholds-2025.md", "output_path": "outputs/reviews/librarian/2026-05-13_ce-thresholds.md", "status": "completed", "input_tokens": 1240, "output_tokens": 3890, "model": "claude-sonnet-4-6", "created_at": DT(2)},
-        {"agent_slug": "methods-coach", "task_summary": "Methods review: Markov model structure for the NTD MDA cost-effectiveness paper", "input_path": "inputs/code/mda-markov-model.R", "output_path": "outputs/reviews/methods-coach/2026-05-11_mda-markov-review.md", "status": "completed", "input_tokens": 2100, "output_tokens": 4200, "model": "claude-opus-4-7", "created_at": DT(4)},
+        {"agent_slug": "methods-coach", "task_summary": "Methods review: Markov model structure for the malaria MDA cost-effectiveness paper", "input_path": "inputs/code/mda-markov-model.R", "output_path": "outputs/reviews/methods-coach/2026-05-11_mda-markov-review.md", "status": "completed", "input_tokens": 2100, "output_tokens": 4200, "model": "claude-opus-4-7", "created_at": DT(4)},
         {"agent_slug": "writing-partner", "task_summary": "Policy-brief revision: UHC financing options section", "input_path": "inputs/drafts/uhc-brief-v2.md", "output_path": "outputs/reviews/writing-partner/2026-05-10_uhc-brief-revision.md", "status": "completed", "input_tokens": 3400, "output_tokens": 5600, "model": "claude-sonnet-4-6", "created_at": DT(5)},
         {"agent_slug": "data-analyst", "task_summary": "Profile and harmonise catastrophic-expenditure across six household surveys", "input_path": "inputs/code/ncd-surveys-merge.csv", "output_path": "outputs/reviews/data-analyst/2026-05-12_ncd-survey-profile.md", "status": "completed", "input_tokens": 1800, "output_tokens": 2900, "model": "claude-sonnet-4-6", "created_at": DT(3)},
         {"agent_slug": "meeting-memory", "task_summary": "Global Health Financing Working Group — structured brief + action items", "input_path": "inputs/meetings/financing-wg-2026.txt", "output_path": "outputs/reviews/meeting-memory/2026-05-13_financing-wg.md", "status": "completed", "input_tokens": 2800, "output_tokens": 3400, "model": "claude-haiku-4-5", "created_at": DT(2)},

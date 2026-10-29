@@ -66,11 +66,11 @@ Apply these in every line edit:
 
 **Example 1 — Structural problem**
 
-Original: "Passive screening has been used in disease elimination programs. Active screening was implemented in several countries. Our study design used passive screening only."
+Original: "Community health workers have been used in hypertension programmes. Facility-based follow-up was implemented in several countries. Our study design used community health workers only."
 
 Problem: Three sentences, three topics, no logical connection made explicit.
 
-Revised: "Our study relied on passive screening — care-seeking cases presenting to health facilities — rather than active mass screening. This choice reflects the current programmatic shift in elimination: as transmission falls, passive screening is increasingly the primary modality in former high-burden zones (citation)."
+Revised: "Our study relied on community health workers — trained lay staff following patients up at home — rather than facility-based follow-up alone. This choice reflects a wider shift in hypertension care: as diagnosis expands, task-sharing is increasingly the main route to sustained control where clinicians are scarce (citation)."
 
 **Example 2 — Reporting standard gap**
 

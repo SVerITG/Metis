@@ -1,0 +1,112 @@
+{# Everything known about one file — all of it from code and notes. #}
+{% if not card %}
+<div class="dm-empty">This file is no longer in the memory. It may have been forgotten with its folder.</div>
+{% else %}
+<div class="dmf">
+  <div class="dmf-head">
+    <div class="dmf-name">{{ card.name }}</div>
+    <div class="u-row u-row--wrap" style="margin-top:var(--m-space-2);">
+      {% if card.on_disk == 1 %}<span class="stat is-good">on disk</span>
+      {% elif card.on_disk == 0 %}<span class="stat is-warn">not found — moved or renamed?</span>
+      {% else %}<span class="stat is-quiet">location not checked</span>{% endif %}
+      <span class="tag">{{ card.format or 'folder' }}</span>
+      <span class="tag">{{ card.n_columns }} columns seen</span>
+    </div>
+    <div class="dmf-path u-row">
+      <code class="u-grow">{{ card.path }}</code>
+      <button type="button" class="btn btn--ghost btn--caps" title="Copy the path"
+              onclick="navigator.clipboard.writeText({{ card.path|tojson|forceescape }});this.textContent='copied';">copy</button>
+    </div>
+  </div>
+
+  {% if card.read_by %}
+  <div class="dmf-sec">
+    <div class="dmf-label">Read by</div>
+    <ul class="dmf-scripts">
+      {% for r in card.read_by %}
+      <li title="{{ r.script }}"><span class="dmf-script">{{ r.name }}</span>
+        {% if r.object %}<span class="tag">as {{ r.object }}</span>{% endif %}
+        {% if r.sheet %}<span class="tag">sheet {{ r.sheet }}</span>{% endif %}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if card.written_by %}
+  <div class="dmf-sec">
+    <div class="dmf-label">Made by</div>
+    <ul class="dmf-scripts">
+      {% for w in card.written_by %}<li title="{{ w.script }}"><span class="dmf-script">{{ w.name }}</span></li>{% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <div class="dmf-sec">
+    <div class="dmf-label">Columns your code uses</div>
+    {% if card.columns %}
+    <table class="dmf-cols">
+      {% for c in card.columns %}
+      <tr>
+        <td class="dmf-col">{{ c.name }}</td>
+        <td>
+          {% for v in c["values"][:12] %}<span class="chip chip--mute">{{ v }}</span> {% endfor %}
+          {% if c["values"]|length > 12 %}<span class="tag">+{{ c["values"]|length - 12 }}</span>{% endif %}
+          {% if c.derived %}<div class="dmf-recipe">:= {{ c.derived }}</div>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% else %}
+    <div class="dmf-none">No column names appear in the code for this file — it may be read
+      without headers, or only passed on whole. Metis will not guess them.</div>
+    {% endif %}
+  </div>
+
+  <div class="dmf-sec">
+    <div class="dmf-label">What you have told Metis</div>
+    {% for s in card.stories[:4] %}
+    <div class="dmf-story">
+      <div class="u-row" style="margin-bottom:var(--m-space-1);">
+        {% if s.source == 'researcher' %}<span class="stat is-info">your words</span>
+        {% else %}<span class="tag">{{ s.source_path.split('/')[-1] }} · {{ s.target.split('/')[-1] }}</span>{% endif %}
+        <span class="tag">{{ (s.updated_at or '')[:10] }}</span>
+      </div>
+      <div class="dmf-story-text">{{ s.text[:1200] }}{% if s.text|length > 1200 %}…{% endif %}</div>
+    </div>
+    {% else %}
+    <div class="dmf-none">Nothing yet. Where it came from, what to watch out for, why it is the
+      reference — anything you write here is kept with the file and given to Claude whenever
+      this data comes up.</div>
+    {% endfor %}
+    <form class="dmf-add" hx-post="/api/data-memory/story" hx-target="#dm-detail">
+      <input type="hidden" name="key" value="{{ card.key }}">
+      <textarea name="story" rows="2" class="dm-input" style="width:100%;"
+                placeholder="e.g. Fixed reference list — do not update. Built from the 2023 extract; two sites merged in 2021." aria-label="Add a note about this file"></textarea>
+      <button type="submit" class="btn btn--sec btn--caps" style="margin-top:var(--m-space-2);">Keep this note</button>
+    </form>
+  </div>
+</div>
+
+<style>
+  .dmf-head { padding:var(--m-space-4) var(--m-space-5); border-bottom:1px solid var(--m-rule-soft); }
+  .dmf-name { font-family:var(--m-display); font-size:22px; color:var(--m-ink); word-break:break-word; line-height:1.2; }
+  .dmf-path { margin-top:var(--m-space-3); }
+  .dmf-path code { font-family:var(--m-mono); font-size:var(--t-micro); color:var(--m-muted); word-break:break-all; }
+  .dmf-sec { padding:var(--m-space-4) var(--m-space-5); border-bottom:1px solid var(--m-rule-soft); }
+  .dmf-sec:last-child { border-bottom:0; }
+  .dmf-label { font-family:var(--m-mono); font-size:var(--t-micro); letter-spacing:0.16em; text-transform:uppercase;
+               color:var(--m-muted); margin-bottom:var(--m-space-2); }
+  .dmf-scripts { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:4px; }
+  .dmf-script { font-family:var(--m-mono); font-size:var(--t-small); margin-right:6px; }
+  .dmf-cols { width:100%; border-collapse:collapse; }
+  .dmf-cols td { padding:6px 0; border-top:1px solid var(--m-rule-soft); vertical-align:top; font-size:var(--t-small); }
+  .dmf-cols tr:first-child td { border-top:0; }
+  .dmf-col { font-family:var(--m-mono); width:34%; padding-right:var(--m-space-3) !important; word-break:break-word; }
+  .dmf-cols .chip { margin:0 2px 3px 0; text-transform:none; letter-spacing:0.02em; }
+  .dmf-recipe { font-family:var(--m-mono); font-size:var(--t-micro); color:var(--m-muted); margin-top:2px; word-break:break-word; }
+  .dmf-none { font-size:var(--t-small); color:var(--m-muted); line-height:1.5; }
+  .dmf-story { padding:var(--m-space-2) 0; }
+  .dmf-story-text { font-size:var(--t-small); line-height:1.55; white-space:pre-wrap; max-height:14em; overflow:auto; }
+  .dmf-add { margin-top:var(--m-space-3); }
+</style>
+{% endif %}

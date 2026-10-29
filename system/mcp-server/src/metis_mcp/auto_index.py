@@ -2,7 +2,7 @@
 
 WHY THIS EXISTS
     The blocking half of M6 shipped earlier: a layer can now point at a folder outside
-    knowledge/library, which is what made 211 sleeping-sickness papers searchable. But a
+    knowledge/library, which is what made 211 subject papers searchable. But a
     document added after that still waited for someone to press Rebuild, or for the
     nightly job. "I added the paper and Metis cannot find it" is indistinguishable from
     "Metis is broken", and the researcher has no way to tell which.

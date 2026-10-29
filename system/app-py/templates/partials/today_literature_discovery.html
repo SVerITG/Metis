@@ -27,7 +27,9 @@
                   color:{% if period == 'month' %}var(--m-on-accent){% else %}var(--m-muted){% endif %};">MONTH</button>
       </span>
       {%- set claude_lit_prompt -%}
-Find recent publications relevant to my research (sleeping sickness / HAT, neglected tropical diseases, DHIS2, spatial epidemiology, disease surveillance in West and Central Africa). Using the metis-rc tools, add the most relevant new papers to my Metis literature discovery, then show me what you added.
+{#- The research scope is the researcher's own declared topics, not a fixed list. -#}
+{%- set topic_names = (topics or []) | map(attribute='topic') | select | list -%}
+Find recent publications relevant to my research{% if topic_names %} ({{ topic_names | join(', ') }}){% endif %}. Using the metis-rc tools, add the most relevant new papers to my Metis literature discovery, then show me what you added.
       {%- endset -%}
       {% set lit_update_opts = [
         {'icon': '✦', 'label': 'With Claude Desktop', 'sub': 'searches the web for new papers · no API tokens',

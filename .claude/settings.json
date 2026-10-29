@@ -100,6 +100,11 @@
             "type": "command",
             "command": "if command -v node >/dev/null 2>&1; then node \"$CLAUDE_PROJECT_DIR/.claude/hooks/user-prompt-submit.mjs\"; fi",
             "timeout": 8
+          },
+          {
+            "type": "command",
+            "command": "if command -v node >/dev/null 2>&1; then node \"$CLAUDE_PROJECT_DIR/.claude/hooks/data-mode.mjs\"; fi",
+            "timeout": 5
           }
         ]
       }

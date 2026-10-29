@@ -39,7 +39,7 @@ Write the answer so it **clearly separates** (a) what your **library** says — 
 ## After answering — close the loop
 
 If the web turned up genuinely useful sources, offer to **make them permanent**:
-> "These 3 papers filled a real gap — index them into your `hat-specialist` layer so they're in your library next time? (`/background extend`)"
+> "These 3 papers filled a real gap — index them into your field's knowledge layer so they're in your library next time? (`/background extend`)"
 
 This is the virtuous cycle: today's gap becomes tomorrow's library hit, so the internet is needed less over time.
 

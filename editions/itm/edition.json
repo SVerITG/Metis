@@ -1,0 +1,20 @@
+{
+  "id": "itm",
+  "name": "Metis for ITM",
+  "version": "1.1",
+  "update_repo": "SVerITG/Metis_ITM",
+  "surfaces_off": [
+    "learning"
+  ],
+  "modules_off": [
+    "dhis2",
+    "course_builder",
+    "background_packs",
+    "voice_capture",
+    "accounts"
+  ],
+  "pack": "itm",
+  "links": {
+    "statistics_course": "https://statistics-for-epidemiology.netlify.app/#course-map"
+  }
+}

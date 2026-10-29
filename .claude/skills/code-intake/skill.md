@@ -18,8 +18,14 @@ The end goal: Metis can scaffold new scripts (dashboards, analyses, Table 1) usi
 Ask the user where their scripts are. Default: `inputs/code/`. Accept any folder path.
 
 ```
-scan_project_scripts(folder_path="<path>", project_id="<project>")
+data_memory_scan(folder="<path>", project_id="<project>")
 ```
+
+This feeds the Data Memory, the store every data request now consults first
+(`data_memory(question)`). It follows path objects and `source()` chains, so
+`read_excel(path_cases)` is resolved to the real file, and it registers the folder
+so later edits are re-learnt automatically. The older `scan_project_scripts` only
+recognised a literal path inside the read call and missed most real reads.
 
 If the user hasn't specified a project, ask which project this belongs to (check `get_project_status()` for active projects).
 

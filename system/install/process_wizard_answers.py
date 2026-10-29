@@ -54,7 +54,7 @@ Be concrete — every sentence should be actionable. Cover:
 List 8-14 research topic tags, one per line, no bullets.
 These drive literature alerts, news filtering, and knowledge search.
 Be specific (e.g. "visceral leishmaniasis" not "tropical diseases").
-Include their tools as topics if they are researchable (e.g. "DHIS2", "spatial epidemiology").
+Include their tools as topics if they are researchable (e.g. "REDCap", "spatial epidemiology").
 
 === PROJECTS ===
 For each project the researcher mentioned, one block per project:
@@ -657,6 +657,50 @@ def _scan_folder_for_description(folder: Path, scan_type: str) -> str:
     return ", ".join(hints) if hints else ""
 
 
+def _data_memory_module(metis_root: Path):
+    """The Data Memory engine, imported from the package or straight from source.
+
+    The installer can run before the MCP package is installed; the engine is
+    plain Python with no dependency on the server, so loading it by path works.
+    """
+    try:
+        from metis_mcp import data_memory
+        return data_memory
+    except ImportError:
+        import importlib.util
+        src = metis_root / "system" / "mcp-server" / "src" / "metis_mcp" / "data_memory.py"
+        spec = importlib.util.spec_from_file_location("metis_data_memory", src)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+
+
+def register_script_folders(metis_root: Path, answers: dict) -> dict:
+    """Register the folders that hold the user's analysis scripts.
+
+    Only registers: learning them (reading every script's code, never its
+    data) is slower and is started by the caller — in the background from the
+    dashboard, with progress from the terminal wizard.
+    """
+    raw = answers.get("script_folders") or []
+    if isinstance(raw, str):
+        raw = [ln for ln in raw.splitlines()]
+    folders = [f.strip().strip('"') for f in raw if f and f.strip()]
+    out = {"registered": [], "missing": [], "scripts": 0}
+    if not folders:
+        return out
+    dm = _data_memory_module(metis_root)
+    db = live_db_path(metis_root)
+    for f in folders:
+        try:
+            p = dm.register_source(f, db=db)
+            out["registered"].append(p["folder"])
+            out["scripts"] += p["scripts"]
+        except FileNotFoundError:
+            out["missing"].append(f)
+    return out
+
+
 def remove_first_run_marker(metis_root: Path):
     marker = metis_root / "system" / "config" / ".first-run"
     marker.unlink(missing_ok=True)
@@ -706,6 +750,10 @@ def process(answers: dict, metis_root: Path, api_key: str | None = None) -> dict
     result["projects"] = [str(p) for p in write_project_stubs(metis_root, structured_projects, scan_type)]
     result["topics_written"] = write_user_topics(metis_root, answers)
     result["profile_written"] = write_user_preferences(metis_root, answers)
+    try:
+        result["data_memory"] = register_script_folders(metis_root, answers)
+    except Exception as exc:   # never let this block the rest of setup
+        result["data_memory"] = {"registered": [], "missing": [], "scripts": 0, "error": str(exc)}
     result["ai_used"] = ai_used
     result["topics"] = topics
     remove_first_run_marker(metis_root)

@@ -20,7 +20,7 @@ this in an earlier pass and no code ever wrote to it; this module supersedes it.
 THE MODEL
 ---------
 1. Every news item is assigned to a persistent THREAD, identified by
-   subject + place ("ebola-drc", "sleeping-sickness-drc", "who-funding").
+   subject + place ("ebola-uganda", "cholera-yemen", "who-funding").
    Identity is deliberately explainable — the researcher can read the thread labels and
    tell whether the clustering agrees with him.
 
@@ -129,18 +129,19 @@ def ensure_tables(conn: sqlite3.Connection) -> None:
 # Kept explicit rather than learned. The domain vocabulary is narrow (diseases,
 # countries, health organisations) and an explainable thread label beats a
 # marginally better clustering that nobody can audit. Aliases map surface forms
-# onto one canonical subject so "HAT", "sleeping sickness" and "human african
-# trypanosomiasis" are one thread, not three.
+# onto one canonical subject so "mpox", "monkeypox" and "clade ib" are one
+# thread, not three.
+#
+# The built-in vocabulary is general outbreak and health-policy news. An
+# installation adds its own subjects, places, labels and stopwords through the
+# machine-local domain files (see metis_mcp.domain): "news_subject_aliases",
+# "news_place_aliases", "news_subject_labels", "news_stopwords".
 
 SUBJECTS: dict[str, tuple[str, ...]] = {
     "ebola": ("ebola", "ebola virus disease", "evd", "zaire ebolavirus", "sudan virus"),
     "marburg": ("marburg", "marburg virus"),
     "mpox": ("mpox", "monkeypox", "clade ib", "clade i mpox"),
     "cholera": ("cholera", "vibrio cholerae"),
-    "sleeping-sickness": (
-        "sleeping sickness", "human african trypanosomiasis", "trypanosomiasis",
-        "hat elimination", "gambiense", "rhodesiense", "tsetse", "trypanosoma",
-    ),
     "malaria": ("malaria", "plasmodium", "falciparum", "artemisinin"),
     "measles": ("measles", "rubeola"),
     "polio": ("polio", "poliovirus", "poliomyelitis", "cvdpv"),
@@ -153,13 +154,6 @@ SUBJECTS: dict[str, tuple[str, ...]] = {
     "hiv": ("hiv", "aids", "antiretroviral", "prep "),
     "influenza": ("influenza", "h5n1", "avian flu", "bird flu", "h5n5"),
     "covid": ("covid", "sars-cov-2", "coronavirus"),
-    "ntd": (
-        "neglected tropical disease", "ntds", "ntd roadmap", "schistosomiasis",
-        "onchocerciasis", "lymphatic filariasis", "leishmaniasis", "trachoma",
-        "soil-transmitted helminth", "buruli", "leprosy", "chagas", "rabies",
-        "guinea worm", "dracunculiasis", "snakebite", "mycetoma", "yaws",
-    ),
-    "dhis2": ("dhis2", "district health information software"),
     "health-financing": (
         "health financing", "aid cuts", "development assistance", "usaid",
         "global fund", "replenishment", "gavi", "budget cut", "funding cut",
@@ -197,7 +191,7 @@ def user_subjects() -> dict[str, tuple[str, ...]]:
     `interests` and `news_topics` (set in the install wizard or the Metis Systems
     surface) are merged in as first-class subjects. A declared interest that
     already matches a built-in entry is folded into it rather than duplicated, so
-    declaring "sleeping sickness" does not create a second HAT thread.
+    declaring "monkeypox" does not create a second mpox thread.
 
     Measured 2026-08-19 before this existed: 59% of items matched no subject and
     fell through to the coarse `domain` tag. Widening the vocabulary from the
@@ -270,7 +264,7 @@ def user_subjects() -> dict[str, tuple[str, ...]]:
 
 PLACES: dict[str, tuple[str, ...]] = {
     "drc": ("drc", "democratic republic of the congo", "dr congo", "congo-kinshasa",
-            "kinshasa", "north kivu", "south kivu", "equateur", "kasai", "ituri", "bandundu"),
+            "kinshasa"),
     "uganda": ("uganda", "kampala"),
     "tanzania": ("tanzania",),
     "kenya": ("kenya", "nairobi"),
@@ -281,7 +275,7 @@ PLACES: dict[str, tuple[str, ...]] = {
     "ghana": ("ghana", "accra"),
     "guinea": ("guinea", "conakry"),
     "cote-divoire": ("cote d'ivoire", "côte d'ivoire", "ivory coast", "abidjan"),
-    "angola": ("angola", "luanda", "uige", "zaire province"),
+    "angola": ("angola", "luanda"),
     "chad": ("chad", "n'djamena"),
     "cameroon": ("cameroon", "yaounde", "yaoundé"),
     "car": ("central african republic", "bangui"),
@@ -306,7 +300,7 @@ PLACES: dict[str, tuple[str, ...]] = {
     "central-africa": ("central africa",),
     "southern-africa": ("southern africa", "sadc"),
     "africa": ("africa", "african union", "africa cdc", "continental"),
-    "europe": ("europe", "european union", "eu ", "ecdc", "belgium", "brussels"),
+    "europe": ("europe", "european union", "eu ", "ecdc"),
     "global": ("global", "worldwide", "world health assembly", "united nations"),
     "americas": ("latin america", "brazil", "paho", "united states", "washington"),
     "asia": ("asia", "india", "indonesia", "philippines", "china", "vietnam", "bangladesh"),
@@ -337,12 +331,11 @@ _ORG_LABELS = {
 }
 
 _SUBJECT_LABELS = {
-    "sleeping-sickness": "Sleeping sickness", "ntd": "Neglected tropical diseases",
     "ai-in-health": "AI in health", "health-financing": "Health financing",
     "health-workforce": "Health workforce", "climate-health": "Climate & health",
     "pandemic-treaty": "Pandemic treaty", "antimicrobial-resistance": "Antimicrobial resistance",
     "conflict-health": "Conflict & health", "outbreak-response": "Outbreak response",
-    "dhis2": "DHIS2", "hiv": "HIV/AIDS", "covid": "COVID-19", "mpox": "Mpox",
+    "hiv": "HIV/AIDS", "covid": "COVID-19", "mpox": "Mpox",
     "yellow-fever": "Yellow fever", "tuberculosis": "Tuberculosis",
 }
 
@@ -369,8 +362,41 @@ _STOPWORDS = {
     "sante", "publique", "ministere", "pays", "selon", "cette", "dans",
     "pour", "avec", "plus", "leur", "aux", "des", "les", "une", "sur",
     "par", "est", "ont", "nouveau", "nouvelle", "republique", "democratique",
-    "mocratique", "congolaise", "provinces", "province", "region",
+    "mocratique", "provinces", "province", "region",
 }
+
+
+def _merge_local_vocab() -> None:
+    """Fold the machine-local domain extras into the built-in tables.
+
+    Run once at import. Aliases are appended to an existing key or create a new
+    one; matching is longest-alias-first and independent of order, so an
+    extended table classifies exactly as if the extras had been written inline.
+    """
+    try:
+        from metis_mcp.domain import domain
+    except Exception:
+        return
+    for table, key in ((SUBJECTS, "news_subject_aliases"), (PLACES, "news_place_aliases")):
+        extra = domain(key, {}) or {}
+        if not isinstance(extra, dict):
+            continue
+        for canon, aliases in extra.items():
+            have = list(table.get(canon, ()))
+            for a in aliases or []:
+                if a not in have:
+                    have.append(a)
+            table[canon] = tuple(have)
+    labels = domain("news_subject_labels", {}) or {}
+    if isinstance(labels, dict):
+        _SUBJECT_LABELS.update({str(k): str(v) for k, v in labels.items()})
+    place_labels = domain("news_place_labels", {}) or {}
+    if isinstance(place_labels, dict):
+        _PLACE_LABELS.update({str(k): str(v) for k, v in place_labels.items()})
+    _STOPWORDS.update(str(w).lower() for w in (domain("news_stopwords", []) or []))
+
+
+_merge_local_vocab()
 
 
 def _norm(text: str) -> str:
@@ -498,8 +524,8 @@ def _largest_number(text: str) -> int:
 
 
 # Continental / global tags are too coarse to split a story on. Treating them
-# as real places produced 'sleeping-sickness', 'sleeping-sickness-africa' and
-# 'sleeping-sickness-drc' as three separate threads for one story, which
+# as real places produced 'cholera', 'cholera-africa' and 'cholera-sudan' as
+# three separate threads for one story, which
 # defeats cooldown — each variant kept its own turn to lead. Only a country
 # distinguishes a thread; a continent collapses into the subject alone.
 _WEAK_PLACES = frozenset({
@@ -534,8 +560,8 @@ def classify(title: str, summary: str = "", domain: str = "") -> dict:
     Returns {thread_id, label, subject, place, keywords, max_number}.
 
     Identity rule, in order:
-      subject + country  → 'ebola-drc'        (a specific story in a place)
-      subject only       → 'sleeping-sickness' (continental/global coverage)
+      subject + country  → 'ebola-uganda'     (a specific story in a place)
+      subject only       → 'malaria'          (continental/global coverage)
       country + token    → 'floods-mozambique' (event with no known subject)
       organisation       → 'who'               (announcement-type items)
       distinctive tokens → 'venezuela-earthquakes' (last resort)
@@ -1212,7 +1238,7 @@ _FOOTER_RE = re.compile(r"<<\s*THREADS\s*:(.*?)>>", re.IGNORECASE | re.DOTALL)
 def parse_coverage_footer(text: str) -> tuple[str, list[dict]]:
     """Split a generated brief into (display_text, coverage entries).
 
-    Expected footer: <<THREADS: ebola-drc(lead,angle=policy); malaria-africa(mention)>>
+    Expected footer: <<THREADS: ebola-uganda(lead,angle=policy); malaria-africa(mention)>>
     A missing or malformed footer yields an empty list — the caller falls back
     to the ranking rather than losing the brief.
     """

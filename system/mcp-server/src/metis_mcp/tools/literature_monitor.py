@@ -419,7 +419,7 @@ async def search_semantic_scholar(
     dashboard surface them like any other discovered paper.
 
     Args:
-        query: Free-text topic to search (e.g. "HAT elimination surveillance").
+        query: Free-text topic to search (e.g. "malaria elimination surveillance").
                Defaults to your configured PubMed/topic query if empty.
         max_results: Maximum papers to retrieve (default 10, max 100).
     """

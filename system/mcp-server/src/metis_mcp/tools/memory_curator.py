@@ -14,6 +14,7 @@ from mcp.types import TextContent
 
 from metis_mcp.config import paths
 from metis_mcp.db import connect
+from metis_mcp.domain import domain
 from metis_mcp.app_instance import app
 
 _MEMORY_DDL = """
@@ -591,8 +592,12 @@ async def memory_health_report() -> list[TextContent]:
     except Exception as e:
         return [TextContent(type="text", text=f"Error generating health report: {e}")]
 
-    core_topics = ["phd", "methods", "statistics", "hat", "ntd", "surveillance",
+    # Generic coverage topics every installation shares; a researcher's own
+    # subject tags come from their machine-local domain config, not the source.
+    core_topics = ["phd", "methods", "statistics", "surveillance",
                    "writing", "code", "metis", "learning", "global-health", "ai"]
+    core_topics += [t for t in domain("memory_core_topics_extra", [])
+                    if t not in core_topics]
 
     covered_topics = set()
     for row in by_topic:

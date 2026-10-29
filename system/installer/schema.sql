@@ -821,7 +821,7 @@ CREATE TABLE IF NOT EXISTS zotero_sync_state (
 
 CREATE TABLE IF NOT EXISTS knowledge_databases (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    slug        TEXT NOT NULL UNIQUE,   -- 'ph-background', 'hat-specialist', 'epi-methods'
+    slug        TEXT NOT NULL UNIQUE,   -- 'ph-background', 'epi-methods', '<topic>-specialist'
     name        TEXT NOT NULL,          -- 'Public Health Background'
     description TEXT DEFAULT '',
     layer       INTEGER DEFAULT 1,      -- 1=foundation, 2=specialist, 3=methods, 4+=custom

@@ -68,12 +68,12 @@ The thesis must have:
 
 ## Current working spine
 
-The current PhD appears to organize around:
+The current PhD spine is read from the user's project record. A typical spine organizes around:
 
-- historic and current risk structure
-- limitations of existing surveillance
-- redesign toward passive-dominant surveillance
-- targeting and monitoring logic for post-elimination surveillance
+- the size and distribution of the problem
+- limitations of current evidence or practice
+- a proposed change in approach or intervention
+- how that change is targeted, monitored and evaluated
 
 This should be treated as the current working architecture until revised deliberately.
 

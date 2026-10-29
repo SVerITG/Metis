@@ -1,0 +1,55 @@
+{
+  "id": "itm",
+  "name": "Institute of Tropical Medicine Antwerp",
+  "short_name": "ITM",
+  "surface_title": "ITM",
+  "accent": "#005B67",
+  "tagline": "The institute's templates and procedures, ready to use with Metis.",
+  "templates": [
+    {"id": "irb-cover-letter", "file": "templates/ITM IRB cover letter (v4).docx",
+     "title": "IRB cover letter", "kind": "Word letter",
+     "note": "The institute's letter to the Institutional Review Board, with its letterhead."},
+    {"id": "presentation", "file": "templates/ITM presentation - English.pptx",
+     "title": "ITM presentation (English)", "kind": "PowerPoint",
+     "note": "58 layouts in the institute's colours; the first slide explains how to use it."},
+    {"id": "poster-portrait", "file": "templates/ITM poster - portrait.potx",
+     "title": "ITM poster, portrait", "kind": "PowerPoint template",
+     "note": "Conference poster in the institute's style."}
+  ],
+  "actions": [
+    {"id": "irb-request", "featured": true,
+     "title": "Prepare an IRB submission",
+     "summary": "Describe your study in your own words. Metis asks what the committee needs to know, drafts the cover letter on the institute's template, and lists the documents to enclose.",
+     "ask": "Help me prepare an ITM IRB submission for my study. Here is what I want to do: ",
+     "templates": ["irb-cover-letter"],
+     "procedure": "procedures/irb-request.md",
+     "produces": ["Cover letter (.docx), ready to sign", "Checklist of enclosures", "Open questions to settle before submitting"]},
+    {"id": "presentation", "featured": true,
+     "title": "Make an ITM presentation",
+     "summary": "Give the topic, the audience and the length. Metis builds the deck on the institute's template.",
+     "ask": "Make an ITM presentation about ",
+     "templates": ["presentation"],
+     "produces": ["PowerPoint deck in the institute's style"]},
+    {"id": "poster", "featured": true,
+     "title": "Make an ITM poster",
+     "summary": "Give the abstract or the main findings. Metis lays them out on the institute's portrait poster.",
+     "ask": "Make an ITM poster from this abstract: ",
+     "templates": ["poster-portrait"],
+     "produces": ["Portrait poster (.pptx) in the institute's style"]}
+  ],
+  "missing_templates": [
+    "Letter on institute letterhead (general use)",
+    "Poster, landscape",
+    "IRB study protocol template",
+    "Participant information sheet and informed consent form",
+    "GDPR & Biobank Compliance Check Form"
+  ],
+  "focus": {
+    "slug": "itm",
+    "title": "ITM",
+    "subtitle": "The institute's actions, one click away",
+    "overview": "Everything that belongs to the institute rather than to one project: the IRB route, the institute's presentation and poster templates, and the institute in the news. The full list is on the ITM surface.",
+    "sections": ["overview", "tools", "whatsnew"],
+    "keyword_groups": [["Institute of Tropical Medicine", "ITM Antwerp"]]
+  }
+}

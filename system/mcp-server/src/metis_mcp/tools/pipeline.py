@@ -665,6 +665,7 @@ _DEFAULT_ROUTING_SEED: list[tuple[list, str, str, int]] = [
      "metis", "idea", 50),
 ]
 
+
 # How many specialists one request may put to work. Three is the point past
 # which a plain-English "who is on this" line stops being readable to someone
 # who does not know the agent roster.
@@ -720,7 +721,7 @@ _COVERAGE_ROUTING_SEED: list[tuple[list, str, str, int]] = [
     (["indicator", "kpi", "denominator", "coverage gap", "positivity rate",
       "screening completeness", "surveillance dashboard", "burden",
       "data quality panel", "dashboard tab", "dashboard bug", "blank panel",
-      "htmx partial", "fastapi route", "hat dashboard", "spinner",
+      "htmx partial", "fastapi route", "spinner",
       ("htmx", 45), ("partial", 55)],
      "dashboard-engineer", "dashboard", 26),
     (["design audit", "ui critique", "design review", "audit the interface",
@@ -762,6 +763,31 @@ _CLAUDE_AGENT_SEED: list[tuple[list, str, str, int]] = [
       "architecture for"], "Plan", "plan", 55),
 ]
 
+
+def _merge_local_routing_keywords() -> None:
+    """Add machine-local keywords ({agent_slug: [phrase, ...]}) to the seed.
+
+    An installation's own vocabulary — the name of its own dashboard, a local
+    platform — belongs in the domain files, not here. Each phrase joins the
+    first seed group for that agent, at the group's default priority.
+    """
+    try:
+        from metis_mcp.domain import domain
+        extra = domain("routing_keywords_extra", {}) or {}
+    except Exception:
+        return
+    if not isinstance(extra, dict):
+        return
+    groups = _DEFAULT_ROUTING_SEED + _COVERAGE_ROUTING_SEED + _CLAUDE_AGENT_SEED
+    for agent, phrases in extra.items():
+        for kws, seed_agent, _t, _p in groups:
+            if seed_agent == agent:
+                kws.extend(p for p in (phrases or []) if p not in kws)
+                break
+
+
+_merge_local_routing_keywords()
+
 # Slugs routing must never return again, and why. Rules for these are DELETED on
 # migration (see _migrate_routing_table) rather than left to lose quietly.
 #
@@ -795,7 +821,7 @@ _RETIRED_ROUTING_SLUGS = frozenset({
 # it. Its own prompt says the opposite, in its first paragraph: "You are not a
 # generic frontend builder" — its subject is which indicator matters, what the
 # denominator is, and how surveillance data should be read, and it carries a
-# HAT-dashboard context file no other agent has. Two agents can share a stack and
+# project-specific dashboard context file no other agent has. Two agents can share a stack and
 # still be different jobs; what they must not share is the same VOCABULARY, which
 # is what the split below fixes.
 
@@ -820,6 +846,21 @@ def _iter_seed(seed) -> list[tuple[str, str, str, int]]:
             else:
                 out.append((str(kw).lower(), agent, t, int(default_prio)))
     return out
+
+
+def _unroutable() -> frozenset:
+    """Slugs routing must never return: the retired ones, and any specialist whose
+    folder is not on this computer. An edition leaves specialists out, and the
+    seed table below still names them; routing to a specialist with no prompt to
+    load fails at dispatch, after the researcher was told who would help."""
+    try:
+        if paths.agents.is_dir():
+            present = {d.name for d in paths.agents.iterdir() if d.is_dir()}
+            seeded = {agent for _kw, agent, _t, _p in _iter_seed(_DEFAULT_ROUTING_SEED)}
+            return _RETIRED_ROUTING_SLUGS | frozenset(seeded - present - {"metis"})
+    except Exception:
+        pass
+    return _RETIRED_ROUTING_SLUGS
 
 
 def _migrate_routing_table(con) -> None:
@@ -1025,13 +1066,16 @@ def _load_routing_rules() -> list[tuple]:
             # Belt and braces: a retired slug must never route even if this
             # machine has not run the migration yet (Claude Desktop can start
             # the server before the dashboard ever opens).
-            return [r for r in rows if r[1] not in _RETIRED_ROUTING_SLUGS]
+            _skip = _unroutable()
+            return [r for r in rows if r[1] not in _skip]
     except Exception:
         # DB unavailable → fall back to the in-code seed so routing never dies.
         # Sorted by priority so the fallback ranks the same way the table does;
         # an unsorted fallback silently routed by declaration order instead.
         rows = [(kw, agent, t, "word", -1, "seed", prio)
                 for kw, agent, t, prio in _iter_seed(_DEFAULT_ROUTING_SEED)]
+        _skip = _unroutable()
+        rows = [r for r in rows if r[1] not in _skip]
         rows.sort(key=lambda r: (r[6], -len(r[0])))
         return rows
 
@@ -1121,7 +1165,8 @@ def _semantic_route(request: str, min_top: float = 0.62, rel_margin: float = 0.2
             return dot / (na * nb) if na and nb else 0.0
 
         scored = sorted(((_cos(q, v), slug) for slug, v in cands), reverse=True)
-        scored = [(sc, sl) for sc, sl in scored if sl not in _RETIRED_ROUTING_SLUGS]
+        _skip = _unroutable()
+        scored = [(sc, sl) for sc, sl in scored if sl not in _skip]
         if len(scored) < 3:
             return None, 0.0, scored
         top_score, top_slug = scored[0]
@@ -1474,7 +1519,7 @@ def record_decision(decision: str, category: str = "preference",
     Args:
         decision: the preference/decision in plain language (e.g. "Always use tidyverse style in R, never base apply").
         category: preference | coding | citation | methodology | writing | article-ref | dataset | routing | other.
-        context: optional — when/why it applies (e.g. "for HAT spatial analyses").
+        context: optional — when/why it applies (e.g. "for the spatial analyses").
         scope: 'always' (persist) or 'once'.
         agent_slug: the specialist that should APPLY this decision — e.g.
             "frontend-designer-builder" for a layout rule, "writing-partner" for

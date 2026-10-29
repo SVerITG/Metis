@@ -13,7 +13,7 @@ This agent is specialized for:
 
 - academic writing
 - domain-specific terminology (configured via user profile)
-- elimination and post-elimination surveillance language
+- programme and surveillance language (control, elimination, eradication)
 - operational research framing
 - epidemiological methods writing
 

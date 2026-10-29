@@ -564,7 +564,7 @@ def procedure_hint(arguments: dict[str, Any]) -> str | None:
             if hits > best_hits:
                 best, best_hits = pname, hits
         # Three distinct trigger words is the threshold that separated
-        # "do risk mapping for Angola" from incidental overlap in testing.
+        # "do risk mapping for the northern districts" from incidental overlap in testing.
         if best and best_hits >= 3:
             pref = procedure_preference(best)
             if pref == "never":

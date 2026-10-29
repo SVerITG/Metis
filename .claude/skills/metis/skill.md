@@ -61,18 +61,18 @@ Step 2 — Pre-fetch knowledge if applicable (RAG orchestration):
 |---|---|
 | Epidemiological methods, study design, surveillance, sampling, statistics, biostatistics, MLM/multilevel, spatial scan | `epi-methods` |
 | Public health guidelines, WHO/CDC recommendations, health systems, health economics, domain background | `ph-background` |
-| NTD programs, roadmaps/targets, malaria, schistosomiasis, general sleeping-sickness awareness | `ntd` |
-| Deep/clinical HAT: treatment, fexinidazole, gHAT elimination verification, HAT surveillance specifics | `hat-specialist` |
-| HAT query, unsure if deep or general | `["hat-specialist", "ntd"]` |
+| The researcher's own field — programmes, targets, general background on their topic | their custom field layer (see `list_knowledge_databases()`) |
+| Deep/specialist questions in that field: treatment, diagnostics, programme or trial specifics | their specialist layer, if one exists |
+| Field query, unsure if deep or general | both the specialist and the field layer |
 | Any query touching two categories above | search both databases |
 
-Available layers: `ph-background` (foundation), `epi-methods` (methods — Methods Coach), `ntd` (NTD + general HAT), `hat-specialist` (personal deep HAT). See `system/config/rag-routing-rules.md`.
+Available layers: `ph-background` (foundation), `epi-methods` (methods — Methods Coach), plus any field or specialist layers the researcher has built (list them with `list_knowledge_databases()`). See `system/config/rag-routing-rules.md`.
 
 **When to SKIP retrieval — do not call `search_pdf_knowledge()`:**
 - Conversational / meta: "how are you", "what did we do", "explain yourself"
 - Routing or status: "route this to", "what agent should", "status of project X"
 - News / scheduling: "what happened today", "set up a cron", "morning brief"
-- Code / software / DHIS2 implementation questions (no books cover those)
+- Code / software / data-platform implementation questions (no books cover those)
 - Idea capture, journaling, quick lookups
 
 **How to call it:**
@@ -163,11 +163,11 @@ After committing, tell the user: "I've saved a record of this to your memory —
 
 ## Research timeline — record evolving beliefs
 
-When a session produces a substantive research finding — a methodological conclusion, a changed view on surveillance data, a DHIS2 design decision, a literature synthesis — call `record_research_finding()` to timestamp it:
+When a session produces a substantive research finding — a methodological conclusion, a changed view on surveillance data, a data-system design decision, a literature synthesis — call `record_research_finding()` to timestamp it:
 
 ```
 record_research_finding(
-  entity="<short consistent name: 'diagnostic sensitivity low-burden setting', 'DHIS2 tracker forms'>",
+  entity="<short consistent name: 'diagnostic sensitivity low-burden setting', 'survey form design'>",
   claim="<your current belief in 1-3 sentences>",
   evidence="<what supports it — paper, data, discussion>",
   confidence="low|medium|high",
@@ -180,7 +180,7 @@ record_research_finding(
 To check how thinking on a topic has evolved: `query_research_timeline(entity="<name>")`.
 To see all tracked topics: `list_research_entities()`.
 
-Call this for: methodology conclusions, study design decisions, DHIS2 implementation choices, literature synthesis, epidemiological assessments. Skip for: factual lookups, code tasks, Q&A that won't affect future decisions.
+Call this for: methodology conclusions, study design decisions, data-system implementation choices, literature synthesis, epidemiological assessments. Skip for: factual lookups, code tasks, Q&A that won't affect future decisions.
 
 ## Reflexion — write after every agent run
 

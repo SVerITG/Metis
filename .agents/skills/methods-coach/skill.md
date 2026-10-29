@@ -6,7 +6,7 @@ where names (personal or place names) are the primary linking variable. Examples
 - Linking patient records across screening years
 - Deduplicating registries with inconsistent name spelling
 - Matching village/location names across data sources
-- Any Western or Congolese name matching context
+- Any Western or non-Western name matching context
 
 ---
 
@@ -53,8 +53,8 @@ dat %>%
 Block on geography or another exact variable BEFORE computing string distances.
 This reduces comparisons from millions to thousands and prevents false many-to-many matches.
 
-**For DRC/TRYPELIM data**: block on `healthzone + healtharea + village`
-(many villages share the same name across provinces — blocking on village alone is insufficient)
+**For routine programme data in multi-tier health systems**: block on `district + subdistrict + village`
+(many villages share the same name across regions — blocking on village alone is insufficient)
 
 **For Western data**: block on postal code, year of birth, or first letter of surname
 
@@ -202,12 +202,12 @@ val %>%
 
 ## Notes on name types
 
-### Congolese names (DRC context)
-- Three-part naming: Nom (family) + Postnom + Prénom — order varies by data entry operator
-- Common variation sources: French vs Lingala/Kikongo/Swahili spelling, vowel doubling (Mbaya/Mbaaya), truncation, prefix omission (Nk- vs K-)
-- Nom de la mère is a strong fallback — independent of the patient's own name encoding errors
-- Postnom completeness is often low (30–40%) — do not rely on it as a required variable
-- Village names: many duplicates across provinces — always block on healthzone + healtharea + village
+### Multi-part names (many African and Asian contexts)
+- Three-part naming: family name + additional name + given name — order varies by data entry operator
+- Common variation sources: official-language vs local-language spelling, vowel doubling, truncation, prefix omission
+- Mother's name is a strong fallback — independent of the patient's own name encoding errors
+- Additional-name completeness is often low (30–40%) — do not rely on it as a required variable
+- Village names: many duplicates across regions — always block on district + subdistrict + village
 
 ### Western names
 - Two-part naming typical: family name + given name (+ optional middle)

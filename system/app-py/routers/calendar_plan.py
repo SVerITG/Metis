@@ -501,7 +501,7 @@ def _short_label(title: str, cap: int = 22) -> str:
     """A chip label you can fit a rail of, without losing which project it is.
 
     Full titles ran to 34 characters here and several of them are qualified twice
-    over — "HAT Formation Clinique — RDC (Kinshasa–Kongo Central)" — so a dozen
+    over — "Field Training Workshop — North (Region A–Region B)" — so a dozen
     chips filled the rail and pushed the calendar itself below the fold. Reported
     2026-09-13: "organize the project names to drag better, now they take too
     much space".
@@ -521,13 +521,13 @@ def _short_labels(titles: list, cap: int = 22) -> list:
     """Shorten a SET of titles, and never let two of them become the same word.
 
     Shortening each title independently is wrong here and the rail proves it:
-    "HAT Formation Clinique — RDC (Kinshasa–Kongo Central)" and
-    "HAT Formation Clinique — RCA (Bangui)" both reduce to "HAT Formation
-    Clinique", so two different projects become one indistinguishable chip. The
+    "Field Training Workshop — North (Region A–Region B)" and
+    "Field Training Workshop — South (Region C)" both reduce to "Field Training
+    Workshop", so two different projects become one indistinguishable chip. The
     qualifier I stripped is precisely what tells them apart.
 
     So a label is only allowed to drop a qualifier while it stays UNIQUE. On a
-    collision the qualifier's first word is put back — "HAT Formation · RDC" —
+    collision the qualifier's first word is put back — "Field Training · North" —
     which is shorter than the original and still says which one it is. Shortening
     that loses identity is not shortening, it is deletion.
     """

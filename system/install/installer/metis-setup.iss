@@ -12,8 +12,24 @@
 ; NOTE the #ifndef guards. A bare #define REPLACES a value passed with /D, so
 ; the version could not be set from the command line: every build was 1.0.
 
+; An EDITION (e.g. an institute's copy) brings edition.iss next to this file:
+; its own name, identity, update address and welcome text. Absent → the full
+; build, unchanged. Included first so its #defines win over the defaults below.
+#if FileExists(AddBackslash(SourcePath) + "edition.iss")
+  #include "edition.iss"
+#endif
+
 #ifndef MyAppName
   #define MyAppName    "Metis"
+#endif
+#ifndef MyAppId
+  #define MyAppId      "A1B2C3D4-E5F6-7890-ABCD-EF1234567890"
+#endif
+#ifndef OutputPrefix
+  #define OutputPrefix "MetisSetup"
+#endif
+#ifndef DefaultFolder
+  #define DefaultFolder "Metis"
 #endif
 #ifndef MyAppVersion
   #define MyAppVersion "1.0"
@@ -27,13 +43,15 @@
 ; it had just launched. 17763 is the real requirement; fail at the door.
 #define MinWinBuild    "17763"   ; = Windows 10 version 1809
 #define MyAppPublisher "Metis Project"
-#define MyAppURL       "https://github.com/SVerITG/Metis"
+#ifndef MyAppURL
+  #define MyAppURL     "https://github.com/SVerITG/Metis"
+#endif
 
 ; RepoRoot = 3 levels up: installer/ → install/ → system/ → repo root
 #define RepoRoot       "..\..\.."
 
 [Setup]
-AppId={{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}
+AppId={{{#MyAppId}}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
@@ -42,7 +60,7 @@ AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
 
 ; Install to user's Documents — no admin required
-DefaultDirName={userdocs}\Metis
+DefaultDirName={userdocs}\{#DefaultFolder}
 DefaultGroupName={#MyAppName}
 DisableDirPage=no
 AllowNoIcons=yes
@@ -53,7 +71,7 @@ PrivilegesRequiredOverridesAllowed=dialog
 
 ; Single output file — choices are made inside the wizard, not via separate builds
 OutputDir=dist
-OutputBaseFilename=MetisSetup-{#MyAppVersion}
+OutputBaseFilename={#OutputPrefix}-{#MyAppVersion}
 
 Compression=lzma2/max
 SolidCompression=yes
@@ -76,7 +94,11 @@ CreateUninstallRegKey=yes
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [CustomMessages]
+#ifdef EditionWelcome
+english.WelcomeText={#EditionWelcome}
+#else
 english.WelcomeText=Welcome to Metis — your AI research companion.%n%nMetis gives every Claude conversation a persistent memory of your domain, your papers, your projects, and your working history. The longer you use it, the better every response gets — because Metis knows you better, not because the AI changed.%n%nYou don't need to follow developments in AI. Metis does that for you.%n%nYour files and data stay on your computer. Only the text you choose to send for analysis goes to Claude (the Anthropic API); everything else stays local.%n%n────────────────────────────────────────────%n%nThis installer will:%n  1. Install the Metis AI core (MCP server + 33 specialist agents)%n  2. Optionally install the 9-tab research dashboard%n  3. Ask you a few questions to personalise Metis to your work%n%nInstallation takes 5–15 minutes depending on your connection.%nAn Anthropic API key is optional: Claude Desktop and Claude Code use your Claude subscription.
+#endif
 
 ; ── Component descriptions shown in wizard ───────────────────────────────────
 [Types]
@@ -100,16 +122,21 @@ Source: "{#RepoRoot}\.claude\*"; DestDir: "{app}\.claude"; Flags: ignoreversion 
   Excludes: "worktrees\*,projects\*,worktrees,projects"
 
 ; ── Knowledge base ────────────────────────────────────────────────────────────
-Source: "{#RepoRoot}\knowledge\course-template\*";  DestDir: "{app}\knowledge\course-template"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#RepoRoot}\knowledge\course-template\*";  DestDir: "{app}\knowledge\course-template"; Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist
 Source: "{#RepoRoot}\knowledge\library\concepts\*"; DestDir: "{app}\knowledge\library\concepts"; Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist
-Source: "{#RepoRoot}\knowledge\library\methods\*";  DestDir: "{app}\knowledge\library\methods";  Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#RepoRoot}\knowledge\library\methods\*";  DestDir: "{app}\knowledge\library\methods";  Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist
 
 ; ── System config (public files only — no personal data) ─────────────────────
 Source: "{#RepoRoot}\system\config\constitution.md";     DestDir: "{app}\system\config"; Flags: ignoreversion
 Source: "{#RepoRoot}\system\config\red-lines.md";        DestDir: "{app}\system\config"; Flags: ignoreversion
 Source: "{#RepoRoot}\system\config\token-guardrails.md"; DestDir: "{app}\system\config"; Flags: ignoreversion
 Source: "{#RepoRoot}\system\config\first-run-wizard.md"; DestDir: "{app}\system\config"; Flags: ignoreversion
+Source: "{#RepoRoot}\system\config\scheduled\morning-briefing.md"; DestDir: "{app}\system\config\scheduled"; Flags: ignoreversion
 Source: "{#RepoRoot}\system\config\tool-subsets.json";   DestDir: "{app}\system\config"; Flags: ignoreversion skipifsourcedoesntexist
+; An edition's settings and its institution pack (templates, procedures).
+; Absent in the full build, so both are skipped there.
+Source: "{#RepoRoot}\system\config\edition.json";      DestDir: "{app}\system\config"; Flags: ignoreversion skipifsourcedoesntexist
+Source: "{#RepoRoot}\packs\*";                         DestDir: "{app}\packs";          Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist
 
 ; ── MCP server ────────────────────────────────────────────────────────────────
 Source: "{#RepoRoot}\system\mcp-server\src\*";          DestDir: "{app}\system\mcp-server\src"; Flags: ignoreversion recursesubdirs createallsubdirs
@@ -144,13 +171,14 @@ Source: "..\dist\MetisTray.exe";         DestDir: "{app}\system\install\windows"
 Source: "..\vendor_download.py";         DestDir: "{app}\system\install";         Flags: ignoreversion
 Source: "..\config_merger.py";           DestDir: "{app}\system\install";         Flags: ignoreversion
 Source: "..\register_desktop.py";        DestDir: "{app}\system\install";         Flags: ignoreversion
+Source: "..\register_schedule.py";       DestDir: "{app}\system\install";         Flags: ignoreversion
 Source: "..\metis_verify.py";            DestDir: "{app}\system\install";         Flags: ignoreversion
 Source: "..\essentials.json";            DestDir: "{app}\system\install";         Flags: ignoreversion
 ; Demo/seed content. Gitignored, so it is absent from a clean clone and the
 ; compile must not depend on it — without skipifsourcedoesntexist, ISCC
 ; fails outright and no installer can be built at all.
 Source: "..\seed_mockup_demo.py";        DestDir: "{app}\system\install";         Flags: ignoreversion
-Source: "..\build_knowledge_db.py";      DestDir: "{app}\system\install";         Flags: ignoreversion
+Source: "..\build_knowledge_db.py";      DestDir: "{app}\system\install";         Flags: ignoreversion skipifsourcedoesntexist
 Source: "..\process_wizard_answers.py";  DestDir: "{app}\system\install";         Flags: ignoreversion
 Source: "..\terminal_wizard.py";         DestDir: "{app}\system\install";         Flags: ignoreversion
 
@@ -221,6 +249,10 @@ Filename: "{localappdata}\Metis\venv\Scripts\python.exe"; \
 Filename: "{app}\system\mcp-server\.venv-win\Scripts\python.exe"; \
   Parameters: """{app}\system\install\register_desktop.py"" --remove"; \
   Flags: runhidden skipifdoesntexist; RunOnceId: "RemoveMetisFromClaudeDesktopOld"
+; And the morning-briefing task from Claude Desktop, leaving every other task.
+Filename: "{localappdata}\Metis\venv\Scripts\python.exe"; \
+  Parameters: """{app}\system\install\register_schedule.py"" --remove"; \
+  Flags: runhidden skipifdoesntexist; RunOnceId: "RemoveMetisMorningBriefing"
 
 [UninstallDelete]
 ; The program files only. The database (in .local\share\metis) and the
@@ -251,6 +283,7 @@ var
   McpConsentPage: TInputOptionWizardPage;
   DemoPage:       TInputOptionWizardPage;
   ApiKeyPage:     TInputQueryWizardPage;
+  BriefPage:      TInputOptionWizardPage;
   AboutPage:      TInputQueryWizardPage;
   ResearchPage:   TInputQueryWizardPage;
   StylePage:      TInputOptionWizardPage;
@@ -585,6 +618,11 @@ begin
   DemoPage.Add('Yes — load demo content  (recommended for first-time users)');
   DemoPage.Add('No  — start with a blank workspace');
   DemoPage.SelectedValueIndex := 0;
+#ifdef NoDemo
+  { An edition that starts every colleague from their own answers and nothing
+    else: the page is skipped and a blank workspace is the only choice. }
+  DemoPage.SelectedValueIndex := 1;
+#endif
 
   { ═══════════════════════════════════════════════════════════════════════
     PAGE 3 — ANTHROPIC API KEY
@@ -602,10 +640,31 @@ begin
   ApiKeyPage.Add('Paste your Anthropic API key here:', False);
 
   { ═══════════════════════════════════════════════════════════════════════
+    PAGE 3b — MORNING BRIEFING
+    ═══════════════════════════════════════════════════════════════════════ }
+  { The standard way the briefing is written: a Claude Desktop scheduled task,
+    on the person's own subscription. register_schedule.py creates it; when
+    Claude Desktop has not been signed in to yet, the daily self-check
+    finishes the job later. An API key is an alternative, not a requirement. }
+  BriefPage := CreateInputOptionPage(
+    ApiKeyPage.ID,
+    'Morning Briefing',
+    'Have Claude write you a short briefing every working day?',
+    'Each weekday morning Claude Desktop reads what is new for you — tasks, news,' + #13#10 +
+    'new papers — and leaves a short briefing on your Metis dashboard. It uses your' + #13#10 +
+    'Claude subscription; no API key is needed. Claude Desktop must be open then.' + #13#10 +
+    'Change the time or switch it off later in Claude Desktop -> Scheduled.',
+    True, False);
+  BriefPage.Add('Yes — every weekday at 08:30  (recommended)');
+  BriefPage.Add('Yes — every weekday at 07:30');
+  BriefPage.Add('No  — I will ask for a briefing myself');
+  BriefPage.SelectedValueIndex := 0;
+
+  { ═══════════════════════════════════════════════════════════════════════
     PAGE 4 — ABOUT YOU
     ═══════════════════════════════════════════════════════════════════════ }
   AboutPage := CreateInputQueryPage(
-    ApiKeyPage.ID,
+    BriefPage.ID,
     'About You',
     'Help Metis get to know you — this takes about 1 minute.',
     'Metis uses this to address you by name, calibrate how it communicates,' + #13#10 +
@@ -614,6 +673,9 @@ begin
   AboutPage.Add('Your full name:', False);
   AboutPage.Add('Institution or organisation (optional):', False);
   AboutPage.Add('Your role or title (e.g. PhD researcher, epidemiologist, professor):', False);
+#ifdef EditionInstitution
+  AboutPage.Values[1] := '{#EditionInstitution}';
+#endif
 
   { ═══════════════════════════════════════════════════════════════════════
     PAGE 5 — YOUR RESEARCH
@@ -760,9 +822,12 @@ end;
 function ShouldSkipPage(PageID: Integer): Boolean;
 begin
   Result := False;
+#ifdef NoDemo
+  if PageID = DemoPage.ID then begin Result := True; Exit; end;
+#endif
   if not ExistingInstall then Exit;
   Result := (PageID = McpConsentPage.ID) or (PageID = DemoPage.ID)
-         or (PageID = ApiKeyPage.ID) or (PageID = AboutPage.ID)
+         or (PageID = ApiKeyPage.ID) or (PageID = BriefPage.ID) or (PageID = AboutPage.ID)
          or (PageID = ResearchPage.ID) or (PageID = StylePage.ID)
          or (PageID = ProjectsPage.ID);
 end;
@@ -804,6 +869,14 @@ begin
   if AnswersFile <> '' then Params := Params + ' -WizardAnswers "' + AnswersFile + '"';
   if LoadDemo then Params := Params + ' -LoadDemo';
   if GetApiKey('') <> '' then Params := Params + ' -ApiKey "' + GetApiKey('') + '"';
+  { An update skipped the page: install.ps1 then keeps whatever was chosen before. }
+  if not IsUpdate then
+    case BriefPage.SelectedValueIndex of
+      0: Params := Params + ' -MorningBriefing 08:30';
+      1: Params := Params + ' -MorningBriefing 07:30';
+    else
+      Params := Params + ' -MorningBriefing off';
+    end;
 
   WizardForm.StatusLabel.Caption := 'Installing Metis…';
   WizardForm.ProgressGauge.Style := npbstMarquee;

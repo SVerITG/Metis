@@ -36,7 +36,7 @@ print("downloading (first run only — a few hundred MB)…")
 from fastembed import TextEmbedding
 
 m = TextEmbedding(model_name=MODEL_NAME, cache_dir=str(MODEL_CACHE))
-vec = list(m.embed(["trypanosome antigenic variation"]))[0]
+vec = list(m.embed(["malaria antigenic variation"]))[0]
 files = sum(1 for _ in MODEL_CACHE.rglob("*") if _.is_file())
 size = sum(f.stat().st_size for f in MODEL_CACHE.rglob("*") if f.is_file())
 print(f"\n✓ model ready — {files} file(s), {size // (1024*1024)} MB")

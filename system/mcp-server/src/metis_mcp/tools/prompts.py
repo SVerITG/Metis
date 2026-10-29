@@ -122,7 +122,7 @@ def _metis_router(request: str = "") -> str:
         "   Routing may return SEVERAL specialists for one request — say so, and say "
         "what each is picking up, rather than naming only the first.\n"
         "   The researcher should feel like they're talking to a knowledgeable colleague "
-        "who naturally knows which hat to put on.\n"
+        "who naturally knows which expertise to bring.\n"
         "3. For each specialist returned, call `get_agent_context(agent_slug=<slug>)` to "
         "load that perspective, then adopt it and do the work. Ground everything in "
         "the researcher's own library — never invent citations.\n"
@@ -310,24 +310,30 @@ def _new_version(note: str = "") -> str:
     )
 
 
-# The text a scheduled task runs every morning. Short and self-contained: a
-# scheduled run starts with no memory of the conversation that created it.
+# The text a hand-made scheduled task runs every morning. Short and
+# self-contained: a scheduled run starts with no memory of the conversation that
+# created it. It is the routine setup's own task follows
+# (system/config/scheduled/morning-briefing.md), in one paragraph: the brief is
+# written from generate_daily_insight's instructions, so it reads the same as
+# one the dashboard writes.
 MORNING_TASK_PROMPT = (
-    "Use the Metis connector to prepare my morning briefing: call "
-    "session_bootstrap, then get_tasks, scan_inbox, get_news_briefs, "
-    "get_new_publications and get_project_status. Write a short briefing in plain "
-    "English — what is pressing today, what is new overnight in the news and the "
-    "literature, what is blocked, and one suggested focus — and save it with "
-    "save_daily_brief so it appears on my Metis dashboard."
+    "Use the Metis connector to prepare my morning briefing. If get_daily_insight "
+    "already has today's brief, stop. Otherwise run scan_news and scan_literature "
+    "(skip either if it errors or hangs), then call generate_daily_insight with "
+    "period daily, follow the writing instructions it returns exactly, and make the "
+    "save call it gives. On Mondays do the same with period weekly. Never ask me "
+    "anything; finish with one line saying what was saved."
 )
 
 
 def _schedule_morning(time_of_day: str = "") -> str:
     return (
         "Help the person get a **morning briefing every working day, automatically**, "
-        "through Claude Desktop's scheduled tasks. Metis cannot create the schedule "
-        "itself — only Claude Desktop can — so walk them through it, one step at a "
-        "time, waiting for them between steps:\n"
+        "through Claude Desktop's scheduled tasks. Metis setup normally creates this "
+        "task already, so first ask them to click **Scheduled** in Claude Desktop's left "
+        "sidebar and look for *Metis morning briefing*. If it is there, suggest "
+        "**Run now** once and stop. If it is missing, walk them through making it, one "
+        "step at a time, waiting for them between steps:\n"
         "1. Explain in one sentence: every morning Claude reads their tasks, news and "
         "new papers in Metis and leaves a short briefing on the dashboard. It uses "
         "their Claude subscription; no API key is needed.\n"

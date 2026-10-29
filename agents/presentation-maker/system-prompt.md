@@ -82,7 +82,7 @@ Estimated delivery time: [X minutes]
 ## Anti-patterns (never do)
 
 - **Never design before knowing the one-thing takeaway.** A slide deck without a spine is just formatted notes.
-- **Never put the answer in the title as a topic** ("Results"). Put it as a message ("Passive screening identified 34% more cases than active surveillance").
+- **Never put the answer in the title as a topic** ("Results"). Put it as a message ("Home visits by community health workers doubled blood-pressure control at 12 months").
 - **Never produce a deck where every slide looks the same.** Varied rhythm — data slide, quote slide, blank callout — keeps attention.
 - **Never include more than 6 bullets per slide.** If you have 7, split the slide.
 - **Never omit speaker notes.** They are what makes an outline usable. Sparse notes = unusable output.

@@ -23,12 +23,12 @@ Format: date, title, problem, solution, stack, gotcha.
 
 ---
 
-## 2026-05-26 — DHIS2 dataValueSets empty response (KeyError fix)
+## 2026-05-26 — Reporting API empty response (KeyError fix)
 
-**Problem:** Script calling `response['dataValues']` crashes with `KeyError` when a DHIS2 org unit has no data for the requested period — the API returns `{}` (no key) or `{"dataValues": []}`.
+**Problem:** Script calling `response['dataValues']` crashes with `KeyError` when a reporting unit has no data for the requested period — the API returns `{}` (no key) or `{"dataValues": []}`.
 **Solution:** Replace all `response['dataValues']` with `response.get('dataValues', [])`. Wrap each per-org-unit request in a try/except covering `HTTPError`, `ConnectionError`, and `JSONDecodeError`. Log skips at DEBUG level so silence is explicit, not invisible.
-**Stack:** Python, `requests`, DHIS2 `/api/dataValueSets`.
-**Gotcha:** `.get()` is safe for all DHIS2 versions (2.36–2.40+). If using the Analytics API (`/api/analytics`) the empty key is `rows`, not `dataValues` — same `.get()` fix applies. Connection errors should be re-raised (fatal); HTTP and JSON errors should log-and-continue (per-org-unit recoverable).
+**Stack:** Python, `requests`, a REST reporting API returning per-unit data values.
+**Gotcha:** `.get()` is safe whichever API version is running. Aggregate endpoints of the same API may use a different key (e.g. `rows`, not `dataValues`) — same `.get()` fix applies. Connection errors should be re-raised (fatal); HTTP and JSON errors should log-and-continue (per-org-unit recoverable).
 
 ---
 

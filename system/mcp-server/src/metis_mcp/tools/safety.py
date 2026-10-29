@@ -20,7 +20,7 @@ _INTL_PHONE_RE = re.compile(r"\+\d{1,3}(?:[\s.\-/]?\d){7,}")
 # Patient / case identifier.
 #
 # The value was required to be `\d+`, so the identifier format actually used in
-# the field — an alphanumeric like "HAT-2024-00871" — could not match, and a line
+# the field — an alphanumeric like "MAL-2024-00871" — could not match, and a line
 # naming a real patient record classified PUBLIC (audit 2026-09-14). The value is
 # now any identifier-shaped token, and a bare programme-style code is caught even
 # without its label, because that is how it is usually pasted.
@@ -30,7 +30,7 @@ _PATIENT_ID_RE = re.compile(
     r"|\b[A-Z]{2,6}-\d{4}-\d{3,}\b", re.IGNORECASE
 )
 # ── GPS coordinates ──────────────────────────────────────────────────────────
-# In HAT/NTD surveillance a coordinate pair IS an identifier: it locates a
+# In disease surveillance a coordinate pair IS an identifier: it locates a
 # patient's village, and at 3-4 decimals their household. The previous pattern
 # required ≥4 decimals on BOTH numbers with no cue word, so the single most
 # common way coordinates are actually written — "GPS -4.325, 15.322" — sailed
@@ -107,7 +107,7 @@ _CREDENTIAL_RE = re.compile(
 #
 # Every identity rule except GPS was label-anchored — it needed "nom:" or "DOB="
 # with a separator — which makes this a CSV detector and not a prose detector.
-# A realistic line list written as a sentence ("Kabongo Mwamba, 34 ans, CATT+")
+# A realistic line list written as a sentence ("Maria Okafor, 34 ans, RDT+")
 # classified PUBLIC. This matches the shape that actually carries the risk: a
 # capitalised personal name sitting next to an age, a test result or a stage.
 _NAME_CONTEXT_RE = re.compile(

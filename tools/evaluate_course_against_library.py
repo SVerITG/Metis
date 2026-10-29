@@ -5,12 +5,12 @@ should support it.
 WHY
     A course written from model knowledge is a set of claims with no provenance.
     That was acceptable while the library was not indexed — there was nothing to
-    check against. Now that the HAT corpus is 220+ documents and semantically
+    check against. Now that the topic corpus is 220+ documents and semantically
     searchable, every lesson can be asked two questions it could not be asked
     before:
 
-      1. ARE ITS CITATIONS REAL AND HELD? The lessons cite loosely — "Buscher P
-         et al., Diagnostic accuracy of tests for gambiense HAT (open-access
+      1. ARE ITS CITATIONS REAL AND HELD? The lessons cite loosely — "Smith J
+         et al., Diagnostic accuracy of rapid tests for malaria (open-access
          review)" — with no DOI and no link. Either that paper is in the library
          and the reference can be made precise, or it is not and the claim rests
          on nothing the researcher can open.

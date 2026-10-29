@@ -20,8 +20,8 @@ HOW IT WORKS
 read alongside `metis-persona.md` at the start of every session. The persona file
 stays hand-authored and stable; the learned file is where accumulation happens, so
 a bad automatic write can never corrupt the deliberate description of who the researcher is.
-(That matters here: a 2026-05-28 wizard run once wrote "jon is a k working in ntd"
-into the persona and every agent addressed him as 'jon' until it was found.)
+(That matters here: a 2026-05-28 wizard run once wrote "jon is a k working in epi"
+into the persona and every agent addressed the user as 'jon' until it was found.)
 
 WHAT BELONGS HERE — and what does not
 -------------------------------------

@@ -154,7 +154,7 @@ Ask, **one at a time**, recording each:
 1. **Name** — "What should Metis call you?"
 2. **Language** — "What language do you primarily work in? (English, French, Dutch, Spanish, …)"
 3. **Role & context** — "Your role and the kind of work you do, in a sentence or two."
-4. **Field & subfields** — "Your research field, and the sub-areas within it you actually work on. (e.g. 'epidemiology — neglected tropical disease surveillance, spatial methods'.)"
+4. **Field & subfields** — "Your research field, and the sub-areas within it you actually work on. (e.g. 'epidemiology — cardiovascular cohorts, spatial methods'.)"
 5. **Core topics** — "The specific topics you follow — list as many as you like. These also drive your daily news + literature scans."
 6. **Seminal works & key authors** — "Any foundational papers, books, or authors your field is built on that Metis should know? Name a few — these anchor the knowledge layer."
 7. **Key journals & sources** — "Which journals, report series, or organisations publish the work you trust? (specific journals, an agency's report series, a society's guidelines …)"

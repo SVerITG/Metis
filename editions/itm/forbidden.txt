@@ -1,0 +1,29 @@
+# One case-insensitive regex per line. Nothing an ITM colleague receives may
+# carry the owner's own subject, places, projects or identity.
+# Identity (names, accounts) is NOT listed here: tools/check_publish_clean.py
+# judges it from its private rule list, and this file is committed.
+\bhat\b
+\bghat\b
+\brhat\b
+sleeping.?sickness
+trypano
+\bcatt\b
+fexinidazole
+acoziborole
+\bdhis\s?2\b
+\bntds?\b
+neglected tropical
+\bdrc\b
+\bcongo\b
+congolese
+\bangola\b
+\bkinshasa\b
+\bbandundu\b
+\bkwilu\b
+pnltha
+trypelim
+\bespen\b
+gambit
+stroghat
+passive screening
+post.?elimination

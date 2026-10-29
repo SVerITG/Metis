@@ -14,7 +14,7 @@ WHY THIS EXISTS
     "2026 Jul 1" as LATER than "2026-08-20", because it compares strings — so a
     July paper appears under Today and an August one does not. Silently.
 
-    That matters more than usual here. The retrospective HAT sweep added 400+
+    That matters more than usual here. A retrospective topic sweep added 400+
     papers going back four years, all discovered on the same day. Filtering on
     `discovered_at` would file every one of them under "Today"; filtering on the
     raw `pub_date` string would file them arbitrarily. Neither is usable.

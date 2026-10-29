@@ -89,7 +89,7 @@ def _theme_from(texts: list[str], top_n: int = 3) -> list[tuple[str, int]]:
     """Return top N semantic themes from a list of reflexion texts.
 
     Uses Claude Haiku for semantic extraction when ANTHROPIC_API_KEY is set
-    (produces meaningful themes like "agent lacks NTD domain knowledge" rather
+    (produces meaningful themes like "agent lacks domain knowledge in the field" rather
     than token frequencies). Falls back to word-frequency counting otherwise.
     """
     if not texts:

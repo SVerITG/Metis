@@ -22,7 +22,7 @@
 
     <!-- Step indicators -->
     <div id="wizard-steps" style="display:flex;border-bottom:1px solid var(--m-line);background:var(--m-surface-2);padding:0 var(--m-space-6);">
-      {% for i, label in [('1','About you'),('2','Research'),('3','Working style'),('4','Projects')] %}
+      {% for i, label in [('1','About you'),('2','Research'),('3','Working style'),('4','Projects'),('5','Your scripts')] %}
       <div class="wstep" data-step="{{ i }}"
            style="padding:0.875rem 1.25rem;font-family:var(--m-mono,monospace);font-size:11px;
                   letter-spacing:0.14em;border-bottom:2px solid transparent;cursor:default;
@@ -187,22 +187,54 @@
           💡 <strong>Tip:</strong> To find a folder path in Windows Explorer, right-click the folder and choose
           <em>Copy as path</em>. Paste it in the folder field below.
         </div>
+      </div>
 
-        <!-- Processing indicator -->
-        <div class="u-hide" id="wizard-processing" style="margin-top:var(--m-space-5);padding:var(--m-space-5);background:linear-gradient(135deg,rgba(22,163,74,0.04),rgba(22,163,74,0.08));border:1px solid rgba(22,163,74,0.2);border-radius:8px;text-align:center;">
-          <div style="font-family:var(--m-mono,monospace);font-size:var(--t-micro);letter-spacing:0.2em;color:var(--m-accent);margin-bottom:var(--m-space-3);">CALIBRATING METIS</div>
-          <div style="font-size:var(--t-body);font-weight:500;margin-bottom:0.375rem;">
-            Building your personalised profile…
-          </div>
-          <div style="color:var(--m-muted);font-size:var(--t-meta);line-height:1.5;">
-            Claude is reading your answers and generating a calibrated persona —
-            tuned to your domain, your working style, and your projects.
-            This takes about 15 seconds.
-          </div>
+      <!-- Step 5: Your scripts — the Data Memory -->
+      <div class="wpage u-hide" id="wpage-5">
+        <h2 style="margin:0 0 var(--m-space-1);font-size:var(--t-h4);">Your analysis scripts</h2>
+        <p style="color:var(--m-muted);font-size:var(--t-body);margin:0 0 var(--m-space-4);line-height:1.6;">
+          Point Metis at the folders where your R scripts live. It reads the <strong>code</strong> —
+          never your data files — and learns which datasets you have, where they are, which columns
+          and values your scripts use, and which figures and tables you already make. From then on,
+          when you ask for a new analysis, it writes the R script for you to run on your own computer,
+          starting from your own scripts.
+        </p>
+
+        <div class="dm-promise">
+          <span class="stat is-good">Data never opened</span>
+          <span class="tag">code &amp; notes only</span><span class="tag">files checked for existence, not read</span>
         </div>
 
-        <div class="u-hide" id="wizard-error" style="margin-top:var(--m-space-4);padding:0.875rem;background:var(--m-alert-wash);border:1px solid color-mix(in srgb, var(--m-alert) 35%, transparent);border-radius:6px;color:var(--m-alert);font-size:var(--t-body);"></div>
+        <label class="field-label" for="script-folders" style="margin-top:var(--m-space-4);">Script folders — one per line</label>
+        <textarea id="script-folders" name="script_folders" class="field-input" rows="4"
+                  placeholder="C:\Users\you\Documents\Projects&#10;C:\Users\you\Documents\Analysis"></textarea>
+        <div class="field-hint">
+          A top folder is fine: Metis looks through every subfolder and skips old copies
+          (History, renv, "- Copy" and the like). Leave empty if you do not work with scripts —
+          you can add folders later on the <em>Data</em> page.
+        </div>
+
+        <div class="u-row" style="margin-top:var(--m-space-3);">
+          <button class="btn btn--sec btn--caps" type="button" onclick="checkScriptFolders()">Check folders</button>
+          <span id="script-folders-spin" class="u-mono u-hide" style="color:var(--m-muted);">counting…</span>
+        </div>
+        <div id="script-folders-result" class="u-col" style="margin-top:var(--m-space-3);"></div>
       </div>
+
+      <!-- Processing indicator — shown under whichever step is last -->
+      <div class="u-hide" id="wizard-processing" style="margin-top:var(--m-space-5);padding:var(--m-space-5);background:linear-gradient(135deg,rgba(22,163,74,0.04),rgba(22,163,74,0.08));border:1px solid rgba(22,163,74,0.2);border-radius:8px;text-align:center;">
+        <div style="font-family:var(--m-mono,monospace);font-size:var(--t-micro);letter-spacing:0.2em;color:var(--m-accent);margin-bottom:var(--m-space-3);">CALIBRATING METIS</div>
+        <div style="font-size:var(--t-body);font-weight:500;margin-bottom:0.375rem;">
+          Building your personalised profile…
+        </div>
+        <div style="color:var(--m-muted);font-size:var(--t-meta);line-height:1.5;">
+          Claude is reading your answers and generating a calibrated persona —
+          tuned to your domain, your working style, and your projects.
+          This takes about 15 seconds.
+        </div>
+      </div>
+
+      <div class="u-hide" id="wizard-error" style="margin-top:var(--m-space-4);padding:0.875rem;background:var(--m-alert-wash);border:1px solid color-mix(in srgb, var(--m-alert) 35%, transparent);border-radius:6px;color:var(--m-alert);font-size:var(--t-body);"></div>
 
       <!-- ── Project modal ──────────────────────────────────────────────── -->
       <div class="u-hide" id="project-modal" style="position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.5);backdrop-filter:blur(2px);align-items:center;justify-content:center;padding:var(--m-space-5);">
@@ -224,7 +256,7 @@
             <!-- Name -->
             <div>
               <label class="field-label">Project name *</label>
-              <input id="modal-name" class="field-input" placeholder="e.g. Malaria prevalence survey, HAT surveillance study" aria-label="e.g. Malaria prevalence survey, HAT surveillance study">
+              <input id="modal-name" class="field-input" placeholder="e.g. Malaria prevalence survey, Hypertension cohort study" aria-label="e.g. Malaria prevalence survey, Hypertension cohort study">
             </div>
 
             <!-- Category + Priority row -->
@@ -307,7 +339,7 @@
             <div id="modal-desc-wrap">
               <label class="field-label">Brief description <span id="desc-hint" style="font-weight:400;color:var(--m-muted);">(optional — Metis will auto-detect if a folder is set)</span></label>
               <textarea id="modal-desc" class="field-input" rows="2"
-                        placeholder="e.g. Longitudinal cohort study examining HAT case detection rates across three provinces in DRC"></textarea>
+                        placeholder="e.g. Longitudinal cohort study examining hypertension control rates across three districts"></textarea>
             </div>
 
           </div>
@@ -354,11 +386,26 @@
     .field-input:focus { border-color:var(--m-accent); }
     .field-hint { font-size:0.78rem;color:var(--m-muted);margin-top:0.25rem; }
     textarea.field-input { resize:vertical; }
+    .dm-promise { display:flex; align-items:center; gap:var(--m-space-3); flex-wrap:wrap;
+                  padding:var(--m-space-3); border:1px solid var(--m-rule-soft);
+                  border-radius:6px; background:var(--m-surface-2); }
   </style>
 
   <script>
     var _step = 1;
-    var _total = 4;
+    var _total = 5;
+    var _PROJECTS_STEP = 4;
+
+    // Show/hide by the .u-hide class. It is `display:none !important`, so setting
+    // el.style.display cannot reveal an element that carries it: after the design
+    // refactor moved the hidden state into that class, steps 2+ and every button
+    // and panel toggled this way stayed invisible.
+    function _show(el, on, display) {
+      if (typeof el === 'string') el = document.getElementById(el);
+      if (!el) return;
+      el.classList.toggle('u-hide', !on);
+      el.style.display = on && display ? display : '';
+    }
 
     function wizardStep(dir) {
       // Validate required fields on current page before advancing
@@ -376,8 +423,8 @@
 
       _step = Math.max(1, Math.min(_total, _step + dir));
 
-      document.querySelectorAll('.wpage').forEach(function(p) { p.style.display = 'none'; });
-      document.getElementById('wpage-' + _step).style.display = '';
+      document.querySelectorAll('.wpage').forEach(function(p) { _show(p, false); });
+      _show('wpage-' + _step, true);
 
       document.querySelectorAll('.wstep').forEach(function(s) {
         var active = s.dataset.step == _step;
@@ -385,12 +432,47 @@
         s.style.color = active ? 'var(--m-ink)' : 'var(--m-muted)';
       });
 
-      document.getElementById('btn-back').style.display = _step > 1 ? '' : 'none';
-      document.getElementById('btn-next').style.display = _step < _total ? '' : 'none';
-      document.getElementById('btn-submit').style.display = _step === _total ? '' : 'none';
+      _show('btn-back', _step > 1);
+      _show('btn-next', _step < _total);
+      _show('btn-submit', _step === _total);
 
-      if (_step === _total) {
+      if (_step === _PROJECTS_STEP) {
         renderProjectCards();
+      }
+    }
+
+    // ── Script folders (Data Memory) ──────────────────────────────────────────
+    function _scriptFolders() {
+      return document.getElementById('script-folders').value
+        .split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+    }
+
+    async function checkScriptFolders() {
+      var box = document.getElementById('script-folders-result');
+      var spin = document.getElementById('script-folders-spin');
+      var folders = _scriptFolders();
+      box.innerHTML = '';
+      if (!folders.length) return;
+      spin.classList.remove('u-hide');
+      try {
+        var r = await fetch('/api/data-memory/preview', {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({folders: folders}),
+        });
+        var d = await r.json();
+        box.innerHTML = (d.folders || []).map(function (f) {
+          var badge = !f.exists
+            ? '<span class="stat is-warn">Not found</span>'
+            : (f.scripts ? '<span class="stat is-good">' + f.scripts + ' scripts</span>'
+                         : '<span class="stat is-quiet">No R scripts</span>');
+          var notes = f.exists && f.notes ? '<span class="tag">' + f.notes + ' project notes</span>' : '';
+          return '<div class="u-row u-row--wrap">' + badge + notes +
+                 '<span class="u-mono" style="color:var(--m-muted);">' + _escHtml(f.folder) + '</span></div>';
+        }).join('');
+      } catch (e) {
+        box.innerHTML = '<span class="stat is-warn">Could not check — is the dashboard running?</span>';
+      } finally {
+        spin.classList.add('u-hide');
       }
     }
 
@@ -401,7 +483,7 @@
     function openProjectModal(editIdx) {
       _editIndex = (editIdx !== undefined) ? editIdx : -1;
       var modal = document.getElementById('project-modal');
-      modal.style.display = 'flex';
+      _show(modal, true, 'flex');
       // Reset / pre-fill
       if (_editIndex >= 0) {
         var p = _projects[_editIndex];
@@ -430,7 +512,7 @@
         document.getElementById('modal-desc').value     = '';
         document.getElementById('modal-priority').value = 'medium';
         document.getElementById('modal-category').value = 'Article';
-        document.getElementById('modal-new-cat').style.display = 'none';
+        _show('modal-new-cat', false);
         document.querySelectorAll('[name="modal-scan"]').forEach(function(r) { r.checked = r.value === 'names'; });
         updateScanHighlight('names');
       }
@@ -438,7 +520,7 @@
     }
 
     function closeProjectModal() {
-      document.getElementById('project-modal').style.display = 'none';
+      _show('project-modal', false);
     }
 
     function updateScanHighlight(val) {
@@ -455,10 +537,10 @@
       if (e.target.id === 'modal-category') {
         var newCatInput = document.getElementById('modal-new-cat');
         if (e.target.value === '__new__') {
-          newCatInput.style.display = '';
+          _show(newCatInput, true);
           newCatInput.focus();
         } else {
-          newCatInput.style.display = 'none';
+          _show(newCatInput, false);
         }
       }
     });
@@ -500,7 +582,7 @@
         catSel.insertBefore(opt, catSel.querySelector('[value="__new__"]'));
         catSel.value = category;
         newCatInput.value = '';
-        newCatInput.style.display = 'none';
+        _show(newCatInput, false);
       }
 
       var scanType = 'names';
@@ -576,6 +658,20 @@
     // Legacy addProject kept for compatibility — now opens modal
     function addProject() { openProjectModal(); }
 
+    // One line on the finish screen: what happens to the script folders now.
+    function _dataMemoryLine(dm) {
+      if (!dm || (!dm.registered.length && !dm.missing.length)) return '';
+      var line = dm.registered.length
+        ? '<span class="stat is-info">Learning ' + dm.scripts + ' scripts</span> ' +
+          '<span style="color:var(--m-muted);">in the background — see the <a href="/data">Data</a> page.</span>'
+        : '';
+      if (dm.missing.length) {
+        line += ' <span class="stat is-warn">' + dm.missing.length + ' folder(s) not found</span>';
+      }
+      if (dm.error) line += ' <span class="stat is-warn">' + _escHtml(dm.error) + '</span>';
+      return '<div style="text-align:left;margin-bottom:var(--m-space-4);font-size:var(--t-small);">' + line + '</div>';
+    }
+
     document.getElementById('wizard-form').addEventListener('submit', async function(e) {
       e.preventDefault();
 
@@ -587,9 +683,10 @@
       data['projects'] = _projects;
       // scan_type is per-project; use 'names' as global default for any without explicit type
       data['scan_type'] = 'names';
+      data['script_folders'] = _scriptFolders();
 
-      document.getElementById('wizard-processing').style.display = '';
-      document.getElementById('wizard-error').style.display = 'none';
+      _show('wizard-processing', true);
+      _show('wizard-error', false);
       document.getElementById('btn-submit').disabled = true;
 
       try {
@@ -624,6 +721,7 @@
                 ? '<div style="color:var(--m-muted);font-size:var(--t-small);margin-bottom:var(--m-space-4);">Your profile was generated by Claude.</div>'
                 : '<div style="color:var(--m-muted);font-size:var(--t-small);margin-bottom:var(--m-space-4);">' + (result.warning || 'Basic config written.') + '</div>') +
               '<div style="text-align:left;background:var(--m-surface-2);border:1px solid var(--m-rule-soft);border-radius:6px;padding:0.9rem 1.1rem;margin-bottom:var(--m-space-4);">' + rows + '</div>' +
+              _dataMemoryLine(result.data_memory) +
               (allGood
                 ? '<div style="font-size:var(--t-small);color:var(--m-muted);">Open Claude in this folder — Metis is ready. Fine-tune with <code>/metis_config</code>.</div>'
                 : '<div style="font-size:var(--t-small);color:var(--m-muted);">The items marked ✗ need attention. ' +
@@ -639,14 +737,14 @@
             setTimeout(function () { window.location.reload(); }, 3000);
           }
         } else {
-          document.getElementById('wizard-processing').style.display = 'none';
-          document.getElementById('wizard-error').style.display = '';
+          _show('wizard-processing', false);
+          _show('wizard-error', true);
           document.getElementById('wizard-error').textContent = 'Error: ' + (result.error || 'Unknown error');
           document.getElementById('btn-submit').disabled = false;
         }
       } catch (err) {
-        document.getElementById('wizard-processing').style.display = 'none';
-        document.getElementById('wizard-error').style.display = '';
+        _show('wizard-processing', false);
+        _show('wizard-error', true);
         document.getElementById('wizard-error').textContent = 'Network error — is the dashboard still running?';
         document.getElementById('btn-submit').disabled = false;
       }

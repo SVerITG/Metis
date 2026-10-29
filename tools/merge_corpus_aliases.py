@@ -54,9 +54,12 @@ DB = Path.home() / ".local/share/metis/metis.sqlite"
 
 # Groups where the two names are not obviously the same work. Recorded on the
 # alias row so the question stays visible instead of being quietly settled.
-REVIEW_MARKERS = ("phdthesis alainmpanya", "kayembe passivescreening",
-                  "masterthesis danel", "fexinidazole", "carina praisler",
-                  "christine clayton")
+# Which names those are depends entirely on the corpus, so the list lives in the
+# machine-local domain config (key "corpus_alias_review_markers"), not here.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "system" / "mcp-server" / "src"))
+from metis_mcp.domain import domain  # noqa: E402
+
+REVIEW_MARKERS = tuple(m.lower() for m in domain("corpus_alias_review_markers", []))
 
 STOP = set("the a an of and or in on for to with by from at is are as its this that "
            "et al eng fr full final version draft copy pdf".split())

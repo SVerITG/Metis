@@ -1,0 +1,13 @@
+# path-glob<TAB>regex  — a hit of that regex in a matching file is accepted.
+# Every line says why. Keep this list short: an allowance is a decision.
+
+system/mcp-server/src/metis_mcp/server.py	"dhis2"	# a module name in the loader list; the edition switches it off (edition.json)
+system/config/edition.json	"dhis2"	# names the module this edition switches off
+docker/smoke_test.py	dhis2	# checks that the left-out module and specialist are really absent
+system/mcp-server/src/metis_mcp/tools/board_fit.py	congo|angola|\bdrc\b|sleeping sickness|trypanosomiasis	# world-wide lists of countries and notifiable diseases used to classify any outbreak story
+system/mcp-server/src/metis_mcp/tools/news_threads.py	congo|angola|\bdrc\b|kinshasa	# the world gazetteer for story threads (every country); examples are about parsing country names
+system/mcp-server/src/metis_mcp/app_instance.py	dhis2	# routing line and display name of the dhis2 module, shown only when that module is on (it is off here)
+system/mcp-server/src/metis_mcp/tools/pipeline.py	dhis2	# a seed routing rule for a specialist this edition does not carry; routing skips absent specialists
+system/mcp-server/src/metis_mcp/tools/knowledge_db.py	Health Informatics & DHIS2	# a folder name in a built-in layer list; the folder does not exist in the edition
+system/app-py/static/styles.css	news-domain-hat	# a CSS class name, applied only when a feed is tagged that way (none in the edition)
+agents/biostatistician/*	R-hat	# the MCMC convergence diagnostic, not a disease

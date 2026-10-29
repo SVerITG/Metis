@@ -1,0 +1,159 @@
+# What the ITM edition leaves out, ON TOP of system/release/public-export.gitignore.
+#
+# The public filter keeps out what is personal. This list keeps out what is
+# fine to publish but is not part of the core a colleague should meet on day
+# one: specialists for one platform or for building Metis itself, the course
+# machinery, background packs, and the development tooling.
+#
+# Same syntax as .gitignore, matched against `git ls-files` of the development
+# repository by editions/export-edition.sh.
+
+# ── Editions are built from here; the copy never carries the build itself ──
+editions/
+
+# ── Specialists outside the core roster ─────────────────────────────────────
+# Kept: metis, librarian, writing-partner, methods-coach, biostatistician,
+# epidemiologist, data-analyst, data-guardian, meeting-memory, news-radar,
+# presentation-maker, visualization-maker, critic, memory-curator, phd-architect,
+# research-architect, career-coach, software-engineer, content-harvester,
+# cybersecurity (the pipeline's own safety checks call it).
+agents/dhis2-expert/
+agents/dashboard-engineer/
+agents/course-builder/
+agents/learning-coach/
+agents/learning-architect/
+agents/edu-expert/
+agents/rc-builder/
+agents/builder/
+agents/hr-talent/
+agents/background-maker/
+agents/news-aggregator/
+agents/frontend-designer-builder/
+agents/design-auditor/
+agents/ux-engineer/
+agents/hat-*
+agents/*-context.md
+.claude/agents/dhis2-expert.md
+.claude/agents/dashboard-engineer.md
+.claude/agents/course-builder.md
+.claude/agents/learning-coach.md
+.claude/agents/learning-architect.md
+.claude/agents/rc-builder.md
+.claude/agents/builder.md
+.claude/agents/hr-talent.md
+.claude/agents/background-maker.md
+.claude/agents/news-aggregator.md
+.claude/agents/frontend-designer-builder.md
+.claude/agents/design-auditor.md
+.claude/agents/release-coordinator.md
+.claude/agents/hat-*
+.codex/agents/dhis2-expert.toml
+.codex/agents/dashboard-engineer.toml
+.codex/agents/course-builder.toml
+.codex/agents/learning-coach.toml
+.codex/agents/learning-architect.toml
+.codex/agents/rc-builder.toml
+.codex/agents/builder.toml
+.codex/agents/hr-talent.toml
+.codex/agents/background-maker.toml
+.codex/agents/news-aggregator.toml
+.codex/agents/frontend-designer-builder.toml
+.codex/agents/design-auditor.toml
+.codex/agents/release-coordinator.toml
+.agents/skills/dhis2-expert/
+.agents/skills/dashboard-engineer/
+.agents/skills/course-builder/
+.agents/skills/learning-coach/
+.agents/skills/learning-architect/
+.agents/skills/rc-builder/
+.agents/skills/builder/
+.agents/skills/hr-talent/
+.agents/skills/background-maker/
+.agents/skills/news-aggregator/
+.agents/skills/frontend-designer-builder/
+.agents/skills/design-auditor/
+.agents/skills/release-coordinator/
+.agents/skills/demo-builder/
+
+# ── Skills that are about building Metis, one person's thesis, or filming ───
+.claude/skills/demo-builder/
+.claude/skills/edu-expert/
+.claude/skills/ux-engineer/
+.claude/skills/metis-phd/
+.claude/skills/metis-self-reflexion/
+.claude/skills/schedule-morning-agents/
+
+# ── Domain modules (switched off in edition.json; not shipped either) ───────
+system/mcp-server/src/metis_mcp/tools/dhis2.py
+system/mcp-server/src/metis_mcp/tools/course_builder.py
+system/mcp-server/src/metis_mcp/tools/background_packs.py
+
+# ── Background packs: "no background" — every layer is built from the
+#    researcher's own documents, never pre-seeded ─────────────────────────────
+backgrounds/
+knowledge/library/
+knowledge/course-template/
+knowledge/domains/
+knowledge/courses/
+
+# ── Development tooling: the release pipeline, audits, the dev-only checks ──
+# tools/ itself ships: the scheduler, the database layer and the Windows
+# autostart run scripts from it. Only the scripts written for one subject, or
+# for the two-computer development setup, stay behind.
+system/release/
+tools/mine_hat_references.py
+tools/harvest_backfill.py
+tools/bulk_add_to_library.py
+tools/migrate_risk_mapping_record.py
+tools/verify_library_feeds.py
+tools/sync_runbook.py
+tools/test_routing_regression.py
+tools/metis-sync-db.py
+tools/metis-sync-cleanup.py
+tools/base-shell/
+tools/pdf-meta-extractor/
+graphify-knowledge/
+docs/DOMAIN-PACKS.md
+docs/INDEXING-GUIDE.md
+docs/RAG-ARCHITECTURE.md
+system/config/course-builder-strategy.md
+system/config/metis-keystone-roadmap.md
+system/config/rag-routing-rules.md
+system/config/release-notes-v*.md
+system/config/feature-backlog.md
+CHANGELOG.md
+AGENTS.md
+
+# ── Linux/Docker installers of the full build; the edition is Windows-first
+#    and carries its own test image under docker/ ────────────────────────────
+system/install/linux/
+system/install/docker/
+system/install/seed_epi_base.py
+system/install/seed_ph_database.py
+system/install/build_knowledge_db.py
+system/install/export_knowledge_db.py
+system/install/index-ph.sh
+system/install/windows/icon-previews/
+system/install/windows/icon_designer.py
+system/install/windows/icon_studio.py
+
+# ── Tests: the suite stays in development; the edition ships the install
+#    doctor's own consistency test and the pack test ───────────────────────────
+tests/**
+!tests/unit/test_essentials.py
+
+# ── CI of the full build: its Docker images and cross-distro gate. The edition
+#    carries its own workflow (overlay .github/workflows/itm-smoke.yml) ───────
+.github/workflows/docker-publish.yml
+.github/workflows/release-gate.yml
+.github/workflows/tests.yml
+
+# ── Developer-only scripts and snapshots ─────────────────────────────────────
+system/app-py/before.json
+system/app-py/after.json
+system/mcp-server/index_missing.py
+system/metis-autotest.py
+tools/merge_corpus_aliases.py
+
+# The owner's two-computer daily routine; colleagues get morning-briefing.md.
+system/config/scheduled/metis-daily-update.md

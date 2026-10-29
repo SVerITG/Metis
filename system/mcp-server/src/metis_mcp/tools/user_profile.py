@@ -318,7 +318,7 @@ def _mine_work_terms(limit: int = 40) -> list[tuple[str, int, str]]:
                     except (UnicodeDecodeError, UnicodeEncodeError):
                         pass
                     text = _re.sub(r"\bu[0-9a-f]{4}\b", " ", text)
-                # Two-word phrases first: "sleeping sickness" and "passive
+                # Two-word phrases first: "machine learning" and "passive
                 # screening" are the useful units, and single words lose them.
                 words = [w for w in _re.findall(r"[a-z][a-z0-9\-]{2,}", text)
                          if w not in STOP and len(w) > 3]
@@ -350,7 +350,7 @@ def _mine_work_terms(limit: int = 40) -> list[tuple[str, int, str]]:
         ranked.append((t, s, ", ".join(sorted(srcs))))
 
     # Drop a phrase's component words when the phrase itself made the cut:
-    # "passive screening" is the interest, "passive" on its own is not.
+    # "community screening" is the interest, "community" on its own is not.
     phrases = {t for t, _, _ in ranked if " " in t}
     covered = {w for p in phrases for w in p.split()}
     ranked = [r for r in ranked if " " in r[0] or r[0] not in covered]
@@ -388,8 +388,8 @@ async def suggest_interests_from_work(apply: bool = False, top: int = 12) -> lis
     """
     lists = read_interest_lists()
     known = {t.lower() for t in lists["union"]}
-    # Also treat a declared multi-word term as covering its words, so "sleeping
-    # sickness" already being declared does not surface "sickness" as new.
+    # Also treat a declared multi-word term as covering its words, so "machine
+    # learning" already being declared does not surface "learning" as new.
     for t in list(known):
         for w in t.split():
             if len(w) > 3:
@@ -522,8 +522,8 @@ async def set_research_interests(
     join Metis with nothing set up and still have clear interests — ask, do not
     infer. Call `start_interest_interview()` for the full interview.
 
-    Prefer specific, searchable terms: "sleeping sickness" and "DHIS2" work,
-    "global health" is too broad to filter anything.
+    Prefer specific, searchable terms: "coral bleaching" and "CRISPR screens"
+    work, "biology" is too broad to filter anything.
 
     Args:
         news_interests: What the News surface and briefings should track.

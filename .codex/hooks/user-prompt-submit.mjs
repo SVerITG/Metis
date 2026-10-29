@@ -28,7 +28,7 @@
  *     makes irrelevant papers look like evidence.
  *   · PORTABILITY. Trigger terms are DERIVED from the user's profile, topics and
  *     the domains present in their own corpus — fetched from the dashboard, not
- *     hard-coded. A list naming trypanosomes would be useless to anyone else.
+ *     hard-coded. A list naming one disease would be useless to anyone else.
  *
  * Hook input  (stdin) : JSON { prompt, session_id, ... }
  * Hook output (stdout): JSON { hookSpecificOutput: { additionalContext } }

@@ -94,7 +94,7 @@ async def index_library_pdfs(
     Args:
         force_reindex: Rebuild from scratch even if an index already exists.
         topic_filter: If given, only index PDFs whose parent folder name
-                      contains this string (e.g. "NTD", "Epidemiology", "Methods").
+                      contains this string (e.g. "Malaria", "Epidemiology", "Methods").
         scope: Which library to index. "default" = knowledge/library/ (all PDFs).
                "ph_library" = knowledge/library/ph-background/ (public health background).
     """
@@ -252,7 +252,7 @@ async def extract_structured(
     answer carrying its citations. Useful for systematic-review scaffolding.
 
     Args:
-        topic: The subject to extract on (e.g. "HAT passive screening sensitivity").
+        topic: The subject to extract on (e.g. "malaria rapid test sensitivity").
         fields: Optional comma-separated fields to extract. Default set covers
                 population, design, sample size, outcome, finding, limitations.
         scope: Which index to query ("default" or "ph_library"). Build it first

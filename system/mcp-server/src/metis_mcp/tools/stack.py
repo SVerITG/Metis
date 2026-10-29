@@ -143,7 +143,7 @@ def _twins(con, kind: str, item_id: str) -> list:
 
     Titles are compared lowercased and trimmed, deliberately conservatively. A
     fuzzier match would fold together stories that merely share a headline
-    pattern ("Green forest fire notification in Angola" / "...in Australia" are
+    pattern ("Green forest fire notification in Brazil" / "...in Australia" are
     genuinely different events, and differ only in the last word).
     """
     if kind != "news":

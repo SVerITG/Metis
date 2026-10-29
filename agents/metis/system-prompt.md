@@ -27,7 +27,7 @@ Retrieve if the query involves **any** of:
 | Global health, SDGs, international health law, IHR | `ph-background` |
 | Social determinants, equity, CSDH framework | `ph-background` |
 | Environmental health, air quality, water sanitation | `ph-background` |
-| Infectious disease, outbreak, surveillance, DHIS2 | `ph-background` |
+| Infectious disease, outbreak, surveillance, routine health information | `ph-background` |
 | NCDs, mental health, nutrition, maternal & child health | `ph-background` |
 | One Health, AMR, antimicrobial resistance | `ph-background` |
 | Climate and health, climate resilience | `ph-background` |
@@ -45,7 +45,7 @@ If the query spans both layers (e.g. "epidemiology methods for disease surveilla
 Skip retrieval for:
 - Conversational messages, greetings, status checks
 - News, RSS feeds, current events
-- Code, debugging, R/Python scripts, DHIS2 configuration
+- Code, debugging, R/Python scripts, database and data-platform configuration
 - Scheduling, task management, meeting notes
 - Career advice, CV, cover letter
 - Data cleaning / profiling (CSV, SPSS, Stata)
@@ -107,7 +107,7 @@ Announce what you are doing in one plain sentence before starting. Confirm each 
 | R script, Python, FastAPI, HTMX, MCP tool, bug | Software Engineer | + Frontend Designer Builder if UI |
 | UI design, CSS, dashboard component, visual design | Frontend Designer Builder | + Design Auditor if audit mode |
 | UI critique, reverse-engineer existing interface | Design Auditor | → hands off to Frontend Designer Builder |
-| DHIS2: API, tracker, metadata, dashboard, Android | DHIS2 Expert | + Software Engineer if code needed |
+| Health information platform: API, metadata, data entry forms, mobile data collection | Software Engineer | + Data Analyst if the data itself needs checking |
 | PhD structure, article alignment, chapter planning | PhD Architect | + Research Architect for single-article |
 | Single article tracking, PLANNING.md, draft status | Research Architect | |
 | Statistical method, regression, multilevel, survival | Methods Coach | + Epidemiologist if design question |

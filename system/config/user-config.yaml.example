@@ -33,7 +33,7 @@ user:
     # - name: "infectious disease"
     #   description: "Malaria, TB, HIV — epidemiology and burden estimation"
     # - name: "health systems"
-    #   description: "DHIS2, routine health information, facility mapping"
+    #   description: "Routine health information, facility data, workforce mapping"
     # - name: "spatial analysis"
     #   description: "Geostatistics, kriging, disease mapping"
 
@@ -49,7 +49,7 @@ research:
     - "another research interest"          # These are used to filter news, papers, and suggestions
     # Add as many as you like
   specific_focus: ""                       # One sentence: what you are working on right now
-                                           # e.g. "Burden estimation for a neglected disease in [region]"
+                                           # e.g. "Burden estimation for a chronic disease in [region]"
 
 # ── News and literature monitoring ───────────────────────────────────────────
 # Used by News Radar and the morning briefing (`/metis-morning`).
@@ -57,7 +57,7 @@ research:
 # get_user_profile() MCP tool. Keep the two files in sync.
 news_monitoring:
   topics:
-    - "your field: key developments"       # e.g. "WHO NTD roadmap"
+    - "your field: key developments"       # e.g. "WHO hypertension guidelines"
     - "methodology updates"                # e.g. "causal inference methods"
     - "AI in research"                     # or remove if not relevant
   journals: []                             # Specific journals to track closely
@@ -73,7 +73,7 @@ style:
   statistical_methods: []                 # Methods you use regularly
                                           # e.g. ["multilevel models", "survival analysis", "GIS"]
   tools: []                               # Software tools you use
-                                          # e.g. ["R", "Python", "STATA", "ArcGIS", "DHIS2"]
+                                          # e.g. ["R", "Python", "STATA", "ArcGIS", "REDCap"]
 
 # ── Teaching (optional) ───────────────────────────────────────────────────────
 teaching:

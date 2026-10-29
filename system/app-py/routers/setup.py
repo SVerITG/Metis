@@ -117,6 +117,17 @@ async def configure(request: Request):
     except Exception as exc:
         return JSONResponse({"ok": False, "error": str(exc)}, status_code=500)
 
+    # The script folders are only registered by the processor; reading them
+    # takes ~30 s per few hundred scripts, so it runs after the reply.
+    dmem = result.get("data_memory") or {}
+    if dmem.get("registered"):
+        try:
+            from metis_mcp import data_memory as dm
+            from db import get_db_path
+            dmem["learning"] = dm.start_background_refresh(db=Path(get_db_path()))
+        except Exception as exc:
+            dmem["error"] = f"Folders saved; learning them failed to start ({exc})."
+
     return JSONResponse(result)
 
 

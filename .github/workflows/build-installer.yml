@@ -145,8 +145,29 @@ jobs:
           path: system/install/installer/dist/MetisSetup-*.exe
           if-no-files-found: error
 
+      # An edition (an institute's copy) brings its own release notes; the
+      # full build's notes below would describe what the edition leaves out.
+      - name: Read the edition's name
+        if: hashFiles('system/config/edition.json') != ''
+        shell: pwsh
+        run: |
+          $n = (Get-Content system/config/edition.json -Raw | ConvertFrom-Json).name
+          "EDITION_NAME=$n" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Create GitHub Release (edition notes)
+        if: startsWith(github.ref, 'refs/tags/') && hashFiles('system/install/installer/release-notes.md') != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "${{ env.EDITION_NAME }} ${{ env.VERSION }}"
+          body_path: system/install/installer/release-notes.md
+          files: system/install/installer/dist/MetisSetup-*.exe
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/') && hashFiles('system/install/installer/release-notes.md') == ''
         uses: softprops/action-gh-release@v2
         with:
           name: "Metis ${{ env.VERSION }}"

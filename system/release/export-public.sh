@@ -81,12 +81,14 @@ fi
 # ── 3. Filtered copy of the committed development tree ───────────────────────
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 git archive HEAD | tar -x -C "$TMP"
-EXCLUDED="$(git ls-files --cached -i --exclude-from="$FILTER")"
+# -z: names travel raw. Without it git quotes any name with a non-ASCII
+# character ("\342\200\224" for an em dash), rm is handed a path that does not
+# exist, and the file it should have removed ships.
 n_excluded=0
-while IFS= read -r f; do
+while IFS= read -r -d '' f; do
   [ -n "$f" ] || continue
   rm -f "$TMP/$f"; n_excluded=$((n_excluded + 1))
-done <<< "$EXCLUDED"
+done < <(git ls-files -z --cached -i --exclude-from="$FILTER")
 find "$TMP" -type d -empty -delete
 cp "$FILTER" "$TMP/.gitignore"
 # The development CLAUDE.md is instructions for building Metis (routing tests,

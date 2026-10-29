@@ -24,8 +24,8 @@ Prefix routing (same as the dashboard capture modal):
 Examples:
 - `/metis_capture i: What if the elimination threshold depends on population density?`
 - `/metis_capture t: Review clustering script for Article 2 methods section`
-- `/metis_capture n: Passive screening in the study region shows plateau effect since 2020`
-- `/metis_capture q: Is the diagnostic test sensitivity adequate for post-elimination surveillance?`
+- `/metis_capture n: Blood-pressure control in the cohort shows plateau effect since 2020`
+- `/metis_capture q: Is the rapid test sensitivity adequate once prevalence falls below 1%?`
 
 **Step 1 — Parse prefix**
 Extract the prefix (first 2 characters before `: `). Default to `n:` if none present.

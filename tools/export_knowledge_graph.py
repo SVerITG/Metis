@@ -617,7 +617,7 @@ def main():
     print(f"\nNext steps:")
     print(f"  1. Update .graphifyignore to include graphify-knowledge/")
     print(f"  2. Run: graphify update .")
-    print(f"  3. Query: graphify query 'sleeping sickness literature'")
+    print(f"  3. Query: graphify query 'malaria literature'")
 
 
 if __name__ == "__main__":

@@ -113,7 +113,7 @@ Write a `README.md` with a one-paragraph summary of what the layer contains and 
 | `health-economics` | CEA, DALY/QALY methods, HTA, burden estimation | `/background use health-economics` |
 | `disease-epidemiology` | Disease surveillance, burden, epidemiology papers (name the layer after your domain) | `/background use disease-epidemiology` |
 | `multilevel-methods` | MLM, mixed models, R lme4/brms, hierarchical Bayes | `/background use multilevel-methods` |
-| `dhis2-technical` | DHIS2 API, metadata, tracker, FHIR integration | `/background use dhis2-technical` |
+| `health-information-systems` | Routine health information, EHR standards, FHIR integration | `/background use health-information-systems` |
 | `global-health-policy` | WHO strategy docs, Lancet Commission reports, SDG indicators | `/background use global-health-policy` |
 
 Users can define any layer they want. There are no limits on what a layer can cover.

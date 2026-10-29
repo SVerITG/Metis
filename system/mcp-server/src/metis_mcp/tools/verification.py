@@ -181,7 +181,7 @@ def _resolve_source(con, source: str) -> list[dict]:
     RANKED, not thresholded — and that distinction is the whole correctness of
     this function. The first version scored every candidate with one loose test
     ("share all but one token") and returned everything that passed. Given
-    "WHO Global Report NTDs 2023" it also returned "WHO UHC Global Monitoring
+    "WHO World Malaria Report 2023" it also returned "WHO UHC Global Monitoring
     Report 2023": four shared tokens out of five, so it reported the citation as
     AMBIGUOUS and refused to check it.
 
@@ -1159,7 +1159,7 @@ async def audit_background_provenance(
     instead of once per claim.
 
     Args:
-        layer: Restrict to one layer slug (e.g. 'hat-specialist'); omit for all.
+        layer: Restrict to one layer slug (e.g. 'epi-methods'); omit for all.
         resolve_online: Also query Crossref by title for documents the local
             library cannot identify. Metadata only; costs one request each.
         limit: Maximum documents to process in one pass (default 400).

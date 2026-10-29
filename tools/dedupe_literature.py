@@ -3,8 +3,8 @@
 
 THE PROBLEM
     3,084 rows carried 1,099 distinct titles. One paper was stored 26 times.
-    The copies usually differ only in journal capitalisation ("PLOS Neglected
-    Tropical Diseases" against "PLoS neglected tropical diseases") — the same
+    The copies usually differ only in journal capitalisation ("PLOS Global
+    Public Health" against "PLoS global public health") — the same
     record re-imported under a slightly different rendering of its metadata.
 
     Last year's dedupe work covered the RAG corpus (48,624 chunks to 40,747) and

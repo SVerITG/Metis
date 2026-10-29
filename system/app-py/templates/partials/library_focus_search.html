@@ -1,7 +1,7 @@
-{# Results of searching INSIDE the researcher's own HAT PDFs. Each hit names the
+{# Results of searching INSIDE the focus subject's own PDFs. Each hit names the
    file and page it came from, because a passage without provenance is a claim
-   you cannot check — and the whole point of grounding answers in his own corpus
-   is that he can go and read the source. #}
+   you cannot check — and the whole point of grounding answers in their own corpus
+   is that the reader can go and read the source. #}
 
 {% if error %}
   <div class="panel panel--md" style="border-color:#b3261e;">
@@ -15,7 +15,7 @@
 {% elif not results %}
   <div class="panel panel--md">
     <div class="ed" style="font-size:var(--t-small);margin:0;">
-      Nothing in your indexed HAT corpus matches “{{ q }}”. Either the topic is
+      Nothing in your indexed {{ focus.subject }} corpus matches “{{ q }}”. Either the topic is
       genuinely absent from your library — worth knowing — or the relevant PDF
       has not been indexed yet.
     </div>

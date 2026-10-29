@@ -123,6 +123,31 @@
         hx-select hands htmx the matched ELEMENT, so an innerHTML swap nested a
         second #tab-content inside the first on every nav click — duplicate IDs
         and a fresh 28/32/64px of padding each time. -#}
+    {#- The institution pack's surface sits ABOVE the everyday surfaces, in its
+        own section under the institute's name: it is the one thing in this
+        edition that no other copy of Metis has, so it is the first thing seen.
+        Absent entirely when the edition has no pack. -#}
+    {% set _pk = (edition() if edition is defined else {}).get('pack') or {} %}
+    {% if _pk %}
+    <div class="nav-sec nav-sec--pack">
+      <div class="nav-label"><span>{{ _pk.short_name or 'Institute' }}</span></div>
+      <a class="nav-item {% if active_tab == 'pack' %}active{% endif %}" href="/pack"
+         style="text-decoration:none;color:inherit;{% if _pk.accent %}box-shadow:inset 3px 0 0 {{ _pk.accent }};{% endif %}">
+        <svg class="n-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+          <path d="M2 6 L8 2.5 L14 6"/>
+          <line x1="3.5" y1="6.5" x2="3.5" y2="12"/>
+          <line x1="6.5" y1="6.5" x2="6.5" y2="12"/>
+          <line x1="9.5" y1="6.5" x2="9.5" y2="12"/>
+          <line x1="12.5" y1="6.5" x2="12.5" y2="12"/>
+          <line x1="2" y1="13.5" x2="14" y2="13.5"/>
+        </svg>
+        <span class="n-label">{{ _pk.surface_title or _pk.short_name }}</span>
+        <span class="n-meta">{{ (_pk.actions or [])|length }}</span>
+        <span class="n-tip">{{ _pk.name }} — templates, procedures and actions</span>
+      </a>
+    </div>
+    {% endif %}
+
     <div class="nav-sec">
       <div class="nav-label"><span>Surfaces</span></div>
 
@@ -255,6 +280,23 @@
         <span class="n-tip">Meetings</span>
       </div>
 
+      {#- An edition without the learning surface keeps one door: the online
+          statistics course, which is hosted, so nothing ships with the install. -#}
+      {% set _ed = edition() if edition is defined else {} %}
+      {% if surface_on is defined and not surface_on('learning') %}
+      {% if _ed.statistics_course %}
+      <a class="nav-item" href="{{ _ed.statistics_course }}" target="_blank" rel="noopener"
+         style="text-decoration:none;color:inherit;">
+        <svg class="n-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+          <path d="M2 5 L8 2.5 L14 5 L8 7.5 Z"/>
+          <path d="M4.5 6.5 V10 C 4.5 11, 5 11.5, 6 12 L 8 13 L 10 12 C 11 11.5, 11.5 11, 11.5 10 V 6.5"/>
+        </svg>
+        <span class="n-label">Statistics course</span>
+        <span class="n-meta">online ↗</span>
+        <span class="n-tip">Statistics course — opens online</span>
+      </a>
+      {% endif %}
+      {% else %}
       <!-- 07 Learning -->
       <div class="nav-item {% if active_tab == 'learning' %}active{% endif %}"
            data-tab="learning"
@@ -280,6 +322,7 @@
         <span class="n-meta" hx-get="/api/partial/learning/nav-meta" hx-trigger="load, every 300s" hx-swap="innerHTML">—</span>
         <span class="n-tip">Learning</span>
       </div>
+      {% endif %}
 
       <!-- 08 Presentation -->
       {#- Was "Teach", which built courses from scratch — a job that already has
@@ -326,6 +369,27 @@
         </svg>
         <span class="n-label">Library</span>
         <span class="n-tip">Library</span>
+      </div>
+
+      <!-- 10 Data — the Data Memory: datasets learnt from code. Core in every edition. -->
+      <div class="nav-item {% if active_tab == 'data' %}active{% endif %}"
+           data-tab="data"
+           hx-get="/api/tab/data"
+           hx-target="#tab-content"
+           hx-swap="outerHTML"
+           hx-select="#tab-content"
+           hx-disinherit="*"
+           hx-push-url="/data"
+           onclick="setNavActive(this,'data')"
+           role="button" tabindex="0"
+           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
+        <svg class="n-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+          <ellipse cx="8" cy="3.8" rx="5" ry="1.8"/>
+          <path d="M3 3.8 V 12.2 C 3 13.2, 5.2 14, 8 14 C 10.8 14, 13 13.2, 13 12.2 V 3.8"/>
+          <path d="M3 8 C 3 9, 5.2 9.8, 8 9.8 C 10.8 9.8, 13 9, 13 8"/>
+        </svg>
+        <span class="n-label">Data</span>
+        <span class="n-tip">Data — what Metis knows from your scripts</span>
       </div>
 
     </div><!-- /.nav-sec surfaces -->

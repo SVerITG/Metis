@@ -7,7 +7,7 @@ This is the content pack for the "full" base install. It registers:
   - Spaced-repetition topics per lesson
   - A content_packs record (pack_id: statistics-course)
 
-The PH content pack (the public-health pack: specialist/NTD library cards, epi literature,
+The PH content pack (the public-health pack: specialist library cards, epi literature,
 domain knowledge) is in seed_ph_database.py and is only for the public-health pack.
 
 Toggle off: DELETE FROM content_packs WHERE pack_id = 'statistics-course'

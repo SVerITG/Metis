@@ -41,11 +41,11 @@ ecdc.europa.eu
 africa-cdc.org
 sciensano.be
 
-# NTD and tropical medicine
+# Global health research and product development
 dndi.org
 finddx.org
-ntdenvision.org
-end.org
+mmv.org
+path.org
 
 # News (Tier 1)
 bbc.co.uk

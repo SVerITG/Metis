@@ -255,7 +255,7 @@ def reinstall() -> str:
     src = ROOT / "system" / "mcp-server"
     lock = src / "requirements.txt"
     constraint = ["-c", str(lock)] if lock.exists() else []
-    pkgs = [f"{src}[embedding,library,ocr]"]
+    pkgs = [f"{src}[embedding,library,ocr,office]"]
     app_req = ROOT / "system" / "app-py" / "requirements.txt"
     if has_dashboard() and app_req.exists():
         pkgs += ["-r", str(app_req)]
@@ -267,8 +267,16 @@ def reinstall() -> str:
     cmd = ([uv, "pip", "install", "--python", str(py), *constraint, *pkgs] if uv
            else [str(py), "-m", "pip", "install", *constraint, *pkgs])
     forget()
-    ok = _run(cmd, timeout=1800, env=env).returncode == 0
-    return "reinstalled" if ok else "the reinstall did not succeed"
+    try:
+        r = _run(cmd, timeout=1800, env=env)
+    except (OSError, subprocess.TimeoutExpired) as e:
+        return f"the reinstall did not succeed ({type(e).__name__})"
+    if r.returncode == 0:
+        return "reinstalled"
+    # Keep the reason: a failed repair nobody can explain is no help to IT.
+    last = next((ln.strip() for ln in reversed((r.stderr or r.stdout).splitlines())
+                 if ln.strip()), "")
+    return "the reinstall did not succeed" + (f": {last[:200]}" if last else "")
 
 
 # ═════════════════════════════ the checks ═══════════════════════════════════
@@ -380,6 +388,21 @@ def _tools_current():
 
 
 repair("tools_current")(_fix_tools)
+
+
+@check("office_documents")
+def _office_documents():
+    r = in_venv("import docx, pptx", timeout=60)
+    if r is None:
+        return SKIP, "needs Metis's own Python"
+    if r.returncode == 0:
+        return PASS, ""
+    return PROBLEM, "the Word and PowerPoint libraries are missing; templates cannot be filled"
+
+
+@repair("office_documents")
+def _fix_office_documents():
+    return reinstall()
 
 
 @check("search_engine")
@@ -629,6 +652,28 @@ def _fix_task_selfcheck():
     cur = [ln for ln in _run(["crontab", "-l"], timeout=30).stdout.splitlines() if "metis_verify.py" not in ln]
     p = subprocess.run(["crontab", "-"], input="\n".join(cur + [line]) + "\n", text=True, capture_output=True)
     return "scheduled" if p.returncode == 0 else "could not be scheduled"
+
+
+@check("morning_briefing")
+def _morning_briefing():
+    import register_schedule as sched
+    if SYSTEM != "windows":
+        return SKIP, "Claude Desktop's scheduled tasks are set up from Windows"
+    st = sched.status()
+    if st == "off":
+        return SKIP, "switched off in setup"
+    if st == "registered":
+        return PASS, ""
+    return PROBLEM, "Claude Desktop has not got the task yet (it needs to be signed in once)"
+
+
+@repair("morning_briefing")
+def _fix_morning_briefing():
+    import register_schedule as sched
+    if SANDBOX:
+        return "not attempted (test run)"
+    st, _ = sched.register(ROOT)
+    return "scheduled in Claude Desktop" if st == "registered" else "Claude Desktop is not signed in yet"
 
 
 @check("task_dashboard")

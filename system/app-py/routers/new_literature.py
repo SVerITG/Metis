@@ -16,7 +16,7 @@ WHAT THIS IS FOR
 
     2. TABS, so 1,000 items are legible. One lane for general science (big
        findings outside the field) and one tab per research area. Without tabs the
-       NTD work is buried under a much larger flow of high-profile biology.
+       field's own work is buried under a much larger flow of high-profile biology.
 
     3. ARTICLES AND BOOKS SEPARATED. Different things, reviewed differently.
 
@@ -25,7 +25,7 @@ DATE BASIS — the subtle part
     publication date when known, discovery date when not.
 
     Filtering on discovery alone would have put all 400 papers of the
-    retrospective HAT sweep under "Today", because that is when Metis found them.
+    retrospective subject sweep under "Today", because that is when Metis found them.
     Filtering on the raw `pub_date` string would compare '2026 Jul 1' against
     '2026-08-20' lexically and misfile things without saying so. Only a normalised
     publication date with an honest fallback gets both cases right.
@@ -55,37 +55,26 @@ templates = Jinja2Templates(
 #
 # Each tab is a set of tag/topic needles matched against `topic_tag`, `feed_name`
 # and the title. Needle sets rather than a single stored category on purpose: one
-# paper legitimately belongs in several tabs (a spatial analysis of HAT in the DRC
-# belongs in HAT, in spatial methods, and in DRC), and forcing a single label
-# would hide it from two of the three places its reader would look.
+# paper legitimately belongs in several tabs (a spatial analysis of one disease in
+# one country belongs under that disease, under spatial methods, and under that
+# place), and forcing a single label would hide it from two of the three places
+# its reader would look.
 #
 # Order matters — it is the reading order of the strip, most specific first.
+#
+# SUBJECT TABS ARE NOT HARD-CODED. The base strip below is field-neutral. The
+# subject-specific tabs that sit right after "Close to my work" come from, in
+# order of precedence:
+#   1. `library_extra_tabs` in the machine-local domain settings, when present —
+#      a hand-made strip that reproduces an installation exactly;
+#   2. otherwise, the researcher's own declared library interests, one tab each.
+# `library_tab_extra_needles` can add needles to a base tab without redefining it.
 # ---------------------------------------------------------------------------
-LIT_TABS: list[dict] = [
+_BASE_TABS: list[dict] = [
     {"key": "close", "label": "Close to my work", "kind": "relevance",
      "blurb": "Ranked by closeness to your own corpus. The default view."},
 
-    {"key": "hat", "label": "HAT & trypanosomes", "kind": "match",
-     "needles": {"hat", "trypanosom", "sleeping sickness", "brucei", "gambiense",
-                 "tsetse", "glossina", "vsg", "tryps"},
-     "blurb": "Sleeping sickness across the whole disease — parasite, vector, "
-              "diagnosis, elimination."},
-
-    {"key": "parasite-biology", "label": "Parasite biology", "kind": "match",
-     "needles": {"parasitology", "molecular", "antigenic", "vsg", "genom",
-                 "plos pathogens", "nature microbiology", "mol microbiology",
-                 "trends in parasitology", "mbio", "cell host"},
-     "blurb": "Molecular and cellular work. The axis your library had no feed "
-              "for until 2026-08-21."},
-
-    {"key": "ntd", "label": "NTDs & tropical medicine", "kind": "match",
-     "needles": {"ntd", "tropical-medicine", "neglected", "schistosom",
-                 "leishman", "filaria", "helminth", "chagas", "buruli", "leprosy"},
-     "blurb": "The wider neglected-disease field."},
-
-    {"key": "malaria", "label": "Malaria", "kind": "match",
-     "needles": {"malaria", "plasmodium", "anopheles", "artemisinin"},
-     "blurb": "Malaria epidemiology, control and resistance."},
+    # ← subject tabs are inserted here (see _lit_tabs)
 
     {"key": "methods", "label": "Methods & spatial", "kind": "match",
      "needles": {"spatial-epi", "methods", "epidemiology", "multilevel",
@@ -99,7 +88,7 @@ LIT_TABS: list[dict] = [
      "blurb": "Detection, response and elimination programmes."},
 
     {"key": "health-systems", "label": "Health systems & policy", "kind": "match",
-     "needles": {"policy", "public-health", "health system", "dhis2",
+     "needles": {"policy", "public-health", "health system",
                  "conflict-health", "financing", "governance", "workforce"},
      "blurb": "Systems, data infrastructure and policy."},
 
@@ -121,7 +110,88 @@ LIT_TABS: list[dict] = [
               "its own topic instead."},
 ]
 
-LIT_TABS_BY_KEY = {t["key"]: t for t in LIT_TABS}
+# At most this many tabs are derived from declared interests: a strip of twenty
+# tabs is a list nobody reads, and the catalogue search covers the rest.
+_INTEREST_TAB_LIMIT = 5
+
+
+def _slug(text: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")[:40]
+
+
+def _interest_tabs() -> list[dict]:
+    """One tab per declared library interest — the generic way to be specific."""
+    try:
+        from metis_mcp.tools.user_profile import read_interest_lists
+        interests = read_interest_lists().get("library", []) or []
+    except Exception:
+        return []
+    taken = {t["key"] for t in _BASE_TABS}
+    tabs: list[dict] = []
+    for interest in interests:
+        term = str(interest).strip()
+        key = "i-" + _slug(term)
+        if len(term) < 3 or key == "i-" or key in taken:
+            continue
+        taken.add(key)
+        tabs.append({"key": key, "label": term, "kind": "match",
+                     "needles": {term.lower()},
+                     "blurb": f"Papers that mention {term}, one of your declared "
+                              f"interests."})
+        if len(tabs) >= _INTEREST_TAB_LIMIT:
+            break
+    return tabs
+
+
+def _normalise_tab(raw: dict) -> dict | None:
+    """A tab read from JSON: lists become sets, and a malformed one is dropped."""
+    if not isinstance(raw, dict) or not raw.get("key") or not raw.get("label"):
+        return None
+    tab = dict(raw)
+    tab.setdefault("kind", "match")
+    tab.setdefault("blurb", "")
+    if tab["kind"] == "match":
+        needles = tab.get("needles") or []
+        if not needles:
+            return None
+        tab["needles"] = {str(n).lower() for n in needles}
+    if tab["kind"] == "kind":
+        tab["entry_kinds"] = set(tab.get("entry_kinds") or [])
+    return tab
+
+
+def _lit_tabs() -> list[dict]:
+    """The tab strip for this installation, in reading order.
+
+    Built per request rather than at import, so a change to the declared
+    interests or the local domain settings shows on the next page load.
+    """
+    from metis_mcp.domain import domain
+
+    extra = domain("library_extra_tabs", None)
+    subject = ([t for t in (_normalise_tab(x) for x in extra) if t]
+               if isinstance(extra, list) else _interest_tabs())
+
+    tabs = [dict(_BASE_TABS[0])]
+    seen = {tabs[0]["key"]}
+    for t in subject + [dict(b) for b in _BASE_TABS[1:]]:
+        if t["key"] in seen:
+            continue
+        seen.add(t["key"])
+        tabs.append(t)
+
+    added = domain("library_tab_extra_needles", {}) or {}
+    if isinstance(added, dict):
+        for t in tabs:
+            more = added.get(t["key"])
+            if more and t.get("kind") == "match":
+                t["needles"] = set(t["needles"]) | {str(n).lower() for n in more}
+    return tabs
+
+
+def _tabs_by_key() -> tuple[list[dict], dict[str, dict]]:
+    tabs = _lit_tabs()
+    return tabs, {t["key"]: t for t in tabs}
 
 # ---------------------------------------------------------------------------
 # Windows. `catchup` has no fixed length — that is the whole point of it.
@@ -207,8 +277,9 @@ def _tab_predicate(spec: dict) -> tuple[str, list]:
         return f" AND entry_kind IN ({marks}) ", list(spec["entry_kinds"])
     if kind == "match":
         # Match against the tag string, the feed name, the title AND the abstract.
-        # Tags alone are too sparse: a Nature paper on trypanosomes carries the
-        # tag 'general-science' and nothing else, so only the title reveals it.
+        # Tags alone are too sparse: a Nature paper on the reader's own subject
+        # carries the tag 'general-science' and nothing else, so only the title
+        # reveals it.
         needles = sorted(spec["needles"])
         clauses = " OR ".join(
             ["lower(topic_tag) LIKE ?"] * len(needles)
@@ -230,9 +301,16 @@ def _fetch(
     q: str = "",
     show: str = "unread",
     page: int = 1,
+    by_key: dict[str, dict] | None = None,
 ) -> tuple[list[dict], int, str]:
-    """Rows for one tab/window/filter combination. Returns (items, total, label)."""
-    spec = LIT_TABS_BY_KEY.get(tab, LIT_TABS[0])
+    """Rows for one tab/window/filter combination. Returns (items, total, label).
+
+    `by_key` is the strip already built for this request; passing it saves
+    rebuilding the strip once per tab when the counters are computed.
+    """
+    if by_key is None:
+        _, by_key = _tabs_by_key()
+    spec = by_key.get(tab) or by_key["close"]
     cutoff, label = _window_cutoff(window)
 
     where = ["1=1"]
@@ -303,16 +381,21 @@ def _fetch(
     return rows, total, label
 
 
-def _tab_counts(window: str, show: str = "unread") -> dict[str, int]:
+def _tab_counts(window: str, show: str = "unread",
+                tabs: list[dict] | None = None) -> dict[str, int]:
     """Unread count per tab, for the badges on the strip.
 
     Counted per tab rather than estimated: a badge that disagrees with the list
     it labels destroys trust in both, and this is 11 cheap indexed queries.
     """
+    if tabs is None:
+        tabs = _lit_tabs()
+    by_key = {t["key"]: t for t in tabs}
     counts: dict[str, int] = {}
-    for t in LIT_TABS:
+    for t in tabs:
         try:
-            _, total, _ = _fetch(tab=t["key"], window=window, show=show, page=1)
+            _, total, _ = _fetch(tab=t["key"], window=window, show=show, page=1,
+                                 by_key=by_key)
             counts[t["key"]] = total
         except Exception:
             counts[t["key"]] = 0
@@ -334,20 +417,22 @@ async def new_literature_panel(
     page: int = 1,
 ):
     """The whole New Literature block: strip, window switcher, and the list."""
-    if tab not in LIT_TABS_BY_KEY:
+    tabs, by_key = _tabs_by_key()
+    if tab not in by_key:
         tab = "close"
     if window not in LIT_WINDOWS:
         window = "week"
 
-    items, total, window_label = _fetch(tab, window, kind, q, show, page)
-    counts = _tab_counts(window, show)
+    items, total, window_label = _fetch(tab, window, kind, q, show, page,
+                                        by_key=by_key)
+    counts = _tab_counts(window, show, tabs)
     last = _last_reviewed()
 
     return templates.TemplateResponse(
         request,
         "partials/library_new_literature.html",
         {
-            "tabs": LIT_TABS, "active": tab, "spec": LIT_TABS_BY_KEY[tab],
+            "tabs": tabs, "active": tab, "spec": by_key[tab],
             "windows": LIT_WINDOWS, "window": window, "window_label": window_label,
             "kind_groups": KIND_GROUPS, "active_kind": kind,
             "items": items, "total": total, "counts": counts,
@@ -405,16 +490,18 @@ async def new_literature_list(
     Separate from the panel route so switching a tab does not re-render the strip
     it was clicked on: the strip keeps focus and the page does not jump.
     """
-    if tab not in LIT_TABS_BY_KEY:
+    _, by_key = _tabs_by_key()
+    if tab not in by_key:
         tab = "close"
-    items, total, window_label = _fetch(tab, window, kind, q, show, page)
+    items, total, window_label = _fetch(tab, window, kind, q, show, page,
+                                        by_key=by_key)
     return templates.TemplateResponse(
         request,
         "partials/library_new_literature_list.html",
         {
             "items": items, "total": total, "active": tab,
             "states": _stack_states(items),
-            "spec": LIT_TABS_BY_KEY[tab], "window": window,
+            "spec": by_key[tab], "window": window,
             "window_label": window_label, "active_kind": kind,
             "q": q, "show": show, "page": page,
             "total_pages": max(1, (total + PAGE_SIZE - 1) // PAGE_SIZE),
@@ -777,132 +864,181 @@ async def pickup_downloads():
 
 
 # ---------------------------------------------------------------------------
-# The HAT Library — one surface for the disease this researcher actually works on
+# The focus library — one surface for the single subject a researcher works on
 # ---------------------------------------------------------------------------
 #
-# the researcher asked whether the Library has a specific focus on his HAT library. It did
-# not. The material was spread across three places that did not know about each
-# other: the catalogue (literature_metadata), the indexed corpus (pdf_chunks in
-# the hat-specialist layer), and the review queue (new_publications). Each
-# answered a different question and none answered "how complete is my HAT
-# library?"
+# For a researcher with one dominant subject, the material is spread across three
+# places that do not know about each other: the catalogue (literature_metadata),
+# the indexed corpus (pdf_chunks in that subject's knowledge layer), and the
+# review queue (new_publications). Each answers a different question and none
+# answers "how complete is my library on this subject?"
 #
 # This panel puts the three together and adds the one thing none of them had: a
-# search box that queries the FULL TEXT of his own HAT papers rather than their
-# titles. Until 2026-08-21 the hat-specialist layer held 5 documents; it now
-# holds 220, so that search is finally worth offering.
+# search box that queries the FULL TEXT of the subject's own papers rather than
+# their titles.
+#
+# It is OFF unless the machine-local domain settings define `library_focus`:
+# the subject's terms, the themes it is judged complete against, and the
+# knowledge layer that holds its full text. Without those there is nothing
+# honest to show, so the tab and its routes do not exist.
 
-HAT_TERMS = ("trypanosom", "sleeping sickness", "tsetse", "glossina",
-             "gambiense", "rhodesiense", "brucei", "nagana", "surra", "evansi")
+def library_focus() -> dict | None:
+    """The configured focus subject, or None when the feature is off.
 
-_HAT_LIKE = " OR ".join(
-    "lower(title || ' ' || COALESCE(abstract,'')) LIKE ?" for _ in HAT_TERMS)
-_HAT_PARAMS = tuple(f"%{w}%" for w in HAT_TERMS)
+    Keys (all from `library_focus` in the domain settings):
+      layer       knowledge-layer slug holding the subject's full text (required)
+      terms       substrings that identify a paper as on-subject (required)
+      themes      [[label, [substrings]], ...] — coverage is counted per theme
+      tab         key of the Library tab (default "focus")
+      label       text of the Library tab (default "Focus")
+      subject     the subject's short name, used in sentences
+      title, tail, intro, tooltip, catalogue_note, placeholder   display text
+      gap_tag     new_publications.topic_tag of reference-mined gaps
+      queue_prefix  topic_tag prefix of everything queued for this subject
+    """
+    try:
+        from metis_mcp.domain import domain
+        raw = domain("library_focus", None)
+    except Exception:
+        return None
+    if not isinstance(raw, dict):
+        return None
+    terms = tuple(str(t).lower() for t in (raw.get("terms") or []) if str(t).strip())
+    layer = str(raw.get("layer") or "").strip()
+    if not terms or not layer:
+        return None
+    themes = []
+    for item in raw.get("themes") or []:
+        if (isinstance(item, (list, tuple)) and len(item) == 2
+                and isinstance(item[1], (list, tuple)) and item[1]):
+            themes.append((str(item[0]), tuple(str(n).lower() for n in item[1])))
+    subject = str(raw.get("subject") or raw.get("label") or "focus")
+    return {
+        "tab": _slug(str(raw.get("tab") or "focus")).replace("-", "") or "focus",
+        "label": str(raw.get("label") or "Focus"),
+        "subject": subject,
+        "title": str(raw.get("title") or f"{subject} library"),
+        "tail": str(raw.get("tail") or "YOUR OWN CORPUS"),
+        "intro": str(raw.get("intro") or
+                     f"Everything Metis holds on {subject} — catalogued, indexed, "
+                     f"and searchable by what the papers say rather than what "
+                     f"they are called."),
+        "tooltip": str(raw.get("tooltip") or
+                       f"Your {subject} corpus: what you hold, what Metis can "
+                       f"read, and what your own citations say is missing"),
+        "catalogue_note": str(raw.get("catalogue_note") or
+                              f"References whose title or abstract mention {subject}."),
+        "placeholder": str(raw.get("placeholder") or
+                           "Ask a question your own papers might answer…"),
+        "layer": layer,
+        "terms": terms,
+        "themes": themes,
+        "gap_tag": str(raw.get("gap_tag") or ""),
+        "queue_prefix": str(raw.get("queue_prefix") or ""),
+    }
 
-# The themes a HAT library is judged complete against. Deliberately the shape of
-# the DISEASE, not the shape of the folder tree: a library can look tidy and
-# still have nothing on the vector.
-HAT_THEMES: list[tuple[str, tuple[str, ...]]] = [
-    ("Diagnostics",       ("diagnos", "catt", "trypanolysis", "maect", "rdt",
-                           "serolog", "pcr", "screening test", "litat")),
-    ("Parasite biology",  ("vsg", "antigenic", "variant surface", "genom",
-                           "transcript", "differentiation", "stumpy", "slender")),
-    ("Vector & tsetse",   ("tsetse", "glossina", "vector", "tiny target", "trap")),
-    ("Treatment",         ("fexinidazole", "acoziborole", "nifurtimox", "melarsoprol",
-                           "eflornithine", "pentamidine", "suramin", "treatment", "drug")),
-    ("Elimination",       ("elimination", "eliminat", "roadmap", "who target",
-                           "interrupt")),
-    ("Surveillance",      ("surveillance", "passive", "active screening",
-                           "case detection", "reporting")),
-    ("Animal reservoir",  ("reservoir", "animal", "pig", "cattle", "domestic",
-                           "wild fauna", "congolense", "evansi", "nagana")),
-    ("Modelling & spatial", ("model", "spatial", "risk map", "transmission dynamic",
-                             "bayesian", "geostatist")),
-]
+
+def _focus_like(terms: tuple[str, ...]) -> tuple[str, tuple[str, ...]]:
+    clause = " OR ".join(
+        "lower(title || ' ' || COALESCE(abstract,'')) LIKE ?" for _ in terms)
+    return clause, tuple(f"%{w}%" for w in terms)
 
 
-@router.get("/api/partial/library/hat", response_class=HTMLResponse)
-async def hat_library_panel(request: Request):
-    """The HAT Library: what you hold, what is indexed, what is missing."""
+@router.get("/api/partial/library/focus", response_class=HTMLResponse)
+async def focus_library_panel(request: Request):
+    """The focus library: what you hold, what is indexed, what is missing."""
+    focus = library_focus()
+    if not focus:
+        return HTMLResponse("", status_code=404)
+    like, like_params = _focus_like(focus["terms"])
+    layer = focus["layer"]
+
     catalogue = db_scalar(
-        f"SELECT COUNT(*) FROM literature_metadata WHERE {_HAT_LIKE}",
-        _HAT_PARAMS, default=0) or 0
+        f"SELECT COUNT(*) FROM literature_metadata WHERE {like}",
+        like_params, default=0) or 0
 
     indexed_files = db_scalar(
         "SELECT COUNT(DISTINCT source_file) FROM pdf_chunks WHERE db_id = "
-        "(SELECT id FROM knowledge_databases WHERE slug='hat-specialist')",
-        default=0) or 0
+        "(SELECT id FROM knowledge_databases WHERE slug=?)",
+        (layer,), default=0) or 0
     indexed_chunks = db_scalar(
         "SELECT COUNT(*) FROM pdf_chunks WHERE db_id = "
-        "(SELECT id FROM knowledge_databases WHERE slug='hat-specialist')",
-        default=0) or 0
+        "(SELECT id FROM knowledge_databases WHERE slug=?)",
+        (layer,), default=0) or 0
 
     # Coverage per theme, counted over the catalogue. A count, not a score:
     # any single number for "how complete is this library" would be invented.
     themes = []
-    for label, needles in HAT_THEMES:
+    for label, needles in focus["themes"]:
         clause = " OR ".join(
             "lower(title || ' ' || COALESCE(abstract,'')) LIKE ?" for _ in needles)
         n = db_scalar(
             f"SELECT COUNT(*) FROM literature_metadata "
-            f"WHERE ({_HAT_LIKE}) AND ({clause})",
-            _HAT_PARAMS + tuple(f"%{x}%" for x in needles), default=0) or 0
+            f"WHERE ({like}) AND ({clause})",
+            like_params + tuple(f"%{x}%" for x in needles), default=0) or 0
         themes.append({"label": label, "count": n})
     themes.sort(key=lambda t: -t["count"])
 
-    # Gaps found by reference mining, ranked by how many of his papers cite them.
-    gaps = db_query(
-        "SELECT id, title, journal, pub_date, doi, relevance_note "
-        "FROM new_publications WHERE topic_tag='hat-references' "
-        "AND COALESCE(added_at,'')='' AND COALESCE(dismissed_at,'')='' "
-        "ORDER BY relevance DESC LIMIT 12") or []
-    gaps_total = db_scalar(
-        "SELECT COUNT(*) FROM new_publications WHERE topic_tag='hat-references' "
-        "AND COALESCE(added_at,'')='' AND COALESCE(dismissed_at,'')=''",
-        default=0) or 0
+    # Gaps found by reference mining, ranked by how many of the researcher's own
+    # papers cite them.
+    gaps: list = []
+    gaps_total = 0
+    if focus["gap_tag"]:
+        gaps = db_query(
+            "SELECT id, title, journal, pub_date, doi, relevance_note "
+            "FROM new_publications WHERE topic_tag=? "
+            "AND COALESCE(added_at,'')='' AND COALESCE(dismissed_at,'')='' "
+            "ORDER BY relevance DESC LIMIT 12", (focus["gap_tag"],)) or []
+        gaps_total = db_scalar(
+            "SELECT COUNT(*) FROM new_publications WHERE topic_tag=? "
+            "AND COALESCE(added_at,'')='' AND COALESCE(dismissed_at,'')=''",
+            (focus["gap_tag"],), default=0) or 0
 
-    pending = db_scalar(
-        "SELECT COUNT(*) FROM new_publications WHERE topic_tag LIKE 'hat-%' "
-        "AND COALESCE(added_at,'')='' AND COALESCE(dismissed_at,'')=''",
-        default=0) or 0
+    pending = 0
+    if focus["queue_prefix"]:
+        pending = db_scalar(
+            "SELECT COUNT(*) FROM new_publications WHERE topic_tag LIKE ? "
+            "AND COALESCE(added_at,'')='' AND COALESCE(dismissed_at,'')=''",
+            (focus["queue_prefix"] + "%",), default=0) or 0
 
     last_built = db_scalar(
-        "SELECT last_built FROM knowledge_databases WHERE slug='hat-specialist'",
-        default="") or ""
+        "SELECT last_built FROM knowledge_databases WHERE slug=?",
+        (layer,), default="") or ""
 
     return templates.TemplateResponse(
-        request, "partials/library_hat.html",
-        {"catalogue": catalogue, "indexed_files": indexed_files,
+        request, "partials/library_focus.html",
+        {"focus": focus, "catalogue": catalogue, "indexed_files": indexed_files,
          "indexed_chunks": indexed_chunks, "themes": themes,
          "gaps": gaps, "gaps_total": gaps_total, "pending": pending,
          "last_built": (last_built or "")[:16].replace("T", " ")},
     )
 
 
-@router.get("/api/partial/library/hat/search", response_class=HTMLResponse)
-async def hat_corpus_search(request: Request, q: str = ""):
-    """Full-text semantic search across the researcher's own HAT papers.
+@router.get("/api/partial/library/focus/search", response_class=HTMLResponse)
+async def focus_corpus_search(request: Request, q: str = ""):
+    """Full-text semantic search across the focus subject's own papers.
 
     Distinct from every other search on this page: the catalogue search matches
     TITLES and abstracts, this one matches what the papers actually SAY. It is
-    the capability the RAG index was rebuilt for.
+    the capability the RAG index was built for.
     """
+    focus = library_focus()
+    if not focus:
+        return HTMLResponse("", status_code=404)
     results: list[dict] = []
     error = ""
     if q.strip():
         try:
-            import asyncio
             from metis_mcp.tools.knowledge_db import search_pdf_knowledge
             raw = await search_pdf_knowledge(
-                query=q, databases=["hat-specialist"], top_k=8)
+                query=q, databases=[focus["layer"]], top_k=8)
             text = "".join(getattr(i, "text", "") for i in
                            (raw if isinstance(raw, list) else [raw]))
             # The tool returns formatted markdown; parse the parts we display.
-            import re as _re
-            for m in _re.finditer(
+            for m in re.finditer(
                     r"\*\*\d+\.\s(.+?)\*\*\s*\(score:\s*([\d.]+)\)\s*\n\s*"
                     r"Layer:.*?\|\s*Domain:\s*(.*?)\s*\|\s*p\.(\d+)\s*\|\s*(.*?)\n"
-                    r"\s*>\s*(.*?)(?=\n\n|\Z)", text, _re.S):
+                    r"\s*>\s*(.*?)(?=\n\n|\Z)", text, re.S):
                 results.append({
                     "title": m.group(1).strip(), "score": float(m.group(2)),
                     "domain": m.group(3).strip(), "page": m.group(4),
@@ -912,8 +1048,8 @@ async def hat_corpus_search(request: Request, q: str = ""):
             error = f"{type(exc).__name__}: {exc}"[:180]
 
     return templates.TemplateResponse(
-        request, "partials/library_hat_search.html",
-        {"results": results, "q": q, "error": error})
+        request, "partials/library_focus_search.html",
+        {"focus": focus, "results": results, "q": q, "error": error})
 
 
 # ---------------------------------------------------------------------------
@@ -1031,7 +1167,8 @@ async def corpus_triggers():
     their declared topics, and the domain labels present in the indexed corpus —
     so this works for a parasitologist, a cardiologist or a linguist without
     anyone editing a list. That portability is the point: Metis ships to other
-    people, and a trigger list naming trypanosomes would be useless to them.
+    people, and a trigger list naming one researcher's organism would be useless
+    to them.
     """
     terms: set[str] = set()
 
@@ -1057,8 +1194,8 @@ async def corpus_triggers():
     # THE DISTINCTIVE VOCABULARY OF THE CORPUS ITSELF.
     #
     # Profile interests and folder names are too coarse on their own. Measured
-    # 2026-08-21: they produced 'sleeping' and 'sickness' but NOT 'gambiense',
-    # 'tsetse', 'trypanosome' or 'catt' — so a question phrased in the field's
+    # 2026-08-21: they produced the two words of a disease's common name but NOT
+    # its pathogen, its vector or its assay names — so a question phrased in the field's
     # actual technical vocabulary could slip past the trigger and never be
     # grounded. The words a researcher uses are in their documents' titles, not
     # in their folder labels.
@@ -1071,8 +1208,8 @@ async def corpus_triggers():
         "SELECT DISTINCT title FROM pdf_chunks WHERE title != '' "
         "UNION SELECT title FROM literature_metadata WHERE title IS NOT NULL") or []
     for row in titles:
-        # 4 characters, not 5: this field is full of four-letter assay names —
-        # CATT, mAECT, RDTs — and dropping them would miss exactly the questions
+        # 4 characters, not 5: many fields are full of four-letter assay and
+        # instrument names, and dropping them would miss exactly the questions
         # a diagnostics researcher asks most often.
         for w in re.findall(r"[a-z]{4,}", str(row["title"]).lower()):
             counts[w] += 1

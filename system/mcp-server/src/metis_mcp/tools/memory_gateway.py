@@ -88,7 +88,7 @@ async def recall(
       6. Ideas (ideas table — keyword)
 
     Use scope/agent_id/project_id to narrow results:
-      recall("HAT diagnostics")                          → everything
+      recall("malaria diagnostics")                      → everything
       recall("search patterns", agent_id="librarian")    → librarian's wisdom
       recall("elimination", project_id="article-1")      → Article 1 decisions
       recall("mixed models", scope="global")             → cross-cutting knowledge
@@ -367,7 +367,7 @@ async def remember(
         project_id: Tag this memory as belonging to a specific project.
         scope: Visibility scope: 'global' (default), 'agent', 'project', or 'session'.
         title: Optional short title. Auto-generated from content if empty.
-        tags: Comma-separated topic tags (e.g. 'hat,diagnostics,rdts').
+        tags: Comma-separated topic tags (e.g. 'malaria,diagnostics,rdts').
         session_id: Current pipeline session ID (optional).
 
     Returns:

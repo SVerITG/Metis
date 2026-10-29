@@ -1,0 +1,59 @@
+{# The folders the Data Memory reads. While a background read runs, this block
+   polls itself every 2 s and stops by rendering without the trigger. #}
+<div id="dm-sources"
+     {% if job.running %}hx-get="/api/partial/data/sources" hx-trigger="every 2s" hx-swap="outerHTML"{% endif %}>
+
+  {% if job.running %}
+  <div class="dm-job"><span class="stat is-info">Learning…</span>
+    <span class="dm-job-t">Reading your scripts (code only). This page updates when it is done.</span></div>
+  {% elif job.error %}
+  <div class="dm-job"><span class="stat is-warn">Last read failed</span><span class="dm-job-t">{{ job.error }}</span></div>
+  {% elif job.finished %}
+  <div class="dm-job"><span class="stat is-good">Up to date</span>
+    <span class="dm-job-t">Finished {{ job.finished[11:16] }} — <a href="/data">reload the page</a> to see new files.</span></div>
+  {% endif %}
+  {% if message %}<div class="dm-job"><span class="stat is-quiet">{{ message }}</span></div>{% endif %}
+
+  <ul class="dm-src-list">
+    {% for s in sources %}
+    <li class="dm-src">
+      <div class="u-grow" style="min-width:0;">
+        <div class="dm-src-name">{{ s.name }}</div>
+        <div class="dm-src-path">{{ s.display }}</div>
+      </div>
+      <span class="tag">{{ s.n_scripts }} scripts</span>
+      {% if s.last_scan %}<span class="tag">read {{ s.last_scan[:10] }} {{ s.last_scan[11:16] }}</span>
+      {% else %}<span class="stat is-info">waiting</span>{% endif %}
+      <form hx-post="/api/data-memory/forget" hx-target="#dm-sources" hx-swap="outerHTML"
+            hx-confirm="Stop learning this folder? What was learnt from it is removed from the memory. Nothing on disk is touched.">
+        <input type="hidden" name="folder" value="{{ s.root }}">
+        <button class="btn btn--danger btn--caps" type="submit">Forget</button>
+      </form>
+    </li>
+    {% else %}
+    <li class="dm-src"><span class="dmf-none" style="color:var(--m-muted);">No folders yet.</span></li>
+    {% endfor %}
+  </ul>
+
+  <div class="u-row u-row--wrap" style="margin-top:var(--m-space-3);">
+    <form class="u-row u-grow" hx-post="/api/data-memory/folders" hx-target="#dm-sources" hx-swap="outerHTML">
+      <input class="dm-input u-grow" name="folder" placeholder="Add a folder with R scripts — e.g. C:\Users\you\Documents\Analysis"
+             aria-label="Folder with R scripts">
+      <button class="btn btn--primary btn--caps" type="submit">Add &amp; learn</button>
+    </form>
+    <form hx-post="/api/data-memory/refresh" hx-target="#dm-sources" hx-swap="outerHTML">
+      <button class="btn btn--sec btn--caps" type="submit" {% if job.running %}disabled{% endif %}>Re-read all now</button>
+    </form>
+  </div>
+</div>
+
+<style>
+  .dm-job { display:flex; align-items:center; gap:var(--m-space-2); margin-bottom:var(--m-space-3); }
+  .dm-job-t { font-size:var(--t-small); color:var(--m-muted); }
+  .dm-src-list { list-style:none; margin:0; padding:0; border:1px solid var(--m-rule); border-radius:8px; background:var(--m-surface); }
+  .dm-src { display:flex; align-items:center; gap:var(--m-space-3); padding:0.7rem var(--m-space-4); }
+  .dm-src + .dm-src { border-top:1px solid var(--m-rule-soft); }
+  .dm-src-name { font-weight:500; }
+  .dm-src-path { font-family:var(--m-mono); font-size:var(--t-micro); color:var(--m-muted); overflow:hidden;
+                 text-overflow:ellipsis; white-space:nowrap; }
+</style>

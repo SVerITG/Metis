@@ -1,4 +1,4 @@
-<div id="hat-table-area">
+<div id="seeded-table-area">
 
   <div class="u-label u-row u-rule" style="padding:var(--m-space-2) var(--m-space-5);gap:var(--m-space-3);">
     {% if q %}
@@ -135,18 +135,18 @@
   <div class="u-row u-rule-t" style="justify-content:center;gap:var(--m-space-3);padding:var(--m-space-4) 0;">
     {% if page > 1 %}
     <button type="button" class="news-period-btn"
-            hx-get="/api/partial/knowledge/hat-corpus-table?page={{ page - 1 }}&q={{ q | urlencode }}&collection={{ collection | default('') | urlencode }}&sort={{ sort | default('title') | urlencode }}"
-            hx-target="#hat-table-area" hx-swap="outerHTML">← Previous</button>
+            hx-get="/api/partial/knowledge/seeded-corpus-table?page={{ page - 1 }}&q={{ q | urlencode }}&collection={{ collection | default('') | urlencode }}&sort={{ sort | default('title') | urlencode }}"
+            hx-target="#seeded-table-area" hx-swap="outerHTML">← Previous</button>
     {% endif %}
     <span class="u-label">
       {{ page }} / {{ total_pages }} · {{ total }} PAPERS
     </span>
     {% if page < total_pages %}
     <button type="button" class="news-period-btn"
-            hx-get="/api/partial/knowledge/hat-corpus-table?page={{ page + 1 }}&q={{ q | urlencode }}&collection={{ collection | default('') | urlencode }}&sort={{ sort | default('title') | urlencode }}"
-            hx-target="#hat-table-area" hx-swap="outerHTML">Next →</button>
+            hx-get="/api/partial/knowledge/seeded-corpus-table?page={{ page + 1 }}&q={{ q | urlencode }}&collection={{ collection | default('') | urlencode }}&sort={{ sort | default('title') | urlencode }}"
+            hx-target="#seeded-table-area" hx-swap="outerHTML">Next →</button>
     {% endif %}
   </div>
   {% endif %}
 
-</div><!-- /#hat-table-area -->
+</div><!-- /#seeded-table-area -->

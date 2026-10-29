@@ -22,7 +22,7 @@ It exists because Metis reads from both the **database** and the **filesystem** 
 2. Then tell the user, clearly:
    - **Dashboard** is live at http://127.0.0.1:8081 (demo data, API-key + scan banners suppressed, brief served from cache — no API calls).
    - **Fully quit + reopen Codex Desktop** (tray → Quit, *not* just close the window; Task Manager → End any `Codex` if needed). It re-reads `run.sh` only on a fresh launch.
-   - **Confirm** in Desktop: ask *"Metis, what are my current projects?"* → must list Amélie's (UHC financing brief, NTD cost-effectiveness paper, financing dashboard…). If it still shows real projects, Desktop didn't fully restart — quit harder.
+   - **Confirm** in Desktop: ask *"Metis, what are my current projects?"* → must list Amélie's (UHC financing brief, malaria MDA cost-effectiveness paper, financing dashboard…). If it still shows real projects, Desktop didn't fully restart — quit harder.
 3. Offer the shot-list (below).
 
 **`down` / "revert" / "teardown":**

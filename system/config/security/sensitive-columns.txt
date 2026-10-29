@@ -34,12 +34,12 @@ lab_result
 pathology
 biopsy
 
-# HAT-specific
-catt_result
-mAECT
-trypanolysis
-csf_wbc
-csf_tryps
+# Laboratory and diagnostic results
+rdt_result
+pcr_result
+culture_result
+serology
+viral_load
 parasitology
 lumbar_puncture
 

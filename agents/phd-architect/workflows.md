@@ -76,11 +76,11 @@ When supervision or research meetings are added:
 
 ## 7. Framework-evolution workflow
 
-The post-elimination framework note should be maintained as a living structure.
+The central conceptual framework note should be maintained as a living structure.
 
 It should include:
 
-- competing surveillance models
+- competing models or explanations
 - assumptions
 - dependencies on future evidence
 - operational constraints

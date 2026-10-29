@@ -44,7 +44,7 @@ and how to frame answers in your field."
 
 Ask:
 - "Which broad field are you in? (e.g., public health, biomedical sciences, clinical medicine, social sciences, environmental science, economics…)"
-- "What are your 3–5 most specific research interests? (e.g., neglected tropical diseases, multilevel models, health information systems)"
+- "What are your 3–5 most specific research interests? (e.g., hypertension in older adults, multilevel models, antimicrobial resistance)"
 - "Do you work with any specific populations, geographies, or disease areas?"
 
 Write to `user-config.yaml`:
@@ -157,7 +157,7 @@ Ask:
 - "When I find a paper, should I summarise it briefly or give you more detail?"
 - "Do you have a preferred writing style for your own work? (formal/academic, clear/direct, mixed)"
 - "What statistical methods do you use regularly? (e.g., regression, multilevel models, survival analysis, GIS)"
-- "What tools do you work with? (R, Python, STATA, SPSS, ArcGIS, DHIS2, other)"
+- "What tools do you work with? (R, Python, STATA, SPSS, ArcGIS, REDCap, other)"
 
 Write to `user-config.yaml`:
 ```yaml

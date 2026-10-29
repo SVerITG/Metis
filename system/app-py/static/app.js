@@ -1229,9 +1229,9 @@ async function submitAddProject() {
 // ---------------------------------------------------------------------------
 
 const _TUNE_SCAN_FEEDS = [
-  { name: 'WHO outbreak news',     tags: 'NTD · Public health' },
+  { name: 'WHO outbreak news',     tags: 'Outbreaks · Public health' },
   { name: 'CDC EID journal',       tags: 'Methods · Public health' },
-  { name: 'PLOS NTDs',             tags: 'NTD · Methods' },
+  { name: 'medRxiv',               tags: 'Preprints · Methods' },
   { name: 'Anthropic News',        tags: 'AI' },
 ];
 

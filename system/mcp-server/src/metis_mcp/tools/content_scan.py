@@ -102,11 +102,6 @@ NEWS_FEEDS = [
     # base: a retracted paper you have cited is news you want early.
     ("Retraction Watch",       "https://retractionwatch.com/feed/",                                     "science,methods"),
     ("Undark",                 "https://undark.org/feed/",                                              "science"),
-    # The Conversation is academics writing for a general audience — the closest
-    # thing to "a researcher explaining what this result means". The Africa desk
-    # is the most relevant edition for this field.
-    ("The Conversation Africa","https://theconversation.com/africa/articles.atom",                      "science,africa,public-health"),
-    ("The Conversation health","https://theconversation.com/africa/health/articles.atom",               "science,public-health,africa"),
 
     # ── Global-health journalism ──────────────────────────────────────────────
     ("STAT News",              "https://www.statnews.com/feed/",                                        "public-health,science"),
@@ -119,8 +114,6 @@ NEWS_FEEDS = [
     # ── Policy & financing ────────────────────────────────────────────────────
     ("Global Fund",            "https://www.theglobalfund.org/data/rss-feeds/latest/",                  "policy,health-financing"),
     ("Unitaid",                "https://unitaid.org/feed/",                                             "policy,health-financing"),
-    ("DNDi",                   "https://dndi.org/feed/?post_type=news",                                 "ntd,tropical-medicine,policy"),
-    ("MSF",                    "https://www.msf.org/rss/all",                                           "field-research,public-health,tropical-medicine"),
     ("UN News health",         "https://news.un.org/feed/subscribe/en/news/topic/health/feed/rss.xml",  "policy,public-health"),
 
     # ── Humanitarian & disaster ───────────────────────────────────────────────
@@ -129,18 +122,10 @@ NEWS_FEEDS = [
     ("GDACS alerts",           "https://www.gdacs.org/xml/rss.xml",                                     "policy,disasters"),
     ("ReliefWeb disasters",    "https://reliefweb.int/disasters/rss.xml",                               "policy,disasters"),
     ("Reliefweb",              "https://reliefweb.int/updates/rss.xml",                                 "policy,public-health"),
-    ("ReliefWeb DRC",          "https://reliefweb.int/updates/rss.xml?advanced-search=%28C61%29",        "policy,africa,drc"),
     ("OCHA",                   "https://www.unocha.org/rss.xml",                                        "policy,disasters"),
     ("IFRC",                   "https://www.ifrc.org/rss.xml",                                          "policy,disasters"),
     ("The New Humanitarian",   "https://www.thenewhumanitarian.org/rss.xml",                            "policy,public-health,africa"),
     ("Guardian Global dev",    "https://www.theguardian.com/global-development/rss",                    "policy,public-health,africa"),
-
-    # ── Africa desks ──────────────────────────────────────────────────────────
-    ("AllAfrica health",       "https://allafrica.com/tools/headlines/rdf/health/headlines.rdf",        "africa,public-health"),
-    ("AllAfrica",              "https://allafrica.com/tools/headlines/rdf/latest/headlines.rdf",        "africa,world-news"),
-    ("RFI Afrique",            "https://www.rfi.fr/fr/afrique/rss",                                     "africa,world-news"),
-    ("Le Monde Afrique",       "https://www.lemonde.fr/afrique/rss_full.xml",                           "africa,world-news"),
-    ("France24 Afrique",       "https://www.france24.com/fr/afrique/rss",                               "africa,world-news"),
 
     # ── World ─────────────────────────────────────────────────────────────────
     ("BBC World",              "https://feeds.bbci.co.uk/news/world/rss.xml",                           "world-news"),
@@ -172,13 +157,6 @@ NEWS_FEEDS = [
 # ═══════════════════════════════════════════════════════════════════════════════
 
 LIBRARY_FEEDS = [
-    # ── NTDs & tropical medicine ──────────────────────────────────────────────
-    ("PLOS NTDs",              "https://journals.plos.org/plosntds/feed/atom",                                    "ntd,tropical-medicine,public-health"),
-    ("Parasites & Vectors",    "https://link.springer.com/search.rss?facet-journal-id=13071",                     "ntd,tropical-medicine,vectors"),
-    ("Infect Dis Poverty",     "https://link.springer.com/search.rss?facet-journal-id=40249",                     "ntd,tropical-medicine,public-health"),
-    ("Trop Med & Health",      "https://link.springer.com/search.rss?facet-journal-id=41182",                     "tropical-medicine,public-health"),
-    ("Tropical Med & IH",      "https://onlinelibrary.wiley.com/feed/13653156/most-recent",                       "tropical-medicine,methods,public-health"),
-    ("Malaria Journal",        "https://link.springer.com/search.rss?facet-journal-id=12936",                     "malaria,tropical-medicine"),
 
     # ── Infectious disease & surveillance ─────────────────────────────────────
     ("Lancet Inf. Diseases",   "https://www.thelancet.com/rssFeed/laninf_current.xml",                            "infectious-disease,public-health,methods"),
@@ -191,10 +169,7 @@ LIBRARY_FEEDS = [
     ("BMJ Global Health",      "https://gh.bmj.com/rss/current.xml",                                              "public-health,methods"),
     ("Conflict and Health",    "https://link.springer.com/search.rss?facet-journal-id=13031",                     "conflict-health,public-health"),
 
-    # ── Methods, spatial epidemiology, modelling ───────────────────────────────
-    ("Int J Health Geogr",     "https://link.springer.com/search.rss?facet-journal-id=12942",                     "spatial-epi,methods"),
-    # No publication dates in this feed; date filters fall back to scan time.
-    ("Spat Spatio-temp Epi",   "https://rss.sciencedirect.com/publication/science/18775845",                      "spatial-epi,methods"),
+    # ── Methods & modelling ───────────────────────────────────────────────────
     ("Int J Epidemiology",     "https://academic.oup.com/rss/site_5339/OpenAccess.xml",                           "methods,epidemiology"),
 
     # ── Preprints ─────────────────────────────────────────────────────────────
@@ -206,42 +181,12 @@ LIBRARY_FEEDS = [
     ("Nature Mach Intell",     "https://www.nature.com/natmachintell.rss",                                         "AI,methods"),
     ("arXiv cs.AI",            "https://rss.arxiv.org/rss/cs.AI",                                                   "AI,methods"),
 
-    # ── PARASITE BIOLOGY ──────────────────────────────────────────────────────
-    # Added 2026-08-21 after the researcher found that new VSG-differentiation evidence had
-    # never reached his library. The cause was structural, not a ranking failure:
-    # every feed above is epidemiology, surveillance, methods or global health,
-    # and NOT ONE was a molecular parasitology journal. HAT *biology* therefore
-    # had no route into the library at all — antigenic variation, VSG expression
-    # and switching, stumpy-form differentiation, host–parasite interaction.
-    #
-    # This is not adjacent curiosity. Serodiagnosis (CATT, trypanolysis, RDTs)
-    # rests directly on VSG variability, and an elimination argument that ignores
-    # parasite biology is a weaker argument.
-    #
-    # ALL VERIFIED LIVE 2026-08-21 by tools/verify_library_feeds.py.
-    ("PLOS Pathogens",         "https://journals.plos.org/plospathogens/feed/atom",                                "parasitology,trypanosome,molecular,infectious-disease"),
-    ("Nature Microbiology",    "https://www.nature.com/nmicrobiol.rss",                                            "parasitology,molecular,infectious-disease"),
-    ("Nature Rev Microbiol",   "https://www.nature.com/nrmicro.rss",                                               "parasitology,molecular,infectious-disease"),
-    ("Trends in Parasitology", "https://www.cell.com/trends/parasitology/current.rss",                             "parasitology,trypanosome,tropical-medicine"),
-    ("Cell Host & Microbe",    "https://www.cell.com/cell-host-microbe/current.rss",                               "parasitology,molecular,immunology"),
-    ("Mol Microbiology",       "https://onlinelibrary.wiley.com/feed/13652958/most-recent",                        "parasitology,molecular,trypanosome"),
-    ("mBio",                   "https://journals.asm.org/action/showFeed?type=etoc&feed=rss&jc=mbio",              "parasitology,molecular,infectious-disease"),
-    ("Emerg Microbes & Inf",   "https://www.tandfonline.com/feed/rss/temi20",                                      "parasitology,infectious-disease"),
-    # No publication dates in these three; date filters fall back to scan time.
-    ("Acta Tropica",           "https://rss.sciencedirect.com/publication/science/0001706X",                       "parasitology,tropical-medicine,ntd"),
-    ("Int J Parasitology",     "https://rss.sciencedirect.com/publication/science/00207519",                       "parasitology,trypanosome"),
-    ("Exp Parasitology",       "https://rss.sciencedirect.com/publication/science/00144894",                       "parasitology,trypanosome"),
-    # Preprints are where trypanosome molecular biology appears first, often by a
-    # year. bioRxiv 'all' is broad but the relevance centroid does the filtering.
-    ("bioRxiv microbiology",   "https://connect.biorxiv.org/biorxiv_xml.php?subject=microbiology",                 "preprint,parasitology,molecular"),
-    ("Wellcome Open Research", "https://wellcomeopenresearch.org/rss/site_articles",                               "parasitology,tropical-medicine,ntd"),
-
     # ── GENERAL SCIENCE ───────────────────────────────────────────────────────
     # The `general-science` tag is load-bearing, not decorative: it is what routes
     # an item to the General Science lane instead of a topic tab. The tier exists
     # for results important enough to matter outside their own field — which is a
     # different job from tracking one's own literature, and mixing the two buries
-    # the NTD work under a much larger flow of high-profile biology.
+    # one's own field under a much larger flow of high-profile biology.
     #
     # Deliberately the JOURNAL feeds, not the news desks: Nature's and Science's
     # news feeds live in NEWS_FEEDS, where journalism belongs.
@@ -264,6 +209,26 @@ LIBRARY_FEEDS = [
     ("Cell",                   "https://www.cell.com/cell/current.rss",                                            "general-science"),
     ("Nature Rev Dis Primers", "https://www.nature.com/nrdp.rss",                                                  "general-science,methods"),
 ]
+
+# A field's own feeds — specialist journals, regional desks, a disease's NGOs —
+# belong to the installation, not the source: they live in the machine-local
+# domain files as "news_feeds_extra" / "library_feeds_extra", each a list of
+# [name, url, tags], and are appended here. The lists above are the generic set.
+def _extra_feeds(key: str) -> list[tuple[str, str, str]]:
+    try:
+        from metis_mcp.domain import domain
+        raw = domain(key, []) or []
+    except Exception:
+        return []
+    out = []
+    for f in raw:
+        if isinstance(f, (list, tuple)) and len(f) == 3 and str(f[1]).startswith("http"):
+            out.append((str(f[0]), str(f[1]), str(f[2])))
+    return out
+
+
+NEWS_FEEDS += _extra_feeds("news_feeds_extra")
+LIBRARY_FEEDS += _extra_feeds("library_feeds_extra")
 
 # Combined view, kept because existing callers and `check_news_feeds` iterate one
 # list. The 4th element is the KIND, derived rather than hand-maintained so the
@@ -523,9 +488,9 @@ def _norm_domain(domain: str) -> str:
     """Lowercase, hyphenated domain tag.
 
     The stored values had drifted into mixed case because the override keys in
-    `domain-overrides.local.json` are written naturally ('NTD', 'HAT',
+    `domain-overrides.local.json` are written naturally (upper-case acronyms,
     'SPATIAL-EPI', 'MALARIA') while feed tags are lowercase. The result was
-    'NTD' (52 rows) and 'ntd' (48 rows) as two different domains, and
+    'SPATIAL-EPI' and 'spatial-epi' as two different domains, and
     'SURVEILLANCE' separate from 'surveillance' — so a category filter grouping
     by domain silently showed half of each. Normalising once at ingestion is the
     fix; the News tabs also case-fold at match time so existing rows still group.
@@ -536,10 +501,16 @@ def _norm_domain(domain: str) -> str:
 # High-authority sources — a hit here lifts the signal one level.
 _AUTHORITY_SOURCES = {
     "who outbreak news", "lancet inf. diseases", "nature medicine",
-    "plos medicine", "plos ntds", "eurosurveillance", "cdc eid journal",
+    "plos medicine", "eurosurveillance", "cdc eid journal",
     "africa cdc", "ecdc threat reports", "bmj global health",
     "int j epidemiology", "who afro", "ijh geographics",
 }
+# A field's own high-authority journals come from the machine-local domain files.
+try:
+    from metis_mcp.domain import domain as _domain
+    _AUTHORITY_SOURCES |= {str(x).lower() for x in (_domain("authority_sources_extra", []) or [])}
+except Exception:
+    pass
 # Words that mark a genuinely high-signal development (not routine coverage).
 _URGENCY_WORDS = {
     "outbreak", "emergency", "alert", "elimination", "eliminated", "breakthrough",
@@ -920,8 +891,8 @@ def _scan_feeds(feeds, max_per_feed: int = 10) -> dict:
         # Build the interest-profile centroid once (cached daily; local, no API).
         # MAX-ANCHOR, not centroid. A centroid of 5 topics + ~100 work items +
         # ~390 library titles means "public health in general", and on that
-        # measure a foodborne-bacteria paper outscored a paper on passive HAT
-        # screening. Scoring against the CLOSEST SINGLE project / idea / note
+        # measure a foodborne-bacteria paper outscored a paper squarely in the
+        # researcher's own subject. Scoring against the CLOSEST SINGLE project / idea / note
         # separates his work from the middle ground; see relevance.py.
         centroid = None
         _score_batch = None
@@ -1128,7 +1099,7 @@ def scan_news_feeds(max_per_feed: int = 10) -> dict:
 #       impossible if nothing records which is which.
 #
 #   lane       — WHERE it belongs on the surface (his field, or general science).
-#       A Nature paper about trypanosome antigenic variation is NOT general
+#       A Nature paper on the core biology of one's own subject is NOT general
 #       science to him; it is the middle of his field that happens to have been
 #       published somewhere prestigious. So the lane cannot be read off the
 #       journal alone — it needs corpus closeness too.
@@ -1202,8 +1173,8 @@ def publication_title_key(title: str) -> str:
 
 # Above this centroid similarity an item counts as "close to my work" and stays
 # in a topic tab even when it came from a general-science feed. Calibrated
-# against the measurements recorded when relevance.py landed: NTD/HAT/malaria
-# scored 0.65–0.73, an AI paper 0.545, off-topic material ~0.52.
+# against the measurements recorded when relevance.py landed: papers in the
+# researcher's own subject scored 0.65–0.73, an AI paper 0.545, off-topic material ~0.52.
 FIELD_RELEVANCE_FLOOR = 0.62
 
 _KIND_PATTERNS = (
@@ -1245,8 +1216,8 @@ def classify_publication(
     from_general_feed = GENERAL_SCIENCE_TAG in tag_set
 
     # A general-science feed only produces a general-science item when the paper
-    # is NOT close to his corpus. This is the rule that keeps a Nature paper on
-    # trypanosomes out of the "interesting but not mine" pile.
+    # is NOT close to his corpus. This is the rule that keeps a Nature paper in
+    # the researcher's own subject out of the "interesting but not mine" pile.
     lane = "general" if (from_general_feed and relevance < FIELD_RELEVANCE_FLOOR) else "field"
     return kind, lane
 
@@ -1364,8 +1335,8 @@ async def scan_library() -> list[TextContent]:
     """Fetch the literature feeds and add new papers to the Library.
 
     This is the Library's own scan: journal tables-of-contents and preprint
-    servers (PLOS NTDs, Parasites & Vectors, Malaria Journal, Lancet ID, CDC EID,
-    BMC Infectious Diseases, Int J Health Geographics, medRxiv, arXiv q-bio …),
+    servers (Lancet ID, CDC EID, BMC Infectious Diseases, PLOS Medicine, Nature,
+    Science, medRxiv, arXiv …, plus any field journals configured locally),
     written to `new_publications` for the literature-alert surface.
 
     Separate from `scan_news` on purpose: this builds a scientific background
@@ -1504,7 +1475,7 @@ async def get_news_briefs(
     Args:
         limit: Maximum number of briefs to return (default 10).
         source_type: Filter by type — "news" for RSS items, "article" for scientific papers. Empty = all.
-        domain: Filter by domain tag (e.g. "HAT", "AI", "public-health"). Empty = all.
+        domain: Filter by domain tag (e.g. "AI", "public-health"). Empty = all.
         since: ISO date string — only return briefs created after this date. Empty = all.
     """
     if not paths.db.exists():
