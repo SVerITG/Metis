@@ -32,7 +32,11 @@ async def data_memory(question: str, project_id: str = "") -> list[TextContent]:
 
     Call this FIRST whenever a request involves data — a new analysis, an R
     script, a figure, a map, a dashboard panel, cleaning, merging, a variable,
-    "what do I have on X". It returns, from the researcher's own code and notes
+    "what do I have on X". Also when the request names no file at all and only
+    asks a question the data answers: "which areas were endemic in 2026", "how
+    many villages had a case last year", "compare these two regions", "the
+    cases are in the dashboard", "hoeveel gevallen per zone", "combien de
+    villages". It returns, from the researcher's own code and notes
     only: the files involved (exact paths, format, whether they exist), the
     columns the code uses with the values it tests for and how derived
     variables are built, which scripts read and write each file, outputs
@@ -90,6 +94,25 @@ async def data_memory_dataset(name_or_path: str) -> list[TextContent]:
     if len(hits) > 1:
         lines.append("\nOther matches: " + ", ".join(h["path"] for h in hits[1:]))
     return _t("\n".join(lines))
+
+
+@app.tool()
+async def data_memory_script(path: str) -> list[TextContent]:
+    """Open the CODE of one of the researcher's analysis scripts.
+
+    Use it on the templates `data_memory` names, before writing a new script:
+    reuse their paths, loading, cleaning, column names and definitions instead
+    of guessing them or asking the researcher to run names(). Works for .R,
+    .Rmd, .qmd and .py files inside the folders Metis learns from — never for
+    a data file. A bare file name is enough when it is unique.
+
+    Args:
+        path: the script's path as data_memory showed it, or its file name.
+    """
+    text, where = dm.read_script(path)
+    if text is None:
+        return _t(where)
+    return _t(f"# {where}\n\n```r\n{text}\n```")
 
 
 @app.tool()

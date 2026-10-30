@@ -71,6 +71,32 @@ _PII_IS_THE_PAYLOAD = {
     "get_consent_ledger",
 }
 
+# Tools whose arguments are free prose: a procedure hint matched on their words
+# is noise (see the post-call hook below).
+_NO_PROCEDURE_HINT = {
+    "data_memory", "data_memory_dataset", "data_memory_script", "data_memory_scan",
+    "data_memory_status", "record_data_story",
+    "save_session_summary", "update_project_memory", "record_decision",
+    "write_reflexion", "log_agent_run", "add_reminder",
+}
+
+# Tools a conversation calls with the researcher's own words: where the server
+# can notice a data request in Claude Desktop, which runs no prompt hooks.
+_DATA_NUDGE_TOOLS = {
+    "get_continuity_context", "run_metis", "search_pdf_knowledge", "search_memory",
+    "search_session_memory", "semantic_search", "recall", "surface_relevant_context",
+    "get_research_context", "search_library", "search_literature",
+}
+_data_nudged: set[str] = set()
+_DATA_NUDGE = (
+    "\n\n---\n**If this request asks for an analysis, a script, or what the researcher's data "
+    "contains — work in data-protected mode** (otherwise ignore this note). Before writing any "
+    "code: call `data_memory(question=...)` for the researcher's files, columns, values and "
+    "closest scripts, then `data_memory_script(path=...)` on the one or two closest scripts, "
+    "and build from them. Never open a data file or ask for rows; a script with guessed "
+    "column names is a last resort."
+)
+
 # Tools where an untrusted file's contents physically enter the model's context.
 # This is where patient data actually arrives, so this is where we ENFORCE.
 _MASK_EGRESS = {
@@ -225,7 +251,11 @@ def install(app: Any) -> None:
             # Appended to the tool's own output because that is the only channel
             # from here into the conversation — and a procedure that must be
             # remembered to be used is no better than not having recorded it.
-            hint = ambient.procedure_hint(arguments)
+            # Not on calls whose arguments are free prose — a data question, a
+            # summary, a decision. Three shared everyday words ("script", "cases",
+            # "areas") once attached a course-writing procedure to a request for
+            # an analysis script.
+            hint = None if name in _NO_PROCEDURE_HINT else ambient.procedure_hint(arguments)
             if hint:
                 blocks = _texts_of(result)
                 if blocks:
@@ -257,6 +287,23 @@ def install(app: Any) -> None:
                         )
         except Exception as exc:
             log.debug("ambient: post-call skipped for %s (%s)", name, exc)
+
+        # Claude Desktop runs no prompt hooks. The first Metis tool a conversation
+        # calls usually carries the researcher's words (a continuity topic, a
+        # routing request, a library query); when those words are a data request,
+        # the data-mode instruction rides on that tool's answer. Once per request.
+        try:
+            if name in _DATA_NUDGE_TOOLS:
+                text = " ".join(str(v) for v in (arguments or {}).values() if isinstance(v, str)).strip()
+                if text and text not in _data_nudged:
+                    from metis_mcp import data_memory as _dm
+                    if _dm.is_data_request(text):
+                        _data_nudged.add(text)
+                        blocks = _texts_of(result)
+                        if blocks:
+                            blocks[-1].text += _DATA_NUDGE
+        except Exception as exc:
+            log.debug("data-mode nudge skipped for %s (%s)", name, exc)
 
         # ── 3. EGRESS PII RAIL ───────────────────────────────────────────────
         if not guard_on or name in _PII_IS_THE_PAYLOAD:

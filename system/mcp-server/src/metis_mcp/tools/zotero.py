@@ -289,6 +289,31 @@ def _check_write_access(zot) -> tuple[bool, str]:
         return False, f"could not verify Zotero write access: {type(exc).__name__}: {exc}"
 
 
+METIS_COLLECTION = "Metis"
+SAVED_COLLECTION = "Saved from Dashboard"
+
+
+def metis_saved_collection(zot) -> str:
+    """Key of 'Metis / Saved from Dashboard', creating either level if missing.
+
+    Everything Metis writes into Zotero lives under one 'Metis' parent so the
+    researcher can collapse it; their own collections stay at the top level.
+    Matched by NAME, not a stored key, so a collection deleted and recreated
+    by hand in Zotero is found again rather than duplicated.
+    """
+    cols = zot.everything(zot.collections())
+
+    def _find(name, parent):
+        for c in cols:
+            if (c["data"]["name"] == name
+                    and (c["data"].get("parentCollection") or None) == parent):
+                return c["key"]
+        r = zot.create_collections([{"name": name, "parentCollection": parent or False}])
+        return list(r["successful"].values())[0]["key"]
+
+    return _find(SAVED_COLLECTION, _find(METIS_COLLECTION, None))
+
+
 @app.tool()
 async def push_to_zotero(dry_run: bool = True, limit: int = 50) -> list[TextContent]:
     """Push local library papers that aren't in Zotero yet UP to your Zotero library.

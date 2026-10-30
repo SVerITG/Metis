@@ -52,6 +52,25 @@ trap 'echo "[metis-preflight] aborted at line $LINENO — continuing without syn
 
 [ "${METIS_NO_PREFLIGHT:-0}" = "1" ] && exit 0
 
+# ── Windows hook shell → hand over to WSL ────────────────────────────────────
+# Claude Code on Windows runs hooks in Git Bash, where $HOME is the Windows
+# profile. The server and its venv live in WSL's $HOME, so from here nothing
+# looks installed and is_stale() reported STALE on every session. When there is
+# no local venv but WSL is available, run this same script inside WSL instead.
+# --report only: --end pushes, and WSL's git may lack the credentials Windows has.
+case "$(uname -s)" in
+    MINGW*|MSYS*|CYGWIN*)
+        if [ "$MODE" = "--report" ] && [ ! -d "$STATE_DIR/.venv" ] && command -v wsl.exe >/dev/null 2>&1; then
+            wsl_script="$(wsl.exe -e wslpath -a "$(cygpath -w "${BASH_SOURCE[0]}")" 2>/dev/null | tr -d '\r' || true)"
+            if [ -n "$wsl_script" ]; then
+                # Without MSYS_NO_PATHCONV, Git Bash rewrites /mnt/c/... into C:/Program Files/Git/mnt/c/...
+                MSYS_NO_PATHCONV=1 wsl.exe -e bash "$wsl_script" "$@" && exit 0
+                log "WSL hand-over failed — continuing in this shell"
+            fi
+        fi
+        ;;
+esac
+
 # ── Resolve the repo root ────────────────────────────────────────────────────
 # Priority: env var → marker file → this script's own location. The last one is
 # the backstop that cannot go stale: this script lives at <root>/tools/, so it
@@ -116,7 +135,7 @@ if [ "$MODE" = "--report" ]; then
     if [ -x "$VENV/bin/python3" ] && [ -f "$ROOT/tools/metis-sync-db.py" ]; then
         "$VENV/bin/python3" "$ROOT/tools/metis-sync-db.py" --status 2>/dev/null \
             | grep '^SYNC-PROBLEM:' | head -3 \
-            | sed 's/^SYNC-PROBLEM: /METIS SYNC: database — /'
+            | sed 's/^SYNC-PROBLEM: /METIS SYNC: database — /' || true   # no match is the healthy case, not an error
     fi
     exit 0
 fi

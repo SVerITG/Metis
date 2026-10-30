@@ -706,7 +706,7 @@ def _push_one_to_zotero(pub: dict, pdf_rel: str = "") -> tuple[str, str]:
     """
     try:
         from metis_mcp.tools.zotero import (
-            _get_zotero_client, zotero_credential_state,
+            _get_zotero_client, metis_saved_collection, zotero_credential_state,
         )
     except ImportError as exc:
         return "", f"Zotero module unavailable: {exc}"
@@ -741,6 +741,13 @@ def _push_one_to_zotero(pub: dict, pdf_rel: str = "") -> tuple[str, str]:
         item["publicationTitle"] = pub.get("journal") or ""
     if pub.get("doi"):
         item["DOI"] = pub["doi"]
+
+    # Filed under Metis / Saved from Dashboard rather than the library root.
+    # Tolerated on failure: an unfiled item still beats no item.
+    try:
+        item["collections"] = [metis_saved_collection(zot)]
+    except Exception:
+        pass
 
     try:
         resp = zot.create_items([item])
