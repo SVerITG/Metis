@@ -65,8 +65,8 @@ NOT_DATA = [
     "how do I install Metis on my laptop",
     "prepare the release notes for colleagues",
     # subject words without a data request: literature, writing, presenting
-    "what does the literature say about RDT sensitivity in passive screening",
-    "draft the methods paragraph for the passive screening article",
+    "what does the literature say about RDT sensitivity in community screening",
+    "draft the methods paragraph for the community screening article",
     "find papers on elimination of the disease in Eastmoor",
     "prepare slides on elimination progress for the steering committee",
     # false alarms found by replaying 621 real prompts (2026-10-30)

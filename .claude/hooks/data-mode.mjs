@@ -76,7 +76,7 @@ const WEAK = new RegExp(
 const SYSTEM_WORK = /\b(mcp|hooks?|fastapi|htmx|endpoint|routes?|frontend|css|javascript|node|sqlite|the wizard|installer|subagents?|tool ?calls?|pull request|commit|github|release|restyle|layout|spacing|fonts?|buttons?|cards?|navbar|sidebar|dark mode|light mode|surfaces?|briefings?|morning brief|news|feeds?|calendar|reminders?|install(ed|ing|ation)?|launch(es|ed)?|localhost|claude desktop|claude code|handoff|env\w* ?variables?|envi\w*ment\w* variables?|api ?keys?)\b/i;
 
 // Reading, writing and presenting use the same subject words as analysis
-// ("test sensitivity in passive screening") without being about the data.
+// ("test sensitivity in a field study") without being about the data.
 // They silence the hook unless the prompt also asks for an analysis product.
 const OTHER_INTENT = /\b(literature|papers?|articles?|references?|citations?|cite|evidence|review|draft|paragraph|abstract|manuscript|introduction|discussion|slides?|presentation|deck|poster|email|letter|artikel|littérature|article|course|lessons?|exercises?|quiz|learners?|ideas?|strategy document)\b/i;
 const ANALYSIS_ASK = /\b(how many|number of|maps?|tables?|plots?|charts?|figures?|graphs?|scripts?|counts?|compare|trends?|per year|by year|hoeveel|kaart|tabel|grafiek|combien|carte|tableau|graphique)\b/i;
